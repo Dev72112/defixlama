@@ -21,30 +21,32 @@ export default function Dashboard() {
   const { protocols, tvl, tvlHistory, dexVolumes, yieldPools, isLoading } =
     useDashboardData();
 
-  // Calculate metrics
-  const totalTVL = tvl.data?.tvl || 0;
-  const protocolCount = protocols.data?.length || 0;
+  // Calculate metrics with safe access
+  const totalTVL = tvl?.data?.tvl || 0;
+  const protocolCount = protocols?.data?.length || 0;
   const totalDexVolume =
-    dexVolumes.data?.reduce((acc, dex) => acc + (dex.total24h || 0), 0) || 0;
+    dexVolumes?.data?.reduce((acc, dex) => acc + (dex?.total24h || 0), 0) || 0;
   const avgApy =
-    yieldPools.data && yieldPools.data.length > 0
+    yieldPools?.data && yieldPools.data.length > 0
       ? yieldPools.data.reduce(
-          (acc, pool) => acc + ((pool.apyBase || 0) + (pool.apyReward || 0)),
+          (acc, pool) => acc + ((pool?.apyBase || 0) + (pool?.apyReward || 0)),
           0
         ) / yieldPools.data.length
       : 0;
 
   // Get TVL change from history
   const tvlChange = (() => {
-    if (!tvlHistory.data || tvlHistory.data.length < 2) return 0;
-    const latest = tvlHistory.data[tvlHistory.data.length - 1].tvl;
-    const dayAgo = tvlHistory.data[tvlHistory.data.length - 2]?.tvl || latest;
+    if (!tvlHistory?.data || tvlHistory.data.length < 2) return 0;
+    const latestItem = tvlHistory.data[tvlHistory.data.length - 1];
+    const dayAgoItem = tvlHistory.data[tvlHistory.data.length - 2];
+    const latest = latestItem?.tvl || 0;
+    const dayAgo = dayAgoItem?.tvl || latest;
     return dayAgo > 0 ? ((latest - dayAgo) / dayAgo) * 100 : 0;
   })();
 
   // Mini chart data
   const miniChartData =
-    tvlHistory.data?.slice(-14).map((d) => d.tvl) || [];
+    tvlHistory?.data?.slice(-14).map((d) => d?.tvl || 0) || [];
 
   return (
     <Layout>
@@ -74,33 +76,33 @@ export default function Dashboard() {
             value={formatCurrency(totalTVL)}
             change={tvlChange}
             icon={Layers}
-            loading={tvl.isLoading}
+            loading={tvl?.isLoading ?? true}
             miniChart={miniChartData}
           />
           <StatCard
             title="Protocols"
             value={protocolCount.toString()}
             icon={Database}
-            loading={protocols.isLoading}
+            loading={protocols?.isLoading ?? true}
           />
           <StatCard
             title="24h DEX Volume"
             value={formatCurrency(totalDexVolume)}
             icon={ArrowLeftRight}
-            loading={dexVolumes.isLoading}
+            loading={dexVolumes?.isLoading ?? true}
           />
           <StatCard
             title="Avg. Yield APY"
             value={`${avgApy.toFixed(2)}%`}
             icon={TrendingUp}
-            loading={yieldPools.isLoading}
+            loading={yieldPools?.isLoading ?? true}
           />
         </div>
 
         {/* TVL Chart */}
         <TVLChart
-          data={tvlHistory.data || []}
-          loading={tvlHistory.isLoading}
+          data={tvlHistory?.data || []}
+          loading={tvlHistory?.isLoading ?? true}
           height={350}
         />
 
@@ -119,8 +121,8 @@ export default function Dashboard() {
               </Link>
             </div>
             <ProtocolTable
-              protocols={protocols.data || []}
-              loading={protocols.isLoading}
+              protocols={protocols?.data || []}
+              loading={protocols?.isLoading ?? true}
               showCategory={false}
               limit={5}
             />
@@ -139,8 +141,8 @@ export default function Dashboard() {
               </Link>
             </div>
             <DexTable
-              dexes={dexVolumes.data || []}
-              loading={dexVolumes.isLoading}
+              dexes={dexVolumes?.data || []}
+              loading={dexVolumes?.isLoading ?? true}
               limit={5}
             />
           </div>
@@ -159,8 +161,8 @@ export default function Dashboard() {
             </Link>
           </div>
           <YieldTable
-            pools={yieldPools.data || []}
-            loading={yieldPools.isLoading}
+            pools={yieldPools?.data || []}
+            loading={yieldPools?.isLoading ?? true}
             limit={5}
           />
         </div>
