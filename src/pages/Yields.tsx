@@ -1,0 +1,159 @@
+import { Layout } from "@/components/layout/Layout";
+import { YieldTable } from "@/components/dashboard/YieldTable";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { useXLayerYieldPools } from "@/hooks/useDefiData";
+import { formatCurrency } from "@/lib/api/defillama";
+import { TrendingUp, Droplets, Search, Activity, Percent } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useState, useMemo } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export default function Yields() {
+  const { data: pools, isLoading } = useXLayerYieldPools();
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("apy");
+  const [projectFilter, setProjectFilter] = useState("all");
+
+  // Get unique projects
+  const projects = useMemo(() => {
+    if (!pools) return [];
+    const projs = new Set(pools.map((p) => p.project));
+    return Array.from(projs).sort();
+  }, [pools]);
+
+  // Filter and sort pools
+  const filteredPools = useMemo(() => {
+    if (!pools) return [];
+    
+    let filtered = pools.filter((p) => {
+      const matchesSearch = p.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.project.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesProject = projectFilter === "all" || p.project === projectFilter;
+      return matchesSearch && matchesProject;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      const apyA = (a.apyBase || 0) + (a.apyReward || 0);
+      const apyB = (b.apyBase || 0) + (b.apyReward || 0);
+      
+      switch (sortBy) {
+        case "apy":
+          return apyB - apyA;
+        case "tvl":
+          return (b.tvlUsd || 0) - (a.tvlUsd || 0);
+        case "symbol":
+          return a.symbol.localeCompare(b.symbol);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [pools, searchQuery, sortBy, projectFilter]);
+
+  // Calculate metrics
+  const totalTVL = pools?.reduce((acc, p) => acc + (p.tvlUsd || 0), 0) || 0;
+  const poolCount = pools?.length || 0;
+  const avgApy = pools && pools.length > 0
+    ? pools.reduce((acc, p) => acc + ((p.apyBase || 0) + (p.apyReward || 0)), 0) / pools.length
+    : 0;
+  const maxApy = pools && pools.length > 0
+    ? Math.max(...pools.map((p) => (p.apyBase || 0) + (p.apyReward || 0)))
+    : 0;
+
+  return (
+    <Layout>
+      <div className="space-y-6 animate-fade-in">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Yield Pools</h1>
+          <p className="text-muted-foreground mt-1">
+            Discover yield farming opportunities on XLayer
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total TVL"
+            value={formatCurrency(totalTVL)}
+            icon={Droplets}
+            loading={isLoading}
+          />
+          <StatCard
+            title="Active Pools"
+            value={poolCount.toString()}
+            icon={Activity}
+            loading={isLoading}
+          />
+          <StatCard
+            title="Average APY"
+            value={`${avgApy.toFixed(2)}%`}
+            icon={TrendingUp}
+            loading={isLoading}
+          />
+          <StatCard
+            title="Max APY"
+            value={`${maxApy.toFixed(2)}%`}
+            icon={Percent}
+            loading={isLoading}
+          />
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search pools..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((proj) => (
+                <SelectItem key={proj} value={proj} className="capitalize">
+                  {proj}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="apy">APY (High to Low)</SelectItem>
+              <SelectItem value="tvl">TVL (High to Low)</SelectItem>
+              <SelectItem value="symbol">Symbol (A-Z)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Yield Table */}
+        <YieldTable pools={filteredPools} loading={isLoading} />
+
+        {/* Results count */}
+        {!isLoading && (
+          <p className="text-sm text-muted-foreground">
+            Showing {filteredPools.length} of {poolCount} pools
+          </p>
+        )}
+      </div>
+    </Layout>
+  );
+}

@@ -3,10 +3,26 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Protocols from "./pages/Protocols";
+import Dexs from "./pages/Dexs";
+import Yields from "./pages/Yields";
+import Stablecoins from "./pages/Stablecoins";
+import Tokens from "./pages/Tokens";
+import Chains from "./pages/Chains";
+import Fees from "./pages/Fees";
+import Security from "./pages/Security";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -15,8 +31,15 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/protocols" element={<Protocols />} />
+          <Route path="/dexs" element={<Dexs />} />
+          <Route path="/yields" element={<Yields />} />
+          <Route path="/stablecoins" element={<Stablecoins />} />
+          <Route path="/tokens" element={<Tokens />} />
+          <Route path="/chains" element={<Chains />} />
+          <Route path="/fees" element={<Fees />} />
+          <Route path="/security" element={<Security />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
