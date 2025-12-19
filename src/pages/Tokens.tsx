@@ -6,16 +6,20 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/api/defillama";
 
-// XLayer native and common tokens
+// XLayer native and community tokens
 const XLAYER_TOKENS = [
-  { symbol: "OKB", name: "OKB", price: 45.23, change24h: 2.34, volume24h: 125000000, mcap: 2700000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/3897.png" },
-  { symbol: "WOKB", name: "Wrapped OKB", price: 45.20, change24h: 2.31, volume24h: 5600000, mcap: 450000000, logo: null },
-  { symbol: "USDT", name: "Tether USD", price: 1.00, change24h: 0.01, volume24h: 85000000000, mcap: 119000000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/825.png" },
-  { symbol: "USDC", name: "USD Coin", price: 1.00, change24h: -0.01, volume24h: 12000000000, mcap: 43000000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png" },
-  { symbol: "WETH", name: "Wrapped Ether", price: 3450.67, change24h: 1.56, volume24h: 2300000000, mcap: 415000000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/2396.png" },
-  { symbol: "WBTC", name: "Wrapped Bitcoin", price: 97234.45, change24h: 0.89, volume24h: 890000000, mcap: 12500000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png" },
-  { symbol: "DAI", name: "Dai Stablecoin", price: 1.00, change24h: 0.02, volume24h: 450000000, mcap: 5300000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/4943.png" },
-  { symbol: "LINK", name: "Chainlink", price: 18.45, change24h: 3.21, volume24h: 890000000, mcap: 11200000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/1975.png" },
+  { symbol: "OKB", name: "OKB", price: 45.23, change24h: 2.34, volume24h: 125000000, mcap: 2700000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/3897.png", contract: null },
+  { symbol: "WOKB", name: "Wrapped OKB", price: 45.20, change24h: 2.31, volume24h: 5600000, mcap: 450000000, logo: null, contract: null },
+  { symbol: "USDT", name: "Tether USD", price: 1.00, change24h: 0.01, volume24h: 85000000000, mcap: 119000000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/825.png", contract: null },
+  { symbol: "USDC", name: "USD Coin", price: 1.00, change24h: -0.01, volume24h: 12000000000, mcap: 43000000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png", contract: null },
+  { symbol: "WETH", name: "Wrapped Ether", price: 3450.67, change24h: 1.56, volume24h: 2300000000, mcap: 415000000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/2396.png", contract: null },
+  { symbol: "WBTC", name: "Wrapped Bitcoin", price: 97234.45, change24h: 0.89, volume24h: 890000000, mcap: 12500000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png", contract: null },
+  { symbol: "DAI", name: "Dai Stablecoin", price: 1.00, change24h: 0.02, volume24h: 450000000, mcap: 5300000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/4943.png", contract: null },
+  { symbol: "LINK", name: "Chainlink", price: 18.45, change24h: 3.21, volume24h: 890000000, mcap: 11200000000, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/1975.png", contract: null },
+  // XLayer Community Tokens
+  { symbol: "DOG", name: "DOG", price: 0, change24h: 0, volume24h: 0, mcap: 0, logo: null, contract: "0x903358faf7c6304afbd560e9e29b12ab1b8fddc5" },
+  { symbol: "NIUMA", name: "NIUMA", price: 0, change24h: 0, volume24h: 0, mcap: 0, logo: null, contract: "0x87669801a1fad6dad9db70d27ac752f452989667" },
+  { symbol: "XDOG", name: "XDOG", price: 0, change24h: 0, volume24h: 0, mcap: 0, logo: null, contract: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e" },
 ];
 
 export default function Tokens() {
@@ -80,16 +84,17 @@ export default function Tokens() {
         </div>
 
         {/* Tokens Table */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr className="bg-muted/30">
                 <th className="w-12">#</th>
                 <th>Token</th>
+                <th className="text-left hidden lg:table-cell">Contract</th>
                 <th className="text-right">Price</th>
                 <th className="text-right">24h Change</th>
-                <th className="text-right">24h Volume</th>
-                <th className="text-right">Market Cap</th>
+                <th className="text-right hidden sm:table-cell">24h Volume</th>
+                <th className="text-right hidden md:table-cell">Market Cap</th>
               </tr>
             </thead>
             <tbody>
@@ -124,24 +129,46 @@ export default function Tokens() {
                       </div>
                     </div>
                   </td>
+                  <td className="text-left hidden lg:table-cell">
+                    {token.contract ? (
+                      <a
+                        href={`https://www.okx.com/explorer/xlayer/address/${token.contract}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs text-primary/70 hover:text-primary transition-colors"
+                        title={token.contract}
+                      >
+                        {token.contract.slice(0, 6)}...{token.contract.slice(-4)}
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">Native</span>
+                    )}
+                  </td>
                   <td className="text-right font-mono font-medium text-foreground">
-                    ${token.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {token.price > 0 
+                      ? `$${token.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`
+                      : <span className="text-muted-foreground">-</span>
+                    }
                   </td>
                   <td className="text-right">
-                    <span
-                      className={cn(
-                        "font-mono text-sm",
-                        token.change24h >= 0 ? "text-success" : "text-destructive"
-                      )}
-                    >
-                      {token.change24h >= 0 ? "+" : ""}{token.change24h.toFixed(2)}%
-                    </span>
+                    {token.price > 0 ? (
+                      <span
+                        className={cn(
+                          "font-mono text-sm",
+                          token.change24h >= 0 ? "text-success" : "text-destructive"
+                        )}
+                      >
+                        {token.change24h >= 0 ? "+" : ""}{token.change24h.toFixed(2)}%
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </td>
-                  <td className="text-right font-mono text-muted-foreground">
-                    {formatCurrency(token.volume24h)}
+                  <td className="text-right font-mono text-muted-foreground hidden sm:table-cell">
+                    {token.volume24h > 0 ? formatCurrency(token.volume24h) : "-"}
                   </td>
-                  <td className="text-right font-mono font-medium text-foreground">
-                    {formatCurrency(token.mcap)}
+                  <td className="text-right font-mono font-medium text-foreground hidden md:table-cell">
+                    {token.mcap > 0 ? formatCurrency(token.mcap) : "-"}
                   </td>
                 </tr>
               ))}
@@ -150,11 +177,29 @@ export default function Tokens() {
         </div>
 
         {/* Info */}
-        <div className="rounded-lg border border-border bg-card p-4">
+        <div className="rounded-lg border border-border bg-card p-4 space-y-2">
           <p className="text-sm text-muted-foreground">
-            Token prices are fetched from major exchanges and aggregated for accuracy. 
-            Prices may vary slightly across different platforms.
+            Token prices are aggregated from major exchanges. Community tokens (DOG, NIUMA, XDOG) are native XLayer tokens - 
+            click contract addresses to view on OKX Explorer.
           </p>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <a
+              href="https://defillama.com/docs/api"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary/70 hover:text-primary transition-colors"
+            >
+              DefiLlama API Docs →
+            </a>
+            <a
+              href="https://www.okx.com/xlayer/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary/70 hover:text-primary transition-colors"
+            >
+              XLayer Docs →
+            </a>
+          </div>
         </div>
       </div>
     </Layout>
