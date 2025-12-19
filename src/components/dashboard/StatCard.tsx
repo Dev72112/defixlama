@@ -68,7 +68,7 @@ export function StatCard({
               )}
               <span>
                 {isPositive ? "+" : ""}
-                {change.toFixed(2)}%
+                {typeof change === 'number' && !isNaN(change) ? change.toFixed(2) : '0.00'}%
               </span>
               <span className="text-muted-foreground font-normal">
                 {changeLabel}
@@ -78,9 +78,11 @@ export function StatCard({
 
           {miniChart && miniChart.length > 0 && (
             <div className="flex items-end gap-0.5 h-8">
-              {miniChart.slice(-7).map((value, i) => {
-                const max = Math.max(...miniChart.slice(-7));
-                const height = max > 0 ? (value / max) * 100 : 0;
+              {miniChart.slice(-7).map((val, i) => {
+                const chartSlice = miniChart.slice(-7).filter(v => typeof v === 'number' && !isNaN(v));
+                const max = chartSlice.length > 0 ? Math.max(...chartSlice) : 1;
+                const safeVal = typeof val === 'number' && !isNaN(val) ? val : 0;
+                const height = max > 0 ? (safeVal / max) * 100 : 0;
                 return (
                   <div
                     key={i}

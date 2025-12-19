@@ -36,10 +36,12 @@ export function TVLChart({
     );
   }
 
-  const chartData = data.map((item) => ({
-    date: item.date * 1000,
-    tvl: item.tvl,
-  }));
+  const chartData = (data || [])
+    .filter((item) => item && typeof item.date === 'number' && typeof item.tvl === 'number')
+    .map((item) => ({
+      date: item.date * 1000,
+      tvl: item.tvl,
+    }));
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {

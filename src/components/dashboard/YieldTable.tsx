@@ -112,9 +112,9 @@ export function YieldTable({
                 <td className="text-right">
                   <div className="flex items-center justify-end gap-1 text-success font-mono font-medium">
                     <TrendingUp className="h-3.5 w-3.5" />
-                    {totalApy.toFixed(2)}%
+                    {typeof totalApy === 'number' && !isNaN(totalApy) ? totalApy.toFixed(2) : '0.00'}%
                   </div>
-                  {pool.apyBase !== undefined && pool.apyReward !== undefined && (
+                  {typeof pool.apyBase === 'number' && typeof pool.apyReward === 'number' && (
                     <div className="text-xs text-muted-foreground mt-0.5">
                       Base: {pool.apyBase.toFixed(2)}% + Reward: {pool.apyReward.toFixed(2)}%
                     </div>
