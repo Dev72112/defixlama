@@ -186,7 +186,8 @@ export async function fetchDexVolumes(): Promise<DexVolume[]> {
     const response = await fetch("https://api.llama.fi/overview/dexs?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyVolume");
     if (!response.ok) throw new Error("Failed to fetch DEX volumes");
     const data = await response.json();
-    return data.protocols || [];
+    const protocols = data?.protocols;
+    return Array.isArray(protocols) ? protocols : [];
   } catch (error) {
     console.error("Error fetching DEX volumes:", error);
     return [];
@@ -200,14 +201,15 @@ export async function fetchXLayerDexVolumes(): Promise<DexVolume[]> {
     if (!response.ok) {
       // Fallback: filter from all dexes
       const allDexes = await fetchDexVolumes();
-      return allDexes.filter((d) =>
+      return Array.isArray(allDexes) ? allDexes.filter((d) =>
         d.chains?.some(
           (c) => c.toLowerCase() === "xlayer" || c.toLowerCase() === "x layer"
         )
-      );
+      ) : [];
     }
     const data = await response.json();
-    return data.protocols || [];
+    const protocols = data?.protocols;
+    return Array.isArray(protocols) ? protocols : [];
   } catch (error) {
     console.error("Error fetching XLayer DEX volumes:", error);
     return [];
@@ -220,7 +222,8 @@ export async function fetchYieldPools(): Promise<YieldPool[]> {
     const response = await fetch(`${DEFILLAMA_YIELDS_URL}/pools`);
     if (!response.ok) throw new Error("Failed to fetch yield pools");
     const data = await response.json();
-    return data.data || [];
+    const pools = data?.data;
+    return Array.isArray(pools) ? pools : [];
   } catch (error) {
     console.error("Error fetching yield pools:", error);
     return [];
@@ -246,7 +249,8 @@ export async function fetchStablecoins(): Promise<Stablecoin[]> {
     const response = await fetch(`${DEFILLAMA_STABLECOINS_URL}/stablecoins?includePrices=true`);
     if (!response.ok) throw new Error("Failed to fetch stablecoins");
     const data = await response.json();
-    return data.peggedAssets || [];
+    const assets = data?.peggedAssets;
+    return Array.isArray(assets) ? assets : [];
   } catch (error) {
     console.error("Error fetching stablecoins:", error);
     return [];
@@ -286,7 +290,8 @@ export async function fetchFeesData(): Promise<any[]> {
     const response = await fetch("https://api.llama.fi/overview/fees?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true");
     if (!response.ok) throw new Error("Failed to fetch fees data");
     const data = await response.json();
-    return data.protocols || [];
+    const protocols = data?.protocols;
+    return Array.isArray(protocols) ? protocols : [];
   } catch (error) {
     console.error("Error fetching fees data:", error);
     return [];

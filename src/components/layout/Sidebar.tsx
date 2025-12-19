@@ -48,12 +48,12 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 z-40 h-screen w-[220px] border-r border-sidebar-border bg-sidebar flex flex-col">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-          <span className="text-lg font-bold text-primary-foreground">X</span>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70">
+          <span className="text-lg font-bold text-primary-foreground">dX</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-base font-semibold text-foreground">XLayer</span>
-          <span className="text-xs text-muted-foreground">DeFi Analytics</span>
+          <span className="text-base font-semibold text-foreground">defiXlama</span>
+          <span className="text-xs text-muted-foreground">XLayer Analytics</span>
         </div>
       </div>
 
@@ -133,7 +133,7 @@ export function Sidebar() {
             Resources
           </p>
           <a
-            href="https://www.okx.com/xlayer"
+            href="https://www.okx.com/xlayer/docs"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
@@ -142,25 +142,44 @@ export function Sidebar() {
             <span>XLayer Docs</span>
           </a>
           <a
+            href="https://defillama.com/docs/api"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
+          >
+            <ExternalLink className="h-4 w-4" />
+            <span>DefiLlama API</span>
+          </a>
+          <a
             href="https://defillama.com/chain/xlayer"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
           >
             <ExternalLink className="h-4 w-4" />
-            <span>DefiLlama</span>
+            <span>XLayer on DefiLlama</span>
           </a>
         </div>
       </nav>
 
       {/* Footer */}
       <div className="border-t border-sidebar-border p-4">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Data by DefiLlama</span>
-          <div className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            <span>Live</span>
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between">
+            <span>Powered by DefiLlama</span>
+            <div className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+              <span>Live</span>
+            </div>
           </div>
+          <a 
+            href="https://xlama.lovable.app" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary/70 hover:text-primary transition-colors"
+          >
+            xlama.lovable.app
+          </a>
         </div>
       </div>
     </aside>
