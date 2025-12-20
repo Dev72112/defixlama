@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useTokenDetails, useTokenPriceHistory } from "@/hooks/useTokenData";
+import { useTokenDetails, useTokenPriceHistory, useOklinkContract } from "@/hooks/useTokenData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Clock } from "lucide-react";
@@ -22,6 +22,7 @@ export default function TokenDetail() {
   const { data: token, isLoading } = useTokenDetails(id || null);
   const [days, setDays] = useState(7);
   const { data: priceHistory } = useTokenPriceHistory(id || null, days);
+  const { data: oklinkInfo } = useOklinkContract(token?.contract || null);
 
   // Format chart data
   const chartData = priceHistory?.prices?.map(([timestamp, price]) => ({
@@ -92,6 +93,18 @@ export default function TokenDetail() {
                 Rank #{token.market_cap_rank || "-"}
               </span>
             </div>
+            {token.contract && (
+              <div className="mt-2">
+                <a
+                  href={`https://www.okx.com/explorer/xlayer/address/${token.contract}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary/80 hover:text-primary"
+                >
+                  View on XLayer Explorer
+                </a>
+              </div>
+            )}
             <div className="flex items-center gap-4 mt-2">
               <span className="text-3xl font-bold text-foreground">
                 ${token.market_data?.current_price?.usd?.toLocaleString() || "-"}
@@ -253,6 +266,36 @@ export default function TokenDetail() {
             </div>
           </div>
         </div>
+
+        {/* On-chain / Explorer */}
+        {token.contract && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-3">On-Chain</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <a
+                  href={`https://www.okx.com/explorer/xlayer/address/${token.contract}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary/80 hover:text-primary"
+                >
+                  View contract on XLayer Explorer
+                </a>
+                {oklinkInfo?.address && (
+                  <p className="text-sm text-muted-foreground mt-2">{oklinkInfo.address.description || ''}</p>
+                )}
+              </div>
+              <div className="text-right font-mono text-sm text-muted-foreground">
+                <div>Holders: {oklinkInfo?.holders ?? '-'}</div>
+                <div>Transfers: {oklinkInfo?.txCount ?? '-'}</div>
+                <div>Total Supply: {oklinkInfo?.totalSupply ?? '-'}</div>
+              </div>
+            </div>
+            {oklinkInfo && (
+              <pre className="mt-4 text-xs text-muted-foreground overflow-auto max-h-40">{JSON.stringify(oklinkInfo, null, 2)}</pre>
+            )}
+          </div>
+        )}
 
         {/* Description */}
         {token.description?.en && (

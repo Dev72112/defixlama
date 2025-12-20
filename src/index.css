@@ -98,6 +98,15 @@
   #root {
     @apply overflow-x-hidden max-w-full;
   }
+  /* Defensive: prevent large images or svgs from causing horizontal overflow */
+  img, svg, canvas {
+    max-width: 100%;
+    height: auto;
+  }
+  /* Tables should be able to shrink on small screens */
+  table {
+    min-width: 0;
+  }
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     @apply w-2 h-2;

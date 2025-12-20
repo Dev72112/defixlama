@@ -7,13 +7,18 @@ import Dashboard from "./pages/Dashboard";
 import Protocols from "./pages/Protocols";
 import ProtocolDetail from "./pages/ProtocolDetail";
 import Dexs from "./pages/Dexs";
+import DexDetail from "./pages/DexDetail";
 import Yields from "./pages/Yields";
 import Stablecoins from "./pages/Stablecoins";
+import StablecoinDetail from "./pages/StablecoinDetail";
 import Tokens from "./pages/Tokens";
 import TokenDetail from "./pages/TokenDetail";
 import Chains from "./pages/Chains";
+import ChainDetail from "./pages/ChainDetail";
 import Fees from "./pages/Fees";
+import FeeDetail from "./pages/FeeDetail";
 import Security from "./pages/Security";
+import SecurityDetail from "./pages/SecurityDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -37,13 +42,18 @@ const App = () => (
           <Route path="/protocols" element={<Protocols />} />
           <Route path="/protocols/:slug" element={<ProtocolDetail />} />
           <Route path="/dexs" element={<Dexs />} />
+          <Route path="/dexs/:id" element={<DexDetail />} />
           <Route path="/yields" element={<Yields />} />
           <Route path="/stablecoins" element={<Stablecoins />} />
+          <Route path="/stablecoins/:id" element={<StablecoinDetail />} />
           <Route path="/tokens" element={<Tokens />} />
           <Route path="/tokens/:id" element={<TokenDetail />} />
           <Route path="/chains" element={<Chains />} />
+          <Route path="/chains/:id" element={<ChainDetail />} />
           <Route path="/fees" element={<Fees />} />
+          <Route path="/fees/:id" element={<FeeDetail />} />
           <Route path="/security" element={<Security />} />
+          <Route path="/security/:id" element={<SecurityDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

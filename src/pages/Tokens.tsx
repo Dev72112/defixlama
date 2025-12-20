@@ -6,12 +6,13 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/api/defillama";
 import { useTokenPrices } from "@/hooks/useTokenData";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { TOKEN_IDS } from "@/lib/api/coingecko";
 
 export default function Tokens() {
   const { data: tokens, isLoading } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   // Filter tokens
   const filteredTokens = (tokens || []).filter((t) =>
@@ -114,7 +115,14 @@ export default function Tokens() {
               ) : filteredTokens.map((token, index) => {
                 const tokenId = TOKEN_IDS[token.symbol];
                 return (
-                  <tr key={token.symbol} className="group hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={token.symbol}
+                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/tokens/${tokenId || token.symbol.toLowerCase()}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${tokenId || token.symbol.toLowerCase()}`); }}
+                  >
                     <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                       {index + 1}
                     </td>

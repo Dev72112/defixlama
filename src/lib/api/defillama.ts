@@ -284,6 +284,19 @@ export async function fetchProtocolTVLHistory(slug: string): Promise<{ date: num
   }
 }
 
+// Fetch full protocol details from DefiLlama (used to enrich protocol detail pages)
+export async function fetchProtocolDetails(slug: string): Promise<any | null> {
+  try {
+    const response = await fetch(`${DEFILLAMA_BASE_URL}/protocol/${slug}`);
+    if (!response.ok) throw new Error("Failed to fetch protocol details");
+    const data = await response.json();
+    return data || null;
+  } catch (error) {
+    console.error("Error fetching protocol details:", error);
+    return null;
+  }
+}
+
 // Fetch fees data
 export async function fetchFeesData(): Promise<any[]> {
   try {

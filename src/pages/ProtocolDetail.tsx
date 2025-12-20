@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useXLayerProtocols, useProtocolTVLHistory } from "@/hooks/useDefiData";
+import { useXLayerProtocols, useProtocolTVLHistory, useProtocolDetails } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
 import { ArrowLeft, TrendingUp, TrendingDown, Layers, ExternalLink, Globe, Shield, Twitter } from "lucide-react";
@@ -20,6 +20,7 @@ export default function ProtocolDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: protocols, isLoading: protocolsLoading } = useXLayerProtocols();
   const { data: tvlHistory, isLoading: historyLoading } = useProtocolTVLHistory(slug || null);
+  const { data: protocolDetails, isLoading: detailsLoading } = useProtocolDetails(slug || null);
 
   // Find protocol
   const protocol = protocols?.find((p) => p.slug === slug || p.name.toLowerCase().replace(/\s+/g, "-") === slug);
@@ -226,6 +227,40 @@ export default function ProtocolDetail() {
                   </div>
                 ))}
             </div>
+          </div>
+        )}
+
+        {/* Additional DeFiLlama details */}
+        {protocolDetails && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Detailed Data (DefiLlama)</h3>
+            <div className="space-y-3">
+              <div>
+                <strong className="text-sm text-muted-foreground">Module:</strong>
+                <div className="text-foreground">{protocolDetails.module || '-'}</div>
+              </div>
+              <div>
+                <strong className="text-sm text-muted-foreground">Listed At:</strong>
+                <div className="text-foreground">{protocolDetails.listedAt ? new Date(protocolDetails.listedAt * 1000).toLocaleDateString() : '-'}</div>
+              </div>
+              <div>
+                <strong className="text-sm text-muted-foreground">Addresses:</strong>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(protocolDetails.addresses || []).slice(0, 8).map((a: any) => (
+                    <a
+                      key={a}
+                      href={`https://www.okx.com/explorer/xlayer/address/${a}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm"
+                    >
+                      {a.slice(0, 6)}...{a.slice(-4)}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <pre className="mt-4 text-xs text-muted-foreground overflow-auto max-h-48">{JSON.stringify(protocolDetails, null, 2)}</pre>
           </div>
         )}
 

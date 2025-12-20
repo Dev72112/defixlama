@@ -1,6 +1,7 @@
 // CoinGecko API for live token prices
 
 const COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3";
+const DEFILLAMA_COINS_URL = "https://coins.llama.fi";
 
 export interface TokenPrice {
   id: string;
@@ -95,4 +96,71 @@ export function mapTokenData(token: TokenPrice) {
     sparkline: token.sparkline_in_7d?.price || [],
     contract: null,
   };
+}
+
+// Fetch community token prices/details from DefiLlama coins API (fallback when not on CoinGecko)
+export async function fetchCommunityPricesByContracts(contracts: string[]) {
+  try {
+    if (!contracts || contracts.length === 0) return {};
+    const tokens = contracts.map((c) => `xlayer:${c}`).join(',');
+    const response = await fetch(`${DEFILLAMA_COINS_URL}/prices/current/${tokens}`);
+    if (!response.ok) throw new Error('Failed to fetch community token prices');
+    const data = await response.json();
+    // data.coins is expected to be a map like { 'xlayer:0x...': { price: number, symbol: string, timestamp } }
+    return data.coins || {};
+  } catch (error) {
+    console.error('Error fetching community prices:', error);
+    return {};
+  }
+}
+
+export async function fetchCommunityTokenDetailsByContract(contract: string) {
+  try {
+    if (!contract) return null;
+    // Try the coins endpoint for a single token
+    const endpoints = [
+      `${DEFILLAMA_COINS_URL}/coins/xlayer:${contract}`,
+      `${DEFILLAMA_COINS_URL}/coins/xlayer/${contract}`,
+    ];
+
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (!data) continue;
+        // Normalize to a shape similar enough to CoinGecko for the UI to consume
+        const normalized: any = {
+          id: data.address || contract,
+          name: data.name || data.coin || data.address || contract,
+          symbol: (data.symbol || data.ticker || '').toUpperCase(),
+          image: { large: data.logo || data.icon || null, small: data.logo || data.icon || null },
+          contract,
+          market_data: {
+            current_price: { usd: data.price || data.market_price || (data.price && data.price.usd) || 0 },
+            price_change_percentage_24h: data.change24h || 0,
+            total_volume: { usd: data.volume || data.total_volume || 0 },
+            market_cap: { usd: data.marketCap || data.market_cap || 0 },
+            ath: { usd: data.ath || 0 },
+            high_24h: { usd: data.high_24h || 0 },
+            low_24h: { usd: data.low_24h || 0 },
+            atl: { usd: data.atl || 0 },
+            circulating_supply: data.circulating || data.circulating_supply || 0,
+            total_supply: data.total || data.total_supply || 0,
+            max_supply: data.max || data.max_supply || null,
+          },
+          description: { en: data.description || data.about || '' },
+        };
+
+        return normalized;
+      } catch (err) {
+        // ignore and try next
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching community token details:', error);
+    return null;
+  }
 }

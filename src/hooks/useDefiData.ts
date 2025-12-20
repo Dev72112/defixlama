@@ -11,6 +11,7 @@ import {
   fetchStablecoins,
   fetchFeesData,
   fetchProtocolTVLHistory,
+  fetchProtocolDetails,
   Protocol,
   ChainTVL,
   ChainData,
@@ -161,6 +162,36 @@ export function useProtocolTVLHistory(slug: string | null) {
       return Array.isArray(data) ? data : [];
     },
     enabled: !!slug,
+    staleTime: STANDARD_REFRESH,
+    refetchInterval: STANDARD_REFRESH,
+  });
+}
+
+// Hook to fetch full protocol details
+export function useProtocolDetails(slug: string | null) {
+  return useQuery({
+    queryKey: ["protocol-details", slug],
+    queryFn: async () => {
+      if (!slug) return null;
+      const data = await fetchProtocolDetails(slug);
+      return data || null;
+    },
+    enabled: !!slug,
+    staleTime: STANDARD_REFRESH,
+    refetchInterval: STANDARD_REFRESH,
+  });
+}
+
+// Generic chain TVL history hook for any chain name
+export function useChainTVLHistory(chain: string | null) {
+  return useQuery<ChainTVL[]>({
+    queryKey: ["chain-tvl-history", chain],
+    queryFn: async () => {
+      if (!chain) return [];
+      const data = await fetchChainTVLHistory(chain);
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!chain,
     staleTime: STANDARD_REFRESH,
     refetchInterval: STANDARD_REFRESH,
   });
