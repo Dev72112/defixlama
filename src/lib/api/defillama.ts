@@ -5,8 +5,8 @@ const DEFILLAMA_COINS_URL = "https://coins.llama.fi";
 const DEFILLAMA_STABLECOINS_URL = "https://stablecoins.llama.fi";
 const DEFILLAMA_YIELDS_URL = "https://yields.llama.fi";
 
-// XLayer chain identifier in DefiLlama
-export const XLAYER_CHAIN = "xlayer";
+// XLayer chain identifier in DefiLlama (uses "X Layer" with space)
+export const XLAYER_CHAIN = "X Layer";
 export const XLAYER_CHAIN_ID = 196;
 
 export interface Protocol {
