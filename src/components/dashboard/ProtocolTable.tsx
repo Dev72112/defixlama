@@ -78,8 +78,10 @@ export function ProtocolTable({
           </tr>
         </thead>
         <tbody>
-          {displayProtocols.map((protocol, index) => (
-            <tr key={protocol.id || protocol.name} className="group">
+          {displayProtocols.map((protocol, index) => {
+            const slug = protocol.slug || protocol.name.toLowerCase().replace(/\s+/g, "-");
+            return (
+            <tr key={protocol.id || protocol.name} className="group cursor-pointer" onClick={() => window.location.href = `/protocols/${slug}`}>
               <td className="text-muted-foreground font-mono text-sm">
                 {index + 1}
               </td>
@@ -164,7 +166,8 @@ export function ProtocolTable({
                 </div>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
