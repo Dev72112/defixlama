@@ -13,68 +13,57 @@ export default function Fees() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  // Filter fees that might be relevant to XLayer
+  // Filter and sort fee entries
   const filteredFees = useMemo(() => {
-              <tbody>
-                {filteredFees.map((fee, index) => {
-                  const slug = (fee.displayName || fee.name || index).toString().toLowerCase().replace(/\s+/g, '-');
-                  return (
-                    <tr
-                      key={fee.name || index}
-                      className="group cursor-pointer"
-                      onClick={() => navigate(`/fees/${slug}`)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/fees/${slug}`); }}
-                    >
-                      <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
-                        {index + 1}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-3">
-                          {fee.logo ? (
-                            <img
-                              src={fee.logo}
-                              alt={fee.displayName || fee.name}
-                              className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${fee.name}&background=1a1a2e&color=2dd4bf&size=32`;
-                              }}
-                            />
-                          ) : (
-                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                              {(fee.displayName || fee.name || "?").charAt(0)}
-                            </div>
-                          )}
-                          <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">
-                            {fee.displayName || fee.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                        {formatCurrency(fee.total24h)}
-                      </td>
-                      <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
-                        {formatCurrency(fee.total7d)}
-                      </td>
-                      <td className="text-right whitespace-nowrap">
-                        <span
-                          className={cn(
-                            "font-mono text-sm",
-                            (fee.change_1d || 0) >= 0
-                              ? "text-success"
-                              : "text-destructive"
-                          )}
-                        >
-                          {fee.change_1d !== undefined
-                            ? `${fee.change_1d >= 0 ? "+" : ""}${fee.change_1d.toFixed(2)}%`
-                            : "-"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
+    if (!fees) return [];
+    return fees
+      .filter((f) => (f.displayName || f.name || "").toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
+      .slice(0, 200);
+  }, [fees, searchQuery]);
+
+  const total24h = fees?.reduce((acc, f) => acc + (f.total24h || 0), 0) || 0;
+  const protocolsCount = fees?.length || 0;
+
+  return (
+    <Layout>
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Fees</h1>
+          <p className="text-muted-foreground mt-1">Protocol fee volumes across chains</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="24h Fees"
+            value={formatCurrency(total24h)}
+            icon={DollarSign}
+            loading={isLoading}
+          />
+          <StatCard
+            title="Protocols"
+            value={protocolsCount.toString()}
+            icon={Activity}
+            loading={isLoading}
+          />
+          <StatCard
+            title="Top Change"
+            value={"-"}
+            icon={TrendingUp}
+            loading={isLoading}
+          />
+          <StatCard
+            title="Fees Chart"
+            value={"Live"}
+            icon={BarChart3}
+            loading={isLoading}
+          />
+        </div>
+
+        {/* Search */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             placeholder="Search protocols..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -137,54 +126,53 @@ export default function Fees() {
                       tabIndex={0}
                       onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/fees/${slug}`); }}
                     >
+                      <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
+                        {index + 1}
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          {fee.logo ? (
+                            <img
+                              src={fee.logo}
+                              alt={fee.displayName || fee.name}
+                              className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${fee.name}&background=1a1a2e&color=2dd4bf&size=32`;
+                              }}
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
+                              {(fee.displayName || fee.name || "?").charAt(0)}
+                            </div>
+                          )}
+                          <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">
+                            {fee.displayName || fee.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
+                        {formatCurrency(fee.total24h)}
+                      </td>
+                      <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
+                        {formatCurrency(fee.total7d)}
+                      </td>
+                      <td className="text-right whitespace-nowrap">
+                        <span
+                          className={cn(
+                            "font-mono text-sm",
+                            (fee.change_1d || 0) >= 0
+                              ? "text-success"
+                              : "text-destructive"
+                          )}
+                        >
+                          {fee.change_1d !== undefined
+                            ? `${fee.change_1d >= 0 ? "+" : ""}${fee.change_1d.toFixed(2)}%`
+                            : "-"}
+                        </span>
+                      </td>
+                    </tr>
                   );
                 })}
-                    <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
-                      {index + 1}
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        {fee.logo ? (
-                          <img
-                            src={fee.logo}
-                            alt={fee.displayName || fee.name}
-                            className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${fee.name}&background=1a1a2e&color=2dd4bf&size=32`;
-                            }}
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                            {(fee.displayName || fee.name || "?").charAt(0)}
-                          </div>
-                        )}
-                        <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">
-                          {fee.displayName || fee.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                      {formatCurrency(fee.total24h)}
-                    </td>
-                    <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
-                      {formatCurrency(fee.total7d)}
-                    </td>
-                    <td className="text-right whitespace-nowrap">
-                      <span
-                        className={cn(
-                          "font-mono text-sm",
-                          (fee.change_1d || 0) >= 0
-                            ? "text-success"
-                            : "text-destructive"
-                        )}
-                      >
-                        {fee.change_1d !== undefined
-                          ? `${fee.change_1d >= 0 ? "+" : ""}${fee.change_1d.toFixed(2)}%`
-                          : "-"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </div>
@@ -193,7 +181,7 @@ export default function Fees() {
         {/* Results count */}
         {!isLoading && (
           <p className="text-sm text-muted-foreground">
-            Showing {filteredFees.length} protocols
+            Showing {filteredFees.length} of {protocolsCount} protocols
           </p>
         )}
       </div>
