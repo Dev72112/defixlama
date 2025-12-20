@@ -86,14 +86,18 @@
   }
 
   html {
-    @apply scroll-smooth;
+    @apply scroll-smooth overflow-x-hidden;
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-
+  
+  /* Prevent horizontal overflow on mobile */
+  #root {
+    @apply overflow-x-hidden max-w-full;
+  }
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     @apply w-2 h-2;
