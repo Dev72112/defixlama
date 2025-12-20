@@ -6,6 +6,7 @@ import { Layers, TrendingUp, Search, PieChart, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 export default function Chains() {
   const { data: chains, isLoading } = useChainsTVL();
@@ -33,6 +34,7 @@ export default function Chains() {
   const totalTVL = chains?.reduce((acc, c) => acc + (c.tvl || 0), 0) || 0;
   const chainCount = chains?.length || 0;
   const xlayerShare = xlayer && totalTVL > 0 ? (xlayer.tvl / totalTVL) * 100 : 0;
+  const navigate = useNavigate();
 
   return (
     <Layout>
@@ -153,9 +155,13 @@ export default function Chains() {
                     <tr
                       key={chain.name}
                       className={cn(
-                        "group",
+                        "group cursor-pointer",
                         isXLayer && "bg-primary/5 border-l-2 border-primary"
                       )}
+                      onClick={() => navigate(`/chains/${chain.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/chains/${chain.name.toLowerCase().replace(/\s+/g, '-')}`); }}
                     >
                       <td className="text-muted-foreground font-mono text-sm">
                         {index + 1}

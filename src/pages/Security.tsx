@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useXLayerProtocols } from "@/hooks/useDefiData";
 import { Shield, CheckCircle, AlertTriangle, ExternalLink, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Protocol, formatCurrency } from "@/lib/api/defillama";
@@ -121,9 +122,14 @@ export default function Security() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredProtocols.map((protocol) => (
-              <ProtocolSecurityCard key={protocol.id || protocol.name} protocol={protocol} />
-            ))}
+            {filteredProtocols.map((protocol) => {
+              const slug = (protocol.slug || protocol.name).toLowerCase().replace(/\s+/g, '-');
+              return (
+                <Link to={`/security/${slug}`} key={protocol.id || protocol.name} className="block">
+                  <ProtocolSecurityCard protocol={protocol} />
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

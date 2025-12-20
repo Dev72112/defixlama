@@ -1,5 +1,6 @@
 import { DexVolume, formatCurrency, formatPercentage, getChangeColor } from "@/lib/api/defillama";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import { ExternalLink, TrendingUp, TrendingDown, ArrowLeftRight } from "lucide-react";
 
 interface DexTableProps {
@@ -16,6 +17,7 @@ export function DexTable({
   className,
 }: DexTableProps) {
   const displayDexes = limit ? dexes.slice(0, limit) : dexes;
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -73,63 +75,73 @@ export function DexTable({
           </tr>
         </thead>
         <tbody>
-          {displayDexes.map((dex, index) => (
-            <tr key={dex.name} className="group">
-              <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
-                {index + 1}
-              </td>
-              <td>
-                <div className="flex items-center gap-3">
-                  {dex.logo ? (
-                    <img
-                      src={dex.logo}
-                      alt={dex.displayName || dex.name}
-                      className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${dex.name}&background=1a1a2e&color=2dd4bf&size=32`;
-                      }}
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                      {(dex.displayName || dex.name).charAt(0)}
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <span className="font-medium text-foreground truncate block max-w-[120px] sm:max-w-none">
-                      {dex.displayName || dex.name}
-                    </span>
-                    {dex.chains && dex.chains.length > 0 && (
-                      <p className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">
-                        {dex.chains.slice(0, 3).join(", ")}
-                        {dex.chains.length > 3 && ` +${dex.chains.length - 3}`}
-                      </p>
+          {displayDexes.map((dex, index) => {
+            const slug = (dex.displayName || dex.name).toLowerCase().replace(/\s+/g, '-');
+            return (
+              <tr
+                key={dex.name}
+                className="group cursor-pointer"
+                onClick={() => navigate(`/dexs/${slug}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/dexs/${slug}`); }}
+              >
+                <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
+                  {index + 1}
+                </td>
+                <td>
+                  <div className="flex items-center gap-3">
+                    {dex.logo ? (
+                      <img
+                        src={dex.logo}
+                        alt={dex.displayName || dex.name}
+                        className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${dex.name}&background=1a1a2e&color=2dd4bf&size=32`;
+                        }}
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
+                        {(dex.displayName || dex.name).charAt(0)}
+                      </div>
                     )}
+                    <div className="min-w-0">
+                      <span className="font-medium text-foreground truncate block max-w-[120px] sm:max-w-none">
+                        {dex.displayName || dex.name}
+                      </span>
+                      {dex.chains && dex.chains.length > 0 && (
+                        <p className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">
+                          {dex.chains.slice(0, 3).join(", ")}
+                          {dex.chains.length > 3 && ` +${dex.chains.length - 3}`}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                {formatCurrency(dex.total24h)}
-              </td>
-              <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
-                {formatCurrency(dex.total7d)}
-              </td>
-              <td className="text-right whitespace-nowrap">
-                <div
-                  className={cn(
-                    "inline-flex items-center gap-1 font-mono text-sm",
-                    getChangeColor(dex.change_1d)
-                  )}
-                >
-                  {dex.change_1d !== undefined && dex.change_1d >= 0 ? (
-                    <TrendingUp className="h-3.5 w-3.5" />
-                  ) : (
-                    <TrendingDown className="h-3.5 w-3.5" />
-                  )}
-                  {formatPercentage(dex.change_1d)}
-                </div>
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
+                  {formatCurrency(dex.total24h)}
+                </td>
+                <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
+                  {formatCurrency(dex.total7d)}
+                </td>
+                <td className="text-right whitespace-nowrap">
+                  <div
+                    className={cn(
+                      "inline-flex items-center gap-1 font-mono text-sm",
+                      getChangeColor(dex.change_1d)
+                    )}
+                  >
+                    {dex.change_1d !== undefined && dex.change_1d >= 0 ? (
+                      <TrendingUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <TrendingDown className="h-3.5 w-3.5" />
+                    )}
+                    {formatPercentage(dex.change_1d)}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

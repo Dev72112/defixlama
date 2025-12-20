@@ -5,6 +5,7 @@ import { formatCurrency, Stablecoin } from "@/lib/api/defillama";
 import { Coins, TrendingUp, Search, DollarSign, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 export default function Stablecoins() {
@@ -121,7 +122,8 @@ function StablecoinCard({ stablecoin }: { stablecoin: Stablecoin }) {
   const isPegged = pegDeviation < 1;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6 card-hover group">
+    <Link to={`/stablecoins/${stablecoin.symbol.toLowerCase()}`} className="block">
+      <div className="rounded-lg border border-border bg-card p-6 card-hover group">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
@@ -173,5 +175,6 @@ function StablecoinCard({ stablecoin }: { stablecoin: Stablecoin }) {
         )}
       </div>
     </div>
+    </Link>
   );
 }
