@@ -5,7 +5,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, stripHtml, safeEncode } from "@/lib/utils";
 import {
   AreaChart,
   Area,
@@ -96,7 +96,7 @@ export default function TokenDetail() {
             {token.contract && (
               <div className="mt-2">
                 <a
-                  href={`https://www.okx.com/explorer/xlayer/address/${token.contract}`}
+                  href={`https://www.okx.com/explorer/xlayer/address/${safeEncode(token.contract)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary/80 hover:text-primary"
@@ -274,7 +274,7 @@ export default function TokenDetail() {
             <div className="flex items-center justify-between">
               <div>
                 <a
-                  href={`https://www.okx.com/explorer/xlayer/address/${token.contract}`}
+                  href={`https://www.okx.com/explorer/xlayer/address/${safeEncode(token.contract)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary/80 hover:text-primary"
@@ -301,12 +301,13 @@ export default function TokenDetail() {
         {token.description?.en && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">About {token.name}</h3>
-            <p 
-              className="text-muted-foreground text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ 
-                __html: token.description.en.split(". ").slice(0, 3).join(". ") + "." 
-              }}
-            />
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              {(() => {
+                const plain = stripHtml(token.description?.en || "");
+                const snippet = plain.split(/\.\s+/).slice(0, 3).join('. ');
+                return snippet ? `${snippet}.` : "";
+              })()}
+            </p>
           </div>
         )}
       </div>

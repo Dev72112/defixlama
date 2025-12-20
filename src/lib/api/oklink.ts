@@ -13,9 +13,10 @@ async function tryFetch(url: string) {
 
 export async function fetchOklinkAddressTokens(address: string) {
   // Try a couple of plausible endpoints; OKLink docs: https://www.oklink.com/docs/en/#developer-tools
+  const enc = encodeURIComponent(address);
   const endpoints = [
-    `${OKLINK_BASE}/explorer/v1/address/${address}/token`,
-    `${OKLINK_BASE}/explorer/v1/token/address/${address}`,
+    `${OKLINK_BASE}/explorer/v1/address/${enc}/token`,
+    `${OKLINK_BASE}/explorer/v1/token/address/${enc}`,
   ];
 
   for (const url of endpoints) {
@@ -26,9 +27,10 @@ export async function fetchOklinkAddressTokens(address: string) {
 }
 
 export async function fetchOklinkContractInfo(address: string) {
+  const enc = encodeURIComponent(address);
   const endpoints = [
-    `${OKLINK_BASE}/explorer/v1/contract/${address}`,
-    `${OKLINK_BASE}/open/v1/contract/${address}`,
+    `${OKLINK_BASE}/explorer/v1/contract/${enc}`,
+    `${OKLINK_BASE}/open/v1/contract/${enc}`,
   ];
   for (const url of endpoints) {
     const data = await tryFetch(url);
@@ -38,7 +40,8 @@ export async function fetchOklinkContractInfo(address: string) {
 }
 
 export async function fetchOklinkTxsForAddress(address: string, page = 1, size = 10) {
-  const url = `${OKLINK_BASE}/explorer/v1/address/${address}/txs?page=${page}&size=${size}`;
+  const enc = encodeURIComponent(address);
+  const url = `${OKLINK_BASE}/explorer/v1/address/${enc}/txs?page=${page}&size=${size}`;
   return await tryFetch(url);
 }
 

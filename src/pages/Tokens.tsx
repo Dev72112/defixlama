@@ -151,8 +151,8 @@ export default function Tokens() {
                               {token.symbol}
                             </span>
                             {token.contract && (
-                              <a
-                                href={`https://www.okx.com/explorer/xlayer/address/${token.contract}`}
+                                <a
+                                href={`https://www.okx.com/explorer/xlayer/address/${encodeURIComponent(token.contract)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-primary/70 hover:text-primary"

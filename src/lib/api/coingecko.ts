@@ -59,7 +59,7 @@ export async function fetchTokenPrices(): Promise<TokenPrice[]> {
 export async function fetchTokenDetails(id: string): Promise<any> {
   try {
     const response = await fetch(
-      `${COINGECKO_BASE_URL}/coins/${id}?localization=false&tickers=false&community_data=false&developer_data=false`
+      `${COINGECKO_BASE_URL}/coins/${encodeURIComponent(id)}?localization=false&tickers=false&community_data=false&developer_data=false`
     );
     if (!response.ok) throw new Error("Failed to fetch token details");
     return await response.json();
@@ -73,7 +73,7 @@ export async function fetchTokenDetails(id: string): Promise<any> {
 export async function fetchTokenPriceHistory(id: string, days: number = 7): Promise<TokenMarketData | null> {
   try {
     const response = await fetch(
-      `${COINGECKO_BASE_URL}/coins/${id}/market_chart?vs_currency=usd&days=${days}`
+      `${COINGECKO_BASE_URL}/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=${encodeURIComponent(String(days))}`
     );
     if (!response.ok) throw new Error("Failed to fetch price history");
     return await response.json();
@@ -102,7 +102,7 @@ export function mapTokenData(token: TokenPrice) {
 export async function fetchCommunityPricesByContracts(contracts: string[]) {
   try {
     if (!contracts || contracts.length === 0) return {};
-    const tokens = contracts.map((c) => `xlayer:${c}`).join(',');
+    const tokens = contracts.map((c) => encodeURIComponent(`xlayer:${c}`)).join(',');
     const response = await fetch(`${DEFILLAMA_COINS_URL}/prices/current/${tokens}`);
     if (!response.ok) throw new Error('Failed to fetch community token prices');
     const data = await response.json();
@@ -119,8 +119,8 @@ export async function fetchCommunityTokenDetailsByContract(contract: string) {
     if (!contract) return null;
     // Try the coins endpoint for a single token
     const endpoints = [
-      `${DEFILLAMA_COINS_URL}/coins/xlayer:${contract}`,
-      `${DEFILLAMA_COINS_URL}/coins/xlayer/${contract}`,
+      `${DEFILLAMA_COINS_URL}/coins/xlayer:${encodeURIComponent(contract)}`,
+      `${DEFILLAMA_COINS_URL}/coins/xlayer/${encodeURIComponent(contract)}`,
     ];
 
     for (const url of endpoints) {

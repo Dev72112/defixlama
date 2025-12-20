@@ -141,7 +141,7 @@ export async function fetchXLayerProtocols(): Promise<Protocol[]> {
 // Fetch TVL history for a chain
 export async function fetchChainTVLHistory(chain: string): Promise<ChainTVL[]> {
   try {
-    const response = await fetch(`${DEFILLAMA_BASE_URL}/v2/historicalChainTvl/${chain}`);
+    const response = await fetch(`${DEFILLAMA_BASE_URL}/v2/historicalChainTvl/${encodeURIComponent(chain)}`);
     if (!response.ok) throw new Error("Failed to fetch chain TVL history");
     const data: ChainTVL[] = await response.json();
     return data;
@@ -261,7 +261,8 @@ export async function fetchStablecoins(): Promise<Stablecoin[]> {
 export async function fetchTokenPrices(tokens: string[]): Promise<Record<string, { price: number; symbol: string; timestamp: number }>> {
   try {
     const tokenString = tokens.join(",");
-    const response = await fetch(`${DEFILLAMA_COINS_URL}/prices/current/${tokenString}`);
+    const tokenStringEncoded = tokens.map((t) => encodeURIComponent(t)).join(',');
+    const response = await fetch(`${DEFILLAMA_COINS_URL}/prices/current/${tokenStringEncoded}`);
     if (!response.ok) throw new Error("Failed to fetch token prices");
     const data = await response.json();
     return data.coins || {};
@@ -274,7 +275,7 @@ export async function fetchTokenPrices(tokens: string[]): Promise<Record<string,
 // Fetch protocol TVL history
 export async function fetchProtocolTVLHistory(slug: string): Promise<{ date: number; totalLiquidityUSD: number }[]> {
   try {
-    const response = await fetch(`${DEFILLAMA_BASE_URL}/protocol/${slug}`);
+    const response = await fetch(`${DEFILLAMA_BASE_URL}/protocol/${encodeURIComponent(slug)}`);
     if (!response.ok) throw new Error("Failed to fetch protocol TVL");
     const data = await response.json();
     return data.tvl || [];
@@ -287,7 +288,7 @@ export async function fetchProtocolTVLHistory(slug: string): Promise<{ date: num
 // Fetch full protocol details from DefiLlama (used to enrich protocol detail pages)
 export async function fetchProtocolDetails(slug: string): Promise<any | null> {
   try {
-    const response = await fetch(`${DEFILLAMA_BASE_URL}/protocol/${slug}`);
+    const response = await fetch(`${DEFILLAMA_BASE_URL}/protocol/${encodeURIComponent(slug)}`);
     if (!response.ok) throw new Error("Failed to fetch protocol details");
     const data = await response.json();
     return data || null;
