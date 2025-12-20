@@ -37,11 +37,25 @@ export function TVLChart({
   }
 
   const chartData = (data || [])
-    .filter((item) => item && typeof item.date === 'number' && typeof item.tvl === 'number')
+    .filter((item) => item && typeof item.date === 'number' && typeof item.tvl === 'number' && !isNaN(item.tvl))
     .map((item) => ({
       date: item.date * 1000,
       tvl: item.tvl,
     }));
+
+  // Show empty state if no valid chart data
+  if (chartData.length === 0) {
+    return (
+      <div className={cn("rounded-lg border border-border bg-card p-4", className)}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-foreground">TVL History</h3>
+        </div>
+        <div className="flex items-center justify-center text-muted-foreground" style={{ height }}>
+          <p>No TVL history data available</p>
+        </div>
+      </div>
+    );
+  }
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {

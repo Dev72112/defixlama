@@ -77,7 +77,8 @@ export function useXLayerTVLHistory() {
   return useQuery<ChainTVL[]>({
     queryKey: ["xlayer-tvl-history"],
     queryFn: async () => {
-      const data = await fetchChainTVLHistory("xlayer");
+      // Use "X Layer" (with space) as that's the correct chain name in DefiLlama
+      const data = await fetchChainTVLHistory("X Layer");
       return Array.isArray(data) ? data : [];
     },
     staleTime: LIVE_REFRESH,

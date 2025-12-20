@@ -11,7 +11,7 @@ export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Sidebar - hidden on mobile */}
       <div className="hidden lg:block">
         <Sidebar />
@@ -33,9 +33,9 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="lg:pl-[220px]">
+      <div className="lg:pl-[220px] overflow-x-hidden">
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-4 lg:p-6 overflow-x-hidden max-w-full">{children}</main>
       </div>
     </div>
   );

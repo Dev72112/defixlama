@@ -83,24 +83,24 @@ export default function Fees() {
 
         {/* Fees Table */}
         {isLoading ? (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <table className="data-table">
+          <div className="rounded-lg border border-border bg-card overflow-x-auto">
+            <table className="data-table w-full min-w-[500px]">
               <thead>
                 <tr className="bg-muted/30">
-                  <th className="w-12">#</th>
+                  <th className="w-12 hidden sm:table-cell">#</th>
                   <th>Protocol</th>
                   <th className="text-right">24h Fees</th>
-                  <th className="text-right">7d Fees</th>
+                  <th className="text-right hidden sm:table-cell">7d Fees</th>
                   <th className="text-right">24h Change</th>
                 </tr>
               </thead>
               <tbody>
                 {Array(10).fill(0).map((_, i) => (
                   <tr key={i}>
-                    <td><div className="skeleton h-4 w-6" /></td>
+                    <td className="hidden sm:table-cell"><div className="skeleton h-4 w-6" /></td>
                     <td><div className="skeleton h-4 w-32" /></td>
                     <td><div className="skeleton h-4 w-24 ml-auto" /></td>
-                    <td><div className="skeleton h-4 w-24 ml-auto" /></td>
+                    <td className="hidden sm:table-cell"><div className="skeleton h-4 w-24 ml-auto" /></td>
                     <td><div className="skeleton h-4 w-16 ml-auto" /></td>
                   </tr>
                 ))}
@@ -113,21 +113,21 @@ export default function Fees() {
             <p className="text-muted-foreground">No fee data found</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <table className="data-table">
+          <div className="rounded-lg border border-border bg-card overflow-x-auto">
+            <table className="data-table w-full min-w-[500px]">
               <thead>
                 <tr className="bg-muted/30">
-                  <th className="w-12">#</th>
+                  <th className="w-12 hidden sm:table-cell">#</th>
                   <th>Protocol</th>
                   <th className="text-right">24h Fees</th>
-                  <th className="text-right">7d Fees</th>
+                  <th className="text-right hidden sm:table-cell">7d Fees</th>
                   <th className="text-right">24h Change</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredFees.map((fee, index) => (
                   <tr key={fee.name || index} className="group">
-                    <td className="text-muted-foreground font-mono text-sm">
+                    <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                       {index + 1}
                     </td>
                     <td>
@@ -136,28 +136,28 @@ export default function Fees() {
                           <img
                             src={fee.logo}
                             alt={fee.displayName || fee.name}
-                            className="h-8 w-8 rounded-full bg-muted"
+                            className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${fee.name}&background=1a1a2e&color=2dd4bf&size=32`;
                             }}
                           />
                         ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
                             {(fee.displayName || fee.name || "?").charAt(0)}
                           </div>
                         )}
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">
                           {fee.displayName || fee.name}
                         </span>
                       </div>
                     </td>
-                    <td className="text-right font-mono font-medium text-foreground">
+                    <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
                       {formatCurrency(fee.total24h)}
                     </td>
-                    <td className="text-right font-mono text-muted-foreground">
+                    <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
                       {formatCurrency(fee.total7d)}
                     </td>
-                    <td className="text-right">
+                    <td className="text-right whitespace-nowrap">
                       <span
                         className={cn(
                           "font-mono text-sm",

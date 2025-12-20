@@ -19,14 +19,14 @@ export function DexTable({
 
   if (loading) {
     return (
-      <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
-        <table className="data-table">
+      <div className={cn("rounded-lg border border-border bg-card overflow-x-auto", className)}>
+        <table className="data-table w-full min-w-[500px]">
           <thead>
             <tr className="bg-muted/30">
-              <th className="w-12">#</th>
+              <th className="w-12 hidden sm:table-cell">#</th>
               <th>Name</th>
               <th className="text-right">24h Volume</th>
-              <th className="text-right">7d Volume</th>
+              <th className="text-right hidden sm:table-cell">7d Volume</th>
               <th className="text-right">24h Change</th>
             </tr>
           </thead>
@@ -35,10 +35,10 @@ export function DexTable({
               .fill(0)
               .map((_, i) => (
                 <tr key={i}>
-                  <td><div className="skeleton h-4 w-6" /></td>
+                  <td className="hidden sm:table-cell"><div className="skeleton h-4 w-6" /></td>
                   <td><div className="skeleton h-4 w-32" /></td>
                   <td><div className="skeleton h-4 w-24 ml-auto" /></td>
-                  <td><div className="skeleton h-4 w-24 ml-auto" /></td>
+                  <td className="hidden sm:table-cell"><div className="skeleton h-4 w-24 ml-auto" /></td>
                   <td><div className="skeleton h-4 w-16 ml-auto" /></td>
                 </tr>
               ))}
@@ -61,21 +61,21 @@ export function DexTable({
   }
 
   return (
-    <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
-      <table className="data-table">
+    <div className={cn("rounded-lg border border-border bg-card overflow-x-auto", className)}>
+      <table className="data-table w-full min-w-[500px]">
         <thead>
           <tr className="bg-muted/30">
-            <th className="w-12">#</th>
+            <th className="w-12 hidden sm:table-cell">#</th>
             <th>Name</th>
             <th className="text-right">24h Volume</th>
-            <th className="text-right">7d Volume</th>
+            <th className="text-right hidden sm:table-cell">7d Volume</th>
             <th className="text-right">24h Change</th>
           </tr>
         </thead>
         <tbody>
           {displayDexes.map((dex, index) => (
             <tr key={dex.name} className="group">
-              <td className="text-muted-foreground font-mono text-sm">
+              <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                 {index + 1}
               </td>
               <td>
@@ -84,22 +84,22 @@ export function DexTable({
                     <img
                       src={dex.logo}
                       alt={dex.displayName || dex.name}
-                      className="h-8 w-8 rounded-full bg-muted"
+                      className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${dex.name}&background=1a1a2e&color=2dd4bf&size=32`;
                       }}
                     />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
                       {(dex.displayName || dex.name).charAt(0)}
                     </div>
                   )}
-                  <div>
-                    <span className="font-medium text-foreground">
+                  <div className="min-w-0">
+                    <span className="font-medium text-foreground truncate block max-w-[120px] sm:max-w-none">
                       {dex.displayName || dex.name}
                     </span>
                     {dex.chains && dex.chains.length > 0 && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">
                         {dex.chains.slice(0, 3).join(", ")}
                         {dex.chains.length > 3 && ` +${dex.chains.length - 3}`}
                       </p>
@@ -107,13 +107,13 @@ export function DexTable({
                   </div>
                 </div>
               </td>
-              <td className="text-right font-mono font-medium text-foreground">
+              <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
                 {formatCurrency(dex.total24h)}
               </td>
-              <td className="text-right font-mono text-muted-foreground">
+              <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
                 {formatCurrency(dex.total7d)}
               </td>
-              <td className="text-right">
+              <td className="text-right whitespace-nowrap">
                 <div
                   className={cn(
                     "inline-flex items-center gap-1 font-mono text-sm",
