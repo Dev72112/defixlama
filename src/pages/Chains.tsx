@@ -113,8 +113,8 @@ export default function Chains() {
 
         {/* Chains Table */}
         {isLoading ? (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <table className="data-table">
+          <div className="rounded-lg border border-border bg-card overflow-x-auto">
+            <table className="data-table w-full min-w-[500px]">
               <thead>
                 <tr className="bg-muted/30">
                   <th className="w-12">#</th>
@@ -136,14 +136,14 @@ export default function Chains() {
             </table>
           </div>
         ) : (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <table className="data-table">
+          <div className="rounded-lg border border-border bg-card overflow-x-auto">
+            <table className="data-table w-full min-w-[500px]">
               <thead>
                 <tr className="bg-muted/30">
-                  <th className="w-12">#</th>
+                  <th className="w-12 hidden sm:table-cell">#</th>
                   <th>Chain</th>
                   <th className="text-right">TVL</th>
-                  <th className="text-right">Market Share</th>
+                  <th className="text-right hidden sm:table-cell">Market Share</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,7 +163,7 @@ export default function Chains() {
                       tabIndex={0}
                       onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/chains/${chain.name.toLowerCase().replace(/\s+/g, '-')}`); }}
                     >
-                      <td className="text-muted-foreground font-mono text-sm">
+                      <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                         {index + 1}
                       </td>
                       <td>
@@ -188,10 +188,10 @@ export default function Chains() {
                           </span>
                         </div>
                       </td>
-                      <td className="text-right font-mono font-medium text-foreground">
+                      <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
                         {formatCurrency(chain.tvl)}
                       </td>
-                      <td className="text-right">
+                      <td className="text-right hidden sm:table-cell">
                         <div className="flex items-center justify-end gap-2">
                           <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                             <div
