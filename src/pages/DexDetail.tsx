@@ -82,9 +82,16 @@ export default function DexDetail() {
     }));
   }, [dex]);
 
+  // Check if DEX has volume data (detects enriched protocols without volume fields)
+  const hasVolumeData = useMemo(() => {
+    if (!dex) return false;
+    // A DEX is considered to have volume data if any of these are non-zero
+    return (dex.total24h || 0) > 0 || (dex.total7d || 0) > 0 || (dex.total30d || 0) > 0;
+  }, [dex]);
+
   // Volume Analytics - ALWAYS CALL
   const volumeAnalytics = useMemo(() => {
-    if (!dex) return null;
+    if (!dex || !hasVolumeData) return null;
     const current24h = dex.total24h || 0;
     const current7d = dex.total7d || 0;
     const avg7d = current7d / 7;
@@ -102,7 +109,7 @@ export default function DexDetail() {
       avgDaily: isFinite(avg7d) ? avg7d : 0,
       volatility: isFinite(volatility) ? volatility : 0,
     };
-  }, [dex, allDexs]);
+  }, [dex, allDexs, hasVolumeData]);
 
   // Related DEXs - ALWAYS CALL
   const relatedDexs = useMemo(() => {
@@ -221,157 +228,187 @@ export default function DexDetail() {
                 Decentralized exchange analytics and volume tracking
               </p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">24h Volume</p>
-                  <p className="text-xl font-bold text-primary">{formatCurrency(dex.total24h || 0)}</p>
+              {hasVolumeData ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">24h Volume</p>
+                    <p className="text-xl font-bold text-primary">{formatCurrency(dex.total24h || 0)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">7d Avg</p>
+                    <p className="text-xl font-bold">{formatCurrency((dex.total7d || 0) / 7)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">24h Change</p>
+                    <p className={cn(
+                      "text-xl font-bold",
+                      change1d >= 0 ? "text-success" : "text-destructive"
+                    )}>
+                      {formatPercentage(change1d)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Chains</p>
+                    <p className="text-xl font-bold text-amber-500">{dex.chains?.length || 0}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">7d Avg</p>
-                  <p className="text-xl font-bold">{formatCurrency((dex.total7d || 0) / 7)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">24h Change</p>
-                  <p className={cn(
-                    "text-xl font-bold",
-                    change1d >= 0 ? "text-success" : "text-destructive"
-                  )}>
-                    {formatPercentage(change1d)}
+              ) : (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                  <p className="text-sm text-amber-800 dark:text-amber-300">
+                    <span className="font-semibold">Volume data not available</span> - This protocol is still being indexed by DefiLlama or doesn't have volume tracking enabled.
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Chains</p>
-                  <p className="text-xl font-bold text-amber-500">{dex.chains?.length || 0}</p>
-                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {hasVolumeData ? (
+          <>
+            {/* Enhanced Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="24h Volume"
+                value={formatCurrency(dex.total24h || 0)}
+                icon={Activity}
+              />
+              <StatCard
+                title="7d Avg Daily"
+                value={formatCurrency((dex.total7d || 0) / 7)}
+                icon={BarChart3}
+              />
+              <StatCard
+                title="Growth (7d)"
+                value={`${volumeAnalytics?.growth7d.toFixed(2) || 0}%`}
+                change={volumeAnalytics?.growth7d || 0}
+                icon={volumeAnalytics?.growth7d || 0 >= 0 ? TrendingUp : TrendingDown}
+              />
+              <StatCard
+                title="DEX Rank"
+                value={`#${rank}`}
+                icon={Award}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-6">
+            <div className="flex items-start gap-4">
+              <div className="bg-amber-100 dark:bg-amber-800/40 rounded-full p-3 flex-shrink-0">
+                <Activity className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                  Volume Data Unavailable
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-300">
+                  This protocol doesn't currently have volume data from DefiLlama. It may have been recently added to XLayer or doesn't have volume tracking enabled yet.
+                </p>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="24h Volume"
-            value={formatCurrency(dex.total24h || 0)}
-            icon={Activity}
-          />
-          <StatCard
-            title="7d Avg Daily"
-            value={formatCurrency((dex.total7d || 0) / 7)}
-            icon={BarChart3}
-          />
-          <StatCard
-            title="Growth (7d)"
-            value={`${volumeAnalytics?.growth7d.toFixed(2) || 0}%`}
-            change={volumeAnalytics?.growth7d || 0}
-            icon={volumeAnalytics?.growth7d || 0 >= 0 ? TrendingUp : TrendingDown}
-          />
-          <StatCard
-            title="DEX Rank"
-            value={`#${rank}`}
-            icon={Award}
-          />
-        </div>
+        {hasVolumeData && (
+          <>
+            {/* Volume Overview Chart */}
+            <Card className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                Volume Timeline
+              </h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={volumeData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: number) => [formatCurrency(value), "Volume"]}
+                    />
+                    <Bar dataKey="volume" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
 
-        {/* Volume Overview Chart */}
-        <Card className="p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Volume Timeline
-          </h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={volumeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                  formatter={(value: number) => [formatCurrency(value), "Volume"]}
-                />
-                <Bar dataKey="volume" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-
-        {/* Comparison and Analytics Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Volume Comparison */}
-          <Card className="p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              DEX Volume Ranking
-            </h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={comparisonData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis
-                    type="number"
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`}
-                  />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={80}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(value: number) => [formatCurrency(value), "24h Volume"]}
-                  />
-                  <Bar 
-                    dataKey="volume" 
-                    fill="hsl(var(--primary))" 
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-
-          {/* Analytics Card */}
-          <Card className="p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
-              Volume Analytics
-            </h3>
-            <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">7-Day Growth Rate</span>
-                  <span className={cn(
-                    "text-2xl font-bold",
-                    (volumeAnalytics?.growth7d || 0) >= 0 ? "text-success" : "text-destructive"
-                  )}>
-                    {volumeAnalytics?.growth7d.toFixed(2) || 0}%
-                  </span>
+            {/* Comparison and Analytics Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Volume Comparison */}
+              <Card className="p-4 md:p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  DEX Volume Ranking
+                </h3>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={comparisonData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis
+                        type="number"
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`}
+                      />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={80}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: number) => [formatCurrency(value), "24h Volume"]}
+                      />
+                      <Bar 
+                        dataKey="volume" 
+                        fill="hsl(var(--primary))" 
+                        radius={[0, 4, 4, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+              </Card>
+
+              {/* Analytics Card */}
+              <Card className="p-4 md:p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-primary" />
+                  Volume Analytics
+                </h3>
+                <div className="space-y-4">
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-muted-foreground">7-Day Growth Rate</span>
+                      <span className={cn(
+                        "text-2xl font-bold",
+                        (volumeAnalytics?.growth7d || 0) >= 0 ? "text-success" : "text-destructive"
+                      )}>
+                        {volumeAnalytics?.growth7d.toFixed(2) || 0}%
+                      </span>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all"
                     style={{ width: `${Math.min(Math.max((volumeAnalytics?.growth7d || 0) + 50, 0), 100)}%` }}
@@ -410,6 +447,8 @@ export default function DexDetail() {
             </div>
           </Card>
         </div>
+          </>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Supported Chains */}

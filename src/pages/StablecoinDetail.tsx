@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useStablecoins } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
-import { ArrowLeft, DollarSign, Globe, TrendingUp, Layers, ExternalLink, PieChart } from "lucide-react";
+import { ArrowLeft, DollarSign, Globe, TrendingUp, Layers, ExternalLink, PieChart, Zap, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
 import {
@@ -67,6 +67,63 @@ export default function StablecoinDetail() {
       .filter((d) => d.value > 0)
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
+  }, [coin]);
+
+  // Supply Analytics
+  const supplyAnalytics = useMemo(() => {
+    if (!coin?.circulating) return null;
+    const supplies = Object.values(coin.circulating).filter(v => typeof v === "number");
+    if (supplies.length === 0) return null;
+    
+    const total = supplies.reduce((a, b) => a + (b || 0), 0);
+    const avg = total / supplies.length;
+    const maxSupply = Math.max(...supplies);
+    const minSupply = Math.min(...supplies);
+    const concentration = (maxSupply / total) * 100;
+    const chains = Object.keys(coin.circulating || {}).length;
+    
+    return {
+      total,
+      avg,
+      concentration,
+      maxSupply,
+      minSupply,
+      chains,
+    };
+  }, [coin]);
+
+  // Related stablecoins (same peg type)
+  const relatedStablecoins = useMemo(() => {
+    if (!stablecoins || !coin) return [];
+    return stablecoins
+      .filter(s => s.pegType === coin.pegType && s.id !== coin.id)
+      .map(s => ({
+        ...s,
+        totalCirculating: Object.values(s.circulating || {}).reduce((a, b) => a + (b || 0), 0),
+      }))
+      .sort((a, b) => (b.totalCirculating || 0) - (a.totalCirculating || 0))
+      .slice(0, 5);
+  }, [stablecoins, coin]);
+
+  // Distribution concentration data
+  const concentrationData = useMemo(() => {
+    if (!coin?.circulating) return [];
+    const sorted = Object.entries(coin.circulating)
+      .map(([chain, value]) => ({ chain, value: value || 0 }))
+      .filter(d => d.value > 0)
+      .sort((a, b) => b.value - a.value);
+    
+    const total = sorted.reduce((a, b) => a + b.value, 0);
+    let cumulative = 0;
+    return sorted.map(d => {
+      cumulative += d.value;
+      return {
+        chain: d.chain,
+        value: d.value,
+        percentage: (d.value / total) * 100,
+        cumulative: (cumulative / total) * 100,
+      };
+    });
   }, [coin]);
 
   const COLORS = [
@@ -166,18 +223,84 @@ export default function StablecoinDetail() {
             icon={Layers}
           />
           <StatCard
-            title="Peg Type"
-            value={coin.pegType || "-"}
-            icon={TrendingUp}
+            title="Concentration"
+            value={`${supplyAnalytics?.concentration.toFixed(1) || 0}%`}
+            icon={Percent}
           />
           <StatCard
             title="Chains"
-            value={(coin.chains?.length || Object.keys(coin.circulating || {}).length).toString()}
+            value={(supplyAnalytics?.chains || 0).toString()}
             icon={Globe}
           />
         </div>
 
+        {/* Supply Analytics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Chain Distribution
+            </p>
+            <p className="text-2xl font-bold">{supplyAnalytics?.chains || 0}</p>
+            <p className="text-xs text-muted-foreground mt-1">blockchains</p>
+          </div>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Supply Concentration
+            </p>
+            <p className="text-2xl font-bold">{supplyAnalytics?.concentration.toFixed(1) || 0}%</p>
+            <p className="text-xs text-muted-foreground mt-1">on largest chain</p>
+          </div>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Avg per Chain
+            </p>
+            <p className="text-2xl font-bold">{formatCurrency(supplyAnalytics?.avg || 0)}</p>
+            <p className="text-xs text-muted-foreground mt-1">average supply</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Concentration Analysis */}
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Supply Concentration by Chain</h3>
+            <div className="h-[300px]">
+              {concentrationData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={concentrationData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="chain"
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      label={{ value: "Percentage (%)", angle: -90, position: "insideLeft" }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: number) => `${value.toFixed(1)}%`}
+                    />
+                    <Bar dataKey="percentage" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No distribution data
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Chain Distribution Pie */}
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Supply by Chain</h3>
@@ -265,6 +388,37 @@ export default function StablecoinDetail() {
             </div>
           </div>
         </div>
+
+        {/* Related Stablecoins */}
+        {relatedStablecoins.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Related Stablecoins ({coin.pegType})</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              {relatedStablecoins.map((s) => (
+                <Link to={`/stablecoins/${s.symbol.toLowerCase()}`} key={s.id}>
+                  <div className="p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer h-full">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                        {s.symbol?.charAt(0) || "$"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate text-sm">{s.symbol}</p>
+                        <p className="text-xs text-muted-foreground truncate">{s.name}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Supply</p>
+                      <p className="font-mono font-bold text-sm">{formatCurrency(s.totalCirculating)}</p>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-border">
+                      <p className="text-xs text-muted-foreground">{s.chains?.length || Object.keys(s.circulating || {}).length} chains</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Stablecoin Info */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">

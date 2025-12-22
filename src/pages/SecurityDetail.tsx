@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { useAllProtocols, useProtocolDetails, useProtocolTVLHistory } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { ArrowLeft, Shield, CheckCircle, AlertTriangle, ExternalLink, Globe, Twitter, Layers } from "lucide-react";
+import { ArrowLeft, Shield, CheckCircle, AlertTriangle, ExternalLink, Globe, Twitter, Layers, TrendingUp, TrendingDown, Activity, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,39 @@ export default function SecurityDetail() {
 
   const { data: protoDetails, isLoading: detailsLoading } = useProtocolDetails(proto?.slug || null);
   const { data: tvlHistory, isLoading: historyLoading } = useProtocolTVLHistory(proto?.slug || null);
+
+  // TVL Analytics
+  const tvlAnalytics = useMemo(() => {
+    if (!tvlHistory || tvlHistory.length < 2) return null;
+    const latest = tvlHistory[tvlHistory.length - 1]?.totalLiquidityUSD || 0;
+    const prev7d = tvlHistory.length > 7 ? tvlHistory[tvlHistory.length - 8]?.totalLiquidityUSD || 0 : latest;
+    const prev30d = tvlHistory.length > 30 ? tvlHistory[tvlHistory.length - 31]?.totalLiquidityUSD || 0 : latest;
+    
+    const change7d = prev7d !== 0 ? ((latest - prev7d) / prev7d) * 100 : 0;
+    const change30d = prev30d !== 0 ? ((latest - prev30d) / prev30d) * 100 : 0;
+    
+    // Calculate volatility
+    const recentTvls = tvlHistory.slice(-30).map(h => h.totalLiquidityUSD || 0);
+    const avgTvl = recentTvls.reduce((a, b) => a + b, 0) / recentTvls.length;
+    const variance = recentTvls.reduce((a, b) => a + Math.pow(b - avgTvl, 2), 0) / recentTvls.length;
+    const volatility = Math.sqrt(variance) / avgTvl * 100;
+    
+    return {
+      change7d: isFinite(change7d) ? change7d : 0,
+      change30d: isFinite(change30d) ? change30d : 0,
+      volatility: isFinite(volatility) ? volatility : 0,
+      avgTvl: isFinite(avgTvl) ? avgTvl : 0,
+    };
+  }, [tvlHistory]);
+
+  // Related protocols (same category)
+  const relatedProtocols = useMemo(() => {
+    if (!protocols || !proto) return [];
+    return protocols
+      .filter(p => p.category === proto.category && p.name !== proto.name)
+      .sort((a, b) => (b.tvl || 0) - (a.tvl || 0))
+      .slice(0, 5);
+  }, [protocols, proto]);
 
   // Format chart data
   const chartData = useMemo(() => {
@@ -162,16 +195,47 @@ export default function SecurityDetail() {
             icon={Shield}
           />
           <StatCard
-            title="24h Change"
-            value={formatPercentage(proto.change_1d)}
-            change={proto.change_1d}
-            icon={proto.change_1d && proto.change_1d >= 0 ? CheckCircle : AlertTriangle}
+            title="7d Change"
+            value={`${tvlAnalytics?.change7d.toFixed(2) || 0}%`}
+            change={tvlAnalytics?.change7d || 0}
+            icon={tvlAnalytics?.change7d || 0 >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
             title="Chains"
             value={(proto.chains?.length || 0).toString()}
             icon={Globe}
           />
+        </div>
+
+        {/* Security & Growth Analytics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={cn(
+            "rounded-lg border p-4",
+            isAudited ? "border-success/20 bg-success/5" : "border-warning/20 bg-warning/5"
+          )}>
+            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Security Status
+            </p>
+            <p className={`text-2xl font-bold ${isAudited ? "text-success" : "text-warning"}`}>
+              {isAudited ? "Audited" : "Unaudited"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1">7-Day Growth</p>
+            <p className={`text-2xl font-bold ${
+              (tvlAnalytics?.change7d || 0) >= 0 ? "text-success" : "text-destructive"
+            }`}>
+              {tvlAnalytics?.change7d.toFixed(2) || 0}%
+            </p>
+          </div>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1">TVL Volatility</p>
+            <p className="text-2xl font-bold">{tvlAnalytics?.volatility.toFixed(2) || 0}%</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {(tvlAnalytics?.volatility || 0) < 10 ? "Stable" : (tvlAnalytics?.volatility || 0) < 25 ? "Moderate" : "High"}
+            </p>
+          </div>
         </div>
 
         {/* Security Status Card */}
@@ -257,6 +321,56 @@ export default function SecurityDetail() {
             )}
           </div>
         </div>
+
+        {/* Related Protocols Section */}
+        {relatedProtocols.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Related Protocols ({proto.category})</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              {relatedProtocols.map((p) => {
+                const isAuditedRelated = p.audits && p.audits !== "0";
+                return (
+                  <Link to={`/security/${p.slug || p.name.toLowerCase().replace(/\s+/g, "-")}`} key={p.name}>
+                    <div className="p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer h-full">
+                      <div className="flex items-center gap-2 mb-2">
+                        {p.logo ? (
+                          <img src={p.logo} alt={p.name} className="h-8 w-8 rounded-full" loading="lazy" />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
+                            {p.name?.charAt(0) || "?"}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate text-sm">{p.name}</p>
+                          <p className="text-xs text-muted-foreground">{p.category}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1 mt-3">
+                        <p className="text-xs text-muted-foreground">TVL</p>
+                        <p className="font-mono font-bold text-sm">{formatCurrency(p.tvl || 0)}</p>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <div className="flex items-center gap-1">
+                          {isAuditedRelated ? (
+                            <>
+                              <CheckCircle className="h-3.5 w-3.5 text-success" />
+                              <span className="text-xs text-success">Audited</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                              <span className="text-xs text-warning">Unaudited</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Oracles */}

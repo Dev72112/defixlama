@@ -135,6 +135,39 @@ export default function ChainDetail() {
     return Array.from(map.values()).sort((a: any, b: any) => (b.total24h || 0) - (a.total24h || 0)).slice(0, 12);
   }, [allDexs, chain]);
 
+  // TVL Analytics
+  const tvlAnalytics = useMemo(() => {
+    if (!chain || !history || history.length < 2) return null;
+    const latest = history[history.length - 1]?.tvl || 0;
+    const prev7d = history.length > 7 ? history[history.length - 8]?.tvl || 0 : latest;
+    const prev30d = history.length > 30 ? history[history.length - 31]?.tvl || 0 : latest;
+    
+    const change7d = prev7d !== 0 ? ((latest - prev7d) / prev7d) * 100 : 0;
+    const change30d = prev30d !== 0 ? ((latest - prev30d) / prev30d) * 100 : 0;
+    
+    // Calculate volatility
+    const recentTvls = history.slice(-30).map(h => h.tvl || 0);
+    const avgTvl = recentTvls.reduce((a, b) => a + b, 0) / recentTvls.length;
+    const variance = recentTvls.reduce((a, b) => a + Math.pow(b - avgTvl, 2), 0) / recentTvls.length;
+    const volatility = Math.sqrt(variance) / avgTvl * 100;
+    
+    return {
+      change7d: isFinite(change7d) ? change7d : 0,
+      change30d: isFinite(change30d) ? change30d : 0,
+      volatility: isFinite(volatility) ? volatility : 0,
+      avgTvl: isFinite(avgTvl) ? avgTvl : 0,
+    };
+  }, [chain, history]);
+
+  // Related chains comparison
+  const relatedChains = useMemo(() => {
+    if (!chains || !chain) return [];
+    return chains
+      .filter(c => c.name !== chain.name)
+      .sort((a, b) => (b.tvl || 0) - (a.tvl || 0))
+      .slice(0, 5);
+  }, [chains, chain]);
+
   const COLORS = [
     "hsl(var(--primary))",
     "hsl(var(--chart-2))",
@@ -223,8 +256,44 @@ export default function ChainDetail() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total TVL" value={formatCurrency(chain.tvl)} icon={Layers} />
           <StatCard title="Rank" value={`#${rank}`} icon={TrendingUp} />
-          <StatCard title="Market Share" value={`${marketShare.toFixed(2)}%`} icon={Activity} />
-          <StatCard title="Gecko ID" value={chain.gecko_id || "-"} icon={Globe} />
+          <StatCard
+            title="7d Change"
+            value={`${tvlAnalytics?.change7d.toFixed(2) || 0}%`}
+            change={tvlAnalytics?.change7d || 0}
+            icon={tvlAnalytics?.change7d || 0 >= 0 ? TrendingUp : TrendingUp}
+          />
+          <StatCard
+            title="Market Share"
+            value={`${marketShare.toFixed(2)}%`}
+            icon={Activity}
+          />
+        </div>
+
+        {/* TVL Analytics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1">7-Day Growth</p>
+            <p className={`text-2xl font-bold ${
+              (tvlAnalytics?.change7d || 0) >= 0 ? "text-success" : "text-destructive"
+            }`}>
+              {tvlAnalytics?.change7d.toFixed(2) || 0}%
+            </p>
+          </div>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1">30-Day Growth</p>
+            <p className={`text-2xl font-bold ${
+              (tvlAnalytics?.change30d || 0) >= 0 ? "text-success" : "text-destructive"
+            }`}>
+              {tvlAnalytics?.change30d.toFixed(2) || 0}%
+            </p>
+          </div>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1">TVL Volatility</p>
+            <p className="text-2xl font-bold">{tvlAnalytics?.volatility.toFixed(2) || 0}%</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {(tvlAnalytics?.volatility || 0) < 10 ? "Stable" : (tvlAnalytics?.volatility || 0) < 25 ? "Moderate" : "High"}
+            </p>
+          </div>
         </div>
 
         {/* TVL History Chart */}
@@ -402,6 +471,40 @@ export default function ChainDetail() {
                 ) : null}
               </div>
             </div>
+          </div>
+
+          {/* Related Chains */}
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Related Chains</h3>
+            {relatedChains.length > 0 ? (
+              <div className="space-y-3">
+                {relatedChains.slice(0, 5).map((c, idx) => {
+                  const relatedShare = totalTVL > 0 ? ((c.tvl / totalTVL) * 100) : 0;
+                  return (
+                    <Link to={`/chains/${c.name.toLowerCase().replace(/\s+/g, "-")}`} key={c.name}>
+                      <div className="p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-foreground">{c.name}</span>
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">#{idx + 1}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{formatCurrency(c.tvl)}</span>
+                          <span className="text-muted-foreground">{relatedShare.toFixed(1)}%</span>
+                        </div>
+                        <div className="mt-2 h-1.5 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${relatedShare}%` }}
+                          />
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No related chains</p>
+            )}
           </div>
         </div>
 

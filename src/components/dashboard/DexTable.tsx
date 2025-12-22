@@ -119,10 +119,10 @@ export function DexTable({
                   </div>
                 </td>
                 <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                  {formatCurrency(dex.total24h)}
+                  {dex.total24h && dex.total24h > 0 ? formatCurrency(dex.total24h) : <span className="text-muted-foreground italic">No data</span>}
                 </td>
                 <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
-                  {formatCurrency(dex.total7d)}
+                  {dex.total7d && dex.total7d > 0 ? formatCurrency(dex.total7d) : <span className="text-muted-foreground italic">No data</span>}
                 </td>
                 <td className="text-right whitespace-nowrap">
                   <div

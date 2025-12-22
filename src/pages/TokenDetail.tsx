@@ -3,8 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import { useTokenDetails, useTokenPriceHistory, useOklinkContract } from "@/hooks/useTokenData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
-import { ArrowLeft, TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Clock } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Clock, Percent, Zap, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { cn, stripHtml, safeEncode, formatTokenPrice } from "@/lib/utils";
 import {
   AreaChart,
@@ -15,23 +16,53 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function TokenDetail() {
-  const { id } = useParams<{ id: string }>();
-  const { data: token, isLoading } = useTokenDetails(id || null);
+  const { chain, tokenId } = useParams<{ chain: string; tokenId: string }>();
+  const chainName = chain || "";
+  const contractAddress = tokenId || "";
+  
+  const { data: token, isLoading: isLoadingToken } = useTokenDetails(contractAddress);
   const [days, setDays] = useState(7);
-  const { data: priceHistory } = useTokenPriceHistory(id || null, days);
-  const { data: oklinkInfo } = useOklinkContract(token?.contract || null);
+  const { data: priceHistory, isLoading: isLoadingPrice } = useTokenPriceHistory(contractAddress);
+  const { data: oklinkInfo, isLoading: isLoadingOklink } = useOklinkContract(contractAddress);
 
-  // Format chart data
-  const chartData = priceHistory?.prices?.map(([timestamp, price]) => ({
-    date: new Date(timestamp).toLocaleDateString(),
-    price,
-    timestamp,
-  })) || [];
+  // Get token logo from multiple sources with fallback
+  const tokenLogo = useMemo(() => {
+    if (token?.image) return token.image;
+    if (oklinkInfo?.logo) return oklinkInfo.logo;
+    if (oklinkInfo?.contractLogo) return oklinkInfo.contractLogo;
+    return null;
+  }, [token, oklinkInfo]);
 
-  if (isLoading) {
+  // Format chart data from price history
+  const chartData = useMemo(() => {
+    if (!priceHistory) return [];
+    
+    if (Array.isArray(priceHistory)) {
+      return priceHistory.map(([timestamp, price]) => ({
+        date: new Date(timestamp).toLocaleDateString(),
+        price: typeof price === 'number' ? price : parseFloat(price),
+        timestamp,
+      }));
+    }
+    
+    if (typeof priceHistory === 'object') {
+      return Object.entries(priceHistory)
+        .map(([timestamp, price]) => ({
+          date: new Date(parseInt(timestamp)).toLocaleDateString(),
+          price: typeof price === 'number' ? price : parseFloat(price as any),
+          timestamp: parseInt(timestamp),
+        }))
+        .sort((a, b) => a.timestamp - b.timestamp);
+    }
+    
+    return [];
+  }, [priceHistory]);
+
+  // Show loading state
+  if (isLoadingToken && !token && !oklinkInfo) {
     return (
       <Layout>
         <div className="space-y-6 animate-fade-in">
@@ -47,14 +78,15 @@ export default function TokenDetail() {
     );
   }
 
-  if (!token) {
+  // Show not found if we have no data from either source
+  if (!token && !oklinkInfo) {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <Activity className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-xl font-bold text-foreground mb-2">Token not found</h2>
           <p className="text-muted-foreground mb-4">
-            The token "{id}" could not be found. It may not be listed yet.
+            The token "{contractAddress}" could not be found. It may not be listed yet.
           </p>
           <Link to="/tokens">
             <Button variant="outline">
@@ -67,10 +99,55 @@ export default function TokenDetail() {
     );
   }
 
-  const isCommunityToken = token.isCommunityToken;
+  // Use token data or create minimal one from oklink
+  const tokenName = token?.name || oklinkInfo?.contractName || "Unknown Token";
+  const tokenSymbol = token?.symbol || (oklinkInfo?.symbol || "").toUpperCase() || "???";
+  const isCommunityToken = token?.isCommunityToken || !token;
 
   const priceChange24h = token.market_data?.price_change_percentage_24h || 0;
   const priceChange7d = token.market_data?.price_change_percentage_7d || 0;
+
+  // Price Analytics
+  const priceAnalytics = useMemo(() => {
+    if (!priceHistory?.prices || priceHistory.prices.length < 2) return null;
+    
+    const prices = priceHistory.prices.map(([_, price]) => price);
+    const latest = prices[prices.length - 1];
+    const oldest = prices[0];
+    const highest = Math.max(...prices);
+    const lowest = Math.min(...prices);
+    
+    const priceRange = highest - lowest;
+    const volatility = (priceRange / lowest) * 100;
+    
+    const dayChange = oldest !== 0 ? ((latest - oldest) / oldest) * 100 : 0;
+    
+    return {
+      highest,
+      lowest,
+      range: priceRange,
+      volatility: isFinite(volatility) ? volatility : 0,
+      dayChange: isFinite(dayChange) ? dayChange : 0,
+      avgPrice: prices.reduce((a, b) => a + b, 0) / prices.length,
+    };
+  }, [priceHistory]);
+
+  // Market metrics
+  const marketMetrics = useMemo(() => {
+    if (!token.market_data) return null;
+    const mcap = token.market_data.market_cap?.usd || 0;
+    const volume = token.market_data.total_volume?.usd || 0;
+    const mcapVolumeRatio = volume !== 0 ? mcap / volume : 0;
+    const circulatingSupply = token.market_data.circulating_supply || 0;
+    const maxSupply = token.market_data.max_supply;
+    const supplyRatio = maxSupply && circulatingSupply > 0 ? (circulatingSupply / maxSupply) * 100 : 0;
+    
+    return {
+      mcapVolumeRatio: isFinite(mcapVolumeRatio) ? mcapVolumeRatio : 0,
+      supplyRatio: isFinite(supplyRatio) ? supplyRatio : 0,
+      circSupplyPercent: maxSupply ? supplyRatio : 100,
+    };
+  }, [token.market_data]);
 
   return (
     <Layout>
@@ -156,16 +233,50 @@ export default function TokenDetail() {
             icon={Activity}
           />
           <StatCard
-            title="7d Change"
-            value={`${priceChange7d >= 0 ? "+" : ""}${priceChange7d.toFixed(2)}%`}
-            change={priceChange7d}
+            title="Price Range"
+            value={`$${(priceAnalytics?.range || 0).toFixed(4)}`}
             icon={BarChart3}
           />
           <StatCard
-            title="All Time High"
-            value={`$${token.market_data?.ath?.usd?.toLocaleString() || "-"}`}
+            title="Volatility"
+            value={`${priceAnalytics?.volatility.toFixed(1) || 0}%`}
             icon={TrendingUp}
           />
+        </div>
+
+        {/* Price Analytics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1">Price Range</p>
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">High</p>
+                <p className="font-mono font-bold">${priceAnalytics?.highest?.toFixed(4) || "-"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Low</p>
+                <p className="font-mono font-bold">${priceAnalytics?.lowest?.toFixed(4) || "-"}</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Price Volatility
+            </p>
+            <p className="text-2xl font-bold">{priceAnalytics?.volatility?.toFixed(1) || 0}%</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {(priceAnalytics?.volatility || 0) < 15 ? "Low" : (priceAnalytics?.volatility || 0) < 40 ? "Moderate" : "High"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
+              <Percent className="h-4 w-4" />
+              Supply Status
+            </p>
+            <p className="text-2xl font-bold">{marketMetrics?.supplyRatio?.toFixed(1) || 0}%</p>
+            <p className="text-xs text-muted-foreground mt-1">circulating of max</p>
+          </div>
         </div>
 
         {/* Price Chart */}
@@ -237,6 +348,39 @@ export default function TokenDetail() {
 
         {/* Token Info */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Market Analysis */}
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Market Analysis</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Market Cap Rank</span>
+                <span className="font-mono text-foreground">
+                  {token.market_cap_rank ? `#${token.market_cap_rank}` : "-"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Market Cap / Volume</span>
+                <span className="font-mono text-foreground">
+                  {marketMetrics?.mcapVolumeRatio?.toFixed(2) || "-"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">FDV Rank</span>
+                <span className="font-mono text-foreground">
+                  {token.fully_diluted_valuation_rank ? `#${token.fully_diluted_valuation_rank}` : "-"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Market Cap vs FDV</span>
+                <span className="font-mono text-foreground">
+                  {token.market_data?.market_cap && token.market_data?.fully_diluted_valuation
+                    ? `${((token.market_data.market_cap.usd / token.market_data.fully_diluted_valuation.usd) * 100).toFixed(1)}%`
+                    : "-"}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Supply Info */}
           <div className="rounded-lg border border-border bg-card p-4 md:p-6 space-y-4">
             <h3 className="text-lg font-semibold text-foreground">Supply Information</h3>
@@ -259,10 +403,27 @@ export default function TokenDetail() {
                   {token.market_data?.max_supply?.toLocaleString() || "∞"}
                 </span>
               </div>
+              {token.market_data?.max_supply && (
+                <div className="mt-4 pt-3 border-t border-border">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-xs text-muted-foreground">Circulating vs Max</span>
+                    <span className="text-xs font-mono text-foreground">{marketMetrics?.supplyRatio?.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${Math.min(marketMetrics?.supplyRatio || 0, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Price Stats */}
+        {/* Price Statistics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Price Range Stats */}
           <div className="rounded-lg border border-border bg-card p-4 md:p-6 space-y-4">
             <h3 className="text-lg font-semibold text-foreground">Price Statistics</h3>
             <div className="space-y-3">
@@ -279,9 +440,50 @@ export default function TokenDetail() {
                 </span>
               </div>
               <div className="flex justify-between">
+                <span className="text-muted-foreground">All Time High</span>
+                <span className="font-mono text-foreground">
+                  ${token.market_data?.ath?.usd?.toLocaleString() || "-"}
+                </span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">All Time Low</span>
                 <span className="font-mono text-foreground">
                   ${token.market_data?.atl?.usd?.toLocaleString() || "-"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Price Changes */}
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Price Changes</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">24h Change</span>
+                <span className={cn("font-mono font-bold", priceChange24h >= 0 ? "text-success" : "text-destructive")}>
+                  {priceChange24h >= 0 ? "+" : ""}{priceChange24h.toFixed(2)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">7d Change</span>
+                <span className={cn("font-mono font-bold", priceChange7d >= 0 ? "text-success" : "text-destructive")}>
+                  {priceChange7d >= 0 ? "+" : ""}{priceChange7d.toFixed(2)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">ATH Distance</span>
+                <span className="font-mono text-destructive">
+                  {token.market_data?.ath?.usd ? 
+                    `-${(((token.market_data.ath.usd - token.market_data.current_price.usd) / token.market_data.ath.usd) * 100).toFixed(1)}%`
+                    : "-"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">ATL Distance</span>
+                <span className="font-mono text-success">
+                  {token.market_data?.atl?.usd ?
+                    `+${(((token.market_data.current_price.usd - token.market_data.atl.usd) / token.market_data.atl.usd) * 100).toFixed(1)}%`
+                    : "-"}
                 </span>
               </div>
             </div>
