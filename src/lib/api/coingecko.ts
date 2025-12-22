@@ -32,12 +32,45 @@ export const TOKEN_IDS: Record<string, string> = {
   LINK: "chainlink",
 };
 
-// XLayer community tokens (not on CoinGecko, we'll try to fetch from DEX)
+// XLayer community tokens (not on CoinGecko, we'll try to fetch from DEX/DefiLlama)
 export const XLAYER_COMMUNITY_TOKENS = [
-  { symbol: "DOG", name: "DOG", contract: "0x903358faf7c6304afbd560e9e29b12ab1b8fddc5" },
-  { symbol: "NIUMA", name: "NIUMA", contract: "0x87669801a1fad6dad9db70d27ac752f452989667" },
-  { symbol: "XDOG", name: "XDOG", contract: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e" },
+  { symbol: "DOG", name: "DOG", contract: "0x903358faf7c6304afbd560e9e29b12ab1b8fddc5", logo: "https://ui-avatars.com/api/?name=DOG&background=f59e0b&color=fff&size=64" },
+  { symbol: "NIUMA", name: "NIUMA", contract: "0x87669801a1fad6dad9db70d27ac752f452989667", logo: "https://ui-avatars.com/api/?name=NM&background=8b5cf6&color=fff&size=64" },
+  { symbol: "XDOG", name: "XDOG", contract: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", logo: "https://ui-avatars.com/api/?name=XD&background=ec4899&color=fff&size=64" },
 ];
+
+// Alternative price fetching through DexScreener API for community tokens
+export async function fetchDexScreenerPrices(contracts: string[]) {
+  try {
+    if (!contracts || contracts.length === 0) return {};
+    // DexScreener API for XLayer tokens
+    const results: Record<string, any> = {};
+    for (const contract of contracts) {
+      try {
+        const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${contract}`);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.pairs && data.pairs.length > 0) {
+          const pair = data.pairs[0];
+          results[contract.toLowerCase()] = {
+            price: parseFloat(pair.priceUsd) || 0,
+            change24h: pair.priceChange?.h24 || 0,
+            volume24h: pair.volume?.h24 || 0,
+            liquidity: pair.liquidity?.usd || 0,
+            symbol: pair.baseToken?.symbol || '',
+            name: pair.baseToken?.name || '',
+          };
+        }
+      } catch (e) {
+        // ignore individual failures
+      }
+    }
+    return results;
+  } catch (error) {
+    console.error('Error fetching DexScreener prices:', error);
+    return {};
+  }
+}
 
 // Fetch token prices from CoinGecko
 export async function fetchTokenPrices(): Promise<TokenPrice[]> {
@@ -94,7 +127,8 @@ export function mapTokenData(token: TokenPrice) {
     mcap: token.market_cap || 0,
     logo: token.image,
     sparkline: token.sparkline_in_7d?.price || [],
-    contract: null,
+    contract: null as string | null,
+    isCommunityToken: false,
   };
 }
 

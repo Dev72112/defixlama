@@ -51,8 +51,11 @@ export default function TokenDetail() {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <Activity className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-xl font-bold text-foreground mb-2">Token not found</h2>
-          <p className="text-muted-foreground mb-4">The requested token could not be found.</p>
+          <p className="text-muted-foreground mb-4">
+            The token "{id}" could not be found. It may not be listed yet.
+          </p>
           <Link to="/tokens">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -63,6 +66,8 @@ export default function TokenDetail() {
       </Layout>
     );
   }
+
+  const isCommunityToken = token.isCommunityToken;
 
   const priceChange24h = token.market_data?.price_change_percentage_24h || 0;
   const priceChange7d = token.market_data?.price_change_percentage_7d || 0;
@@ -80,18 +85,34 @@ export default function TokenDetail() {
 
         {/* Token Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <img
-            src={token.image?.large || token.image?.small}
-            alt={token.name}
-            className="h-16 w-16 rounded-full bg-muted"
-          />
+          {token.image?.large || token.image?.small ? (
+            <img
+              src={token.image?.large || token.image?.small}
+              alt={token.name}
+              className="h-16 w-16 rounded-full bg-muted"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${token.symbol}&background=1a1a2e&color=2dd4bf&size=64`;
+              }}
+            />
+          ) : (
+            <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl">
+              {token.symbol?.slice(0, 2) || "?"}
+            </div>
+          )}
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold text-foreground">{token.name}</h1>
               <span className="text-lg text-muted-foreground uppercase">{token.symbol}</span>
-              <span className="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs">
-                Rank #{token.market_cap_rank || "-"}
-              </span>
+              {isCommunityToken && (
+                <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                  Community Token
+                </span>
+              )}
+              {!isCommunityToken && token.market_cap_rank && (
+                <span className="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs">
+                  Rank #{token.market_cap_rank}
+                </span>
+              )}
             </div>
             {token.contract && (
               <div className="mt-2">

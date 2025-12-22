@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useChainsTVL } from "@/hooks/useDefiData";
 import { formatCurrency, ChainData } from "@/lib/api/defillama";
-import { Layers, TrendingUp, Search, PieChart, Globe } from "lucide-react";
+import { Layers, TrendingUp, Search, PieChart, Globe, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -40,11 +40,17 @@ export default function Chains() {
     <Layout>
       <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">All Chains</h1>
-          <p className="text-muted-foreground mt-1">
-            TVL comparison across all blockchain networks
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">All Chains</h1>
+            <p className="text-muted-foreground mt-1">
+              TVL comparison across all blockchain networks
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Activity className="h-4 w-4 text-primary animate-pulse" />
+            {chainCount} chains tracked
+          </div>
         </div>
 
         {/* Stats */}
