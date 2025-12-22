@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Clock, Percent, Zap, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn, stripHtml, safeEncode, formatTokenPrice } from "@/lib/utils";
 import {
   AreaChart,
@@ -134,7 +135,7 @@ export default function TokenDetail() {
 
   // Market metrics
   const marketMetrics = useMemo(() => {
-    if (!token.market_data) return null;
+    if (!token?.market_data) return null;
     const mcap = token.market_data.market_cap?.usd || 0;
     const volume = token.market_data.total_volume?.usd || 0;
     const mcapVolumeRatio = volume !== 0 ? mcap / volume : 0;
@@ -147,7 +148,7 @@ export default function TokenDetail() {
       supplyRatio: isFinite(supplyRatio) ? supplyRatio : 0,
       circSupplyPercent: maxSupply ? supplyRatio : 100,
     };
-  }, [token.market_data]);
+  }, [token?.market_data]);
 
   return (
     <Layout>
@@ -159,6 +160,16 @@ export default function TokenDetail() {
             Back to Tokens
           </Button>
         </Link>
+
+        {/* Community Token Alert */}
+        {isCommunityToken && (
+          <Alert className="border-primary/30 bg-primary/10">
+            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-primary">
+              This is a community token with limited data availability. Only price information from CoinGecko and DexScreener is available. On-chain data from the XLayer explorer may provide additional insights.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Token Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
