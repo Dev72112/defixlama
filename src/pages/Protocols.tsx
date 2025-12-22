@@ -3,7 +3,7 @@ import { ProtocolTable } from "@/components/dashboard/ProtocolTable";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useXLayerProtocols, useXLayerTVL } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
-import { Database, Layers, TrendingUp, Search } from "lucide-react";
+import { Database, Layers, TrendingUp, Search, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import {
@@ -74,11 +74,17 @@ export default function Protocols() {
     <Layout>
       <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Protocols</h1>
-          <p className="text-muted-foreground mt-1">
-            All DeFi protocols deployed on XLayer
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Protocols</h1>
+            <p className="text-muted-foreground mt-1">
+              All DeFi protocols deployed on XLayer
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Activity className="h-4 w-4 text-primary animate-pulse" />
+            {protocolCount} protocols tracked
+          </div>
         </div>
 
         {/* Stats */}

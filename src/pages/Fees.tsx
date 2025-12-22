@@ -28,9 +28,15 @@ export default function Fees() {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Fees</h1>
-          <p className="text-muted-foreground mt-1">Protocol fee volumes across chains</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Fees</h1>
+            <p className="text-muted-foreground mt-1">Protocol fee volumes across chains</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Activity className="h-4 w-4 text-primary animate-pulse" />
+            {protocolsCount} protocols
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

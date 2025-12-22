@@ -114,14 +114,18 @@ export default function Tokens() {
                 ))
               ) : filteredTokens.map((token, index) => {
                 const tokenId = TOKEN_IDS[token.symbol];
+                const isCommunity = token.isCommunityToken;
                 return (
                   <tr
                     key={token.symbol}
-                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/tokens/${tokenId || token.symbol.toLowerCase()}`)}
+                    className={cn(
+                      "group hover:bg-muted/30 transition-colors cursor-pointer",
+                      isCommunity && "bg-primary/5"
+                    )}
+                    onClick={() => navigate(`/tokens/${tokenId || token.contract || token.symbol.toLowerCase()}`)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${tokenId || token.symbol.toLowerCase()}`); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${tokenId || token.contract || token.symbol.toLowerCase()}`); }}
                   >
                     <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                       {index + 1}
@@ -143,9 +147,16 @@ export default function Tokens() {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <span className="font-medium text-foreground block truncate">
-                            {token.name}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground block truncate">
+                              {token.name}
+                            </span>
+                            {isCommunity && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary/20 text-primary font-medium">
+                                Community
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground">
                               {token.symbol}
@@ -168,7 +179,7 @@ export default function Tokens() {
                     <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
                       {token.price > 0 
                         ? `$${token.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: token.price < 1 ? 6 : 2 })}`
-                        : <span className="text-muted-foreground">-</span>
+                        : <span className="text-muted-foreground">Fetching...</span>
                       }
                     </td>
                     <td className="text-right whitespace-nowrap">
@@ -192,14 +203,7 @@ export default function Tokens() {
                       {token.mcap > 0 ? formatCurrency(token.mcap) : "-"}
                     </td>
                     <td className="hidden sm:table-cell">
-                      {tokenId && (
-                        <Link 
-                          to={`/tokens/${tokenId}`}
-                          className="text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      )}
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </td>
                   </tr>
                 );
