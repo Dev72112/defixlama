@@ -440,29 +440,35 @@ export async function fetchDexDetails(name: string): Promise<any | null> {
 
 // Format helpers
 export function formatCurrency(value: number | undefined, decimals = 2): string {
-  if (value === undefined || value === null || isNaN(value)) return "$0";
+  if (value === undefined || value === null) return "$0";
+  const num = Number(value);
+  if (isNaN(num)) return "$0";
   
-  if (value >= 1e12) {
-    return `$${(value / 1e12).toFixed(decimals)}T`;
-  } else if (value >= 1e9) {
-    return `$${(value / 1e9).toFixed(decimals)}B`;
-  } else if (value >= 1e6) {
-    return `$${(value / 1e6).toFixed(decimals)}M`;
-  } else if (value >= 1e3) {
-    return `$${(value / 1e3).toFixed(decimals)}K`;
+  if (num >= 1e12) {
+    return `$${(num / 1e12).toFixed(decimals)}T`;
+  } else if (num >= 1e9) {
+    return `$${(num / 1e9).toFixed(decimals)}B`;
+  } else if (num >= 1e6) {
+    return `$${(num / 1e6).toFixed(decimals)}M`;
+  } else if (num >= 1e3) {
+    return `$${(num / 1e3).toFixed(decimals)}K`;
   }
-  return `$${value.toFixed(decimals)}`;
+  return `$${num.toFixed(decimals)}`;
 }
 
 export function formatPercentage(value: number | undefined): string {
-  if (value === undefined || value === null || isNaN(value)) return "0%";
-  const prefix = value >= 0 ? "+" : "";
-  return `${prefix}${value.toFixed(2)}%`;
+  if (value === undefined || value === null) return "0%";
+  const num = Number(value);
+  if (isNaN(num)) return "0%";
+  const prefix = num >= 0 ? "+" : "";
+  return `${prefix}${num.toFixed(2)}%`;
 }
 
 export function formatNumber(value: number | undefined): string {
-  if (value === undefined || value === null || isNaN(value)) return "0";
-  return new Intl.NumberFormat("en-US").format(value);
+  if (value === undefined || value === null) return "0";
+  const num = Number(value);
+  if (isNaN(num)) return "0";
+  return new Intl.NumberFormat("en-US").format(num);
 }
 
 export function getChangeColor(value: number | undefined): string {

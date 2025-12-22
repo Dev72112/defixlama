@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { BarChart3, TrendingUp, Search, DollarSign, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   Pagination,
   PaginationContent,
@@ -24,6 +25,14 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
 export default function Fees() {
+  return (
+    <ErrorBoundary>
+      <FeesContent />
+    </ErrorBoundary>
+  );
+}
+
+function FeesContent() {
   const { data: fees, isLoading } = useFeesData();
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -144,7 +153,11 @@ export default function Fees() {
               </thead>
               <tbody>
                 {paginatedFees.map((fee, index) => {
+                  if (!fee || typeof fee !== "object") return null;
                   const slug = (fee.displayName || fee.name || index).toString().toLowerCase().replace(/\s+/g, '-');
+                  const total24h = typeof fee.total24h === "number" ? fee.total24h : 0;
+                  const total7d = typeof fee.total7d === "number" ? fee.total7d : 0;
+                  const change1d = typeof fee.change_1d === "number" ? fee.change_1d : 0;
                   return (
                     <tr
                       key={fee.name || index}
@@ -179,23 +192,21 @@ export default function Fees() {
                         </div>
                       </td>
                       <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                        {formatCurrency(fee.total24h)}
+                        {formatCurrency(total24h)}
                       </td>
                       <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
-                        {formatCurrency(fee.total7d)}
+                        {formatCurrency(total7d)}
                       </td>
                       <td className="text-right whitespace-nowrap">
                         <span
                           className={cn(
                             "font-mono text-sm",
-                            (fee.change_1d || 0) >= 0
+                            change1d >= 0
                               ? "text-success"
                               : "text-destructive"
                           )}
                         >
-                          {fee.change_1d !== undefined
-                            ? `${fee.change_1d >= 0 ? "+" : ""}${fee.change_1d.toFixed(2)}%`
-                            : "-"}
+                          {`${change1d >= 0 ? "+" : ""}${Number(change1d || 0).toFixed(2)}%`}
                         </span>
                       </td>
                     </tr>

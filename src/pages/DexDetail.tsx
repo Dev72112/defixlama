@@ -3,8 +3,11 @@ import { useParams, Link } from "react-router-dom";
 import { useXLayerDexVolumes, useAllDexVolumes, useDexDetails } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
-import { ArrowLeft, Activity, TrendingUp, TrendingDown, BarChart3, ExternalLink, Globe, Code, Lock, Twitter, Shield } from "lucide-react";
+import { ArrowLeft, Activity, TrendingUp, TrendingDown, BarChart3, ExternalLink, Globe, Code, Lock, Twitter, Shield, Award, Target, Flame, Crown, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
 import {
   BarChart,
@@ -17,6 +20,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
 } from "recharts";
 
 export default function DexDetail() {
@@ -71,12 +76,56 @@ export default function DexDetail() {
   // Chain distribution pie chart
   const chainData = useMemo(() => {
     if (!dex?.chains) return [];
-    // Since we don't have per-chain volumes, just show which chains are supported
     return dex.chains.map((chain, index) => ({
       name: chain,
-      value: 1, // Equal weight for visualization
+      value: 1,
     }));
   }, [dex]);
+
+  // Volume Analytics - ALWAYS CALL
+  const volumeAnalytics = useMemo(() => {
+    if (!dex) return null;
+    const current24h = dex.total24h || 0;
+    const current7d = dex.total7d || 0;
+    const avg7d = current7d / 7;
+    
+    // Safe division by zero checks
+    const growth7d = avg7d !== 0 ? ((current24h - avg7d) / avg7d) * 100 : 0;
+    const volatility = avg7d !== 0 ? ((current24h - avg7d) / avg7d) * 100 : 0;
+    
+    const ranking = allDexs ? allDexs.findIndex((d) => d.name === dex.name) : 0;
+    const percentile = allDexs && allDexs.length > 0 ? ((allDexs.length - ranking) / allDexs.length) * 100 : 0;
+    
+    return {
+      growth7d: isFinite(growth7d) ? growth7d : 0,
+      percentile: isFinite(percentile) ? percentile : 0,
+      avgDaily: isFinite(avg7d) ? avg7d : 0,
+      volatility: isFinite(volatility) ? volatility : 0,
+    };
+  }, [dex, allDexs]);
+
+  // Related DEXs - ALWAYS CALL
+  const relatedDexs = useMemo(() => {
+    if (!allDexs || !dex) return [];
+    return allDexs
+      .filter((d) => d.name !== dex.name)
+      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
+      .slice(0, 5);
+  }, [allDexs, dex]);
+
+  // Comparison data - ALWAYS CALL
+  const comparisonData = useMemo(() => {
+    if (!allDexs || !dex) return [];
+    const sorted = [...allDexs]
+      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
+      .slice(0, 6);
+    
+    return sorted.map((d) => ({
+      name: (d.displayName || d.name || "").substring(0, 12),
+      volume: d.total24h || 0,
+      isCurrentItem: d.name === dex.name,
+    }));
+  }, [allDexs, dex]);
 
   const COLORS = [
     "hsl(var(--primary))",
@@ -86,6 +135,9 @@ export default function DexDetail() {
     "hsl(var(--chart-5))",
     "hsl(var(--muted))",
   ];
+
+  const change1d = typeof dex?.change_1d === "number" ? dex.change_1d : 0;
+  const change7d = typeof dex?.change_7d === "number" ? dex.change_7d : 0;
 
   if (isLoading) {
     return (
@@ -124,9 +176,6 @@ export default function DexDetail() {
     );
   }
 
-  const change1d = dex.change_1d || 0;
-  const change7d = dex.change_7d || 0;
-
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -138,42 +187,68 @@ export default function DexDetail() {
           </Button>
         </Link>
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {dex.logo ? (
-            <img
-              src={dex.logo}
-              alt={dex.displayName || dex.name}
-              className="h-16 w-16 rounded-full bg-muted flex-shrink-0"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          ) : (
-            <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl flex-shrink-0">
-              {(dex.displayName || dex.name).charAt(0)}
-            </div>
-          )}
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">{dex.displayName || dex.name}</h1>
-              {rank > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  Rank #{rank}
-                </span>
+        {/* Enhanced Header */}
+        <div className="rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+            <div>
+              {dex.logo ? (
+                <img
+                  src={dex.logo}
+                  alt={dex.displayName || dex.name}
+                  className="h-20 w-20 rounded-full bg-muted flex-shrink-0 shadow-lg"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-3xl flex-shrink-0 shadow-lg">
+                  {(dex.displayName || dex.name || "?").charAt(0)}
+                </div>
               )}
             </div>
-            <p className="text-muted-foreground mt-1">
-              {dex.chains?.length || 0} chains • DEX
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-primary">{formatCurrency(dex.total24h || 0)}</p>
-            <p className="text-sm text-muted-foreground">24h Volume</p>
+            
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-foreground">{dex.displayName || dex.name}</h1>
+                {rank > 0 && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Crown className="h-3 w-3" />
+                    Rank #{rank}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Decentralized exchange analytics and volume tracking
+              </p>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">24h Volume</p>
+                  <p className="text-xl font-bold text-primary">{formatCurrency(dex.total24h || 0)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">7d Avg</p>
+                  <p className="text-xl font-bold">{formatCurrency((dex.total7d || 0) / 7)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">24h Change</p>
+                  <p className={cn(
+                    "text-xl font-bold",
+                    change1d >= 0 ? "text-success" : "text-destructive"
+                  )}>
+                    {formatPercentage(change1d)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Chains</p>
+                  <p className="text-xl font-bold text-amber-500">{dex.chains?.length || 0}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Enhanced Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="24h Volume"
@@ -181,27 +256,29 @@ export default function DexDetail() {
             icon={Activity}
           />
           <StatCard
-            title="7d Volume"
-            value={formatCurrency(dex.total7d || 0)}
+            title="7d Avg Daily"
+            value={formatCurrency((dex.total7d || 0) / 7)}
             icon={BarChart3}
           />
           <StatCard
-            title="24h Change"
-            value={formatPercentage(change1d)}
-            change={change1d}
-            icon={change1d >= 0 ? TrendingUp : TrendingDown}
+            title="Growth (7d)"
+            value={`${volumeAnalytics?.growth7d.toFixed(2) || 0}%`}
+            change={volumeAnalytics?.growth7d || 0}
+            icon={volumeAnalytics?.growth7d || 0 >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
-            title="7d Change"
-            value={formatPercentage(change7d)}
-            change={change7d}
-            icon={change7d >= 0 ? TrendingUp : TrendingDown}
+            title="DEX Rank"
+            value={`#${rank}`}
+            icon={Award}
           />
         </div>
 
-        {/* Volume Comparison Chart */}
-        <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Volume Overview</h3>
+        {/* Volume Overview Chart */}
+        <Card className="p-4 md:p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            Volume Timeline
+          </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={volumeData}>
@@ -216,7 +293,7 @@ export default function DexDetail() {
                   tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => formatCurrency(v)}
+                  tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`}
                 />
                 <Tooltip
                   contentStyle={{
@@ -230,14 +307,119 @@ export default function DexDetail() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </Card>
+
+        {/* Comparison and Analytics Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Volume Comparison */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              DEX Volume Ranking
+            </h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={comparisonData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    type="number"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`}
+                  />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={80}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), "24h Volume"]}
+                  />
+                  <Bar 
+                    dataKey="volume" 
+                    fill="hsl(var(--primary))" 
+                    radius={[0, 4, 4, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* Analytics Card */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              Volume Analytics
+            </h3>
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">7-Day Growth Rate</span>
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    (volumeAnalytics?.growth7d || 0) >= 0 ? "text-success" : "text-destructive"
+                  )}>
+                    {volumeAnalytics?.growth7d.toFixed(2) || 0}%
+                  </span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${Math.min(Math.max((volumeAnalytics?.growth7d || 0) + 50, 0), 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-4">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Flame className="h-4 w-4" />
+                    Percentile Rank
+                  </span>
+                  <span className="font-mono font-bold">{volumeAnalytics?.percentile.toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Avg Daily Volume
+                  </span>
+                  <span className="font-mono font-bold">{formatCurrency(volumeAnalytics?.avgDaily || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Volatility Index
+                  </span>
+                  <span className={cn(
+                    "font-mono font-bold",
+                    (volumeAnalytics?.volatility || 0) > 30 ? "text-destructive" : "text-success"
+                  )}>
+                    {volumeAnalytics?.volatility.toFixed(2) || 0}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Supported Chains */}
           {dex.chains && dex.chains.length > 0 && (
-            <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Supported Chains</h3>
-              <div className="h-[200px]">
+            <Card className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                Supported Chains ({dex.chains.length})
+              </h3>
+              <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -265,76 +447,115 @@ export default function DexDetail() {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {dex.chains.map((chain, index) => (
-                  <span
+                  <Badge
                     key={chain}
-                    className="px-3 py-1 rounded-full text-sm"
                     style={{
                       backgroundColor: `${COLORS[index % COLORS.length]}20`,
                       color: COLORS[index % COLORS.length],
                     }}
                   >
                     {chain}
-                  </span>
+                  </Badge>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
 
           {/* DEX Info */}
-          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">DEX Information</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">Name</span>
-                <span className="font-medium text-foreground">{dex.displayName || dex.name}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Volume Details
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-3 border-b border-border">
                 <span className="text-muted-foreground">24h Volume</span>
-                <span className="font-mono font-medium text-foreground">{formatCurrency(dex.total24h || 0)}</span>
+                <span className="font-mono font-bold text-primary">{formatCurrency(dex.total24h || 0)}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">7d Volume</span>
-                <span className="font-mono text-foreground">{formatCurrency(dex.total7d || 0)}</span>
+              <div className="flex justify-between items-center py-3 border-b border-border">
+                <span className="text-muted-foreground">7d Total</span>
+                <span className="font-mono font-bold">{formatCurrency(dex.total7d || 0)}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">30d Volume</span>
-                <span className="font-mono text-foreground">{formatCurrency(dex.total30d || 0)}</span>
+              <div className="flex justify-between items-center py-3 border-b border-border">
+                <span className="text-muted-foreground">30d Total</span>
+                <span className="font-mono font-bold">{formatCurrency(dex.total30d || 0)}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">All Time Volume</span>
-                <span className="font-mono text-foreground">{formatCurrency(dex.totalAllTime || 0)}</span>
+              <div className="flex justify-between items-center py-3 border-b border-border">
+                <span className="text-muted-foreground">All Time Total</span>
+                <span className="font-mono font-bold">{formatCurrency(dex.totalAllTime || 0)}</span>
               </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground">Chains</span>
-                <span className="font-medium text-foreground">{dex.chains?.length || 0}</span>
+              <div className="flex justify-between items-center py-3">
+                <span className="text-muted-foreground">Supported Chains</span>
+                <span className="font-bold">{dex.chains?.length || 0}</span>
               </div>
             </div>
 
             {/* External Links */}
             <div className="mt-6 pt-4 border-t border-border">
               <h4 className="text-sm font-medium text-muted-foreground mb-3">Explore</h4>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href={`https://defillama.com/dexs/${encodeURIComponent(dex.name.toLowerCase())}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="outline" size="sm">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    DefiLlama
-                  </Button>
-                </a>
-              </div>
+              <a
+                href={`https://defillama.com/dexs/${encodeURIComponent(dex.name.toLowerCase())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline" size="sm" className="w-full">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View on DefiLlama
+                </Button>
+              </a>
             </div>
-          </div>
+          </Card>
         </div>
+
+        {/* Related DEXs */}
+        {relatedDexs.length > 0 && (
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Other Top DEXs
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {relatedDexs.map((d) => (
+                <Link key={d.name} to={`/dexs/${(d.displayName || d.name).toLowerCase().replace(/\s+/g, '-')}`}>
+                  <div className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {d.displayName || d.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{d.chains?.length || 0} chains</p>
+                      </div>
+                      {d.logo && (
+                        <img
+                          src={d.logo}
+                          alt={d.name}
+                          className="h-8 w-8 rounded-full bg-muted"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <span className="text-sm text-muted-foreground">24h Volume</span>
+                      <span className="font-mono font-bold">{formatCurrency(d.total24h || 0)}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Additional DEX Details from API */}
         {dexDetails && (
           <div className="space-y-6">
             {/* Core Metadata */}
-            <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">DEX Information</h3>
+            <Card className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Code className="h-5 w-5 text-primary" />
+                DEX Information
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
@@ -366,9 +587,7 @@ export default function DexDetail() {
                       <strong className="text-sm text-muted-foreground block mb-2">Forked From</strong>
                       <div className="flex flex-wrap gap-2">
                         {dexDetails.forkedFrom.map((fork: string) => (
-                          <span key={fork} className="px-2 py-1 rounded bg-secondary/30 text-secondary-foreground text-xs">
-                            {fork}
-                          </span>
+                          <Badge key={fork} variant="secondary">{fork}</Badge>
                         ))}
                       </div>
                     </div>
@@ -389,26 +608,26 @@ export default function DexDetail() {
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Methodology */}
             {dexDetails.methodology && (
-              <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+              <Card className="p-4 md:p-6">
                 <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Code className="h-5 w-5" />
+                  <Globe className="h-5 w-5 text-primary" />
                   Methodology
                 </h3>
                 <p className="text-foreground text-sm leading-relaxed line-clamp-6">
                   {dexDetails.methodology}
                 </p>
-              </div>
+              </Card>
             )}
 
             {/* Contract Addresses */}
             {dexDetails.addresses && dexDetails.addresses.length > 0 && (
-              <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+              <Card className="p-4 md:p-6">
                 <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Lock className="h-5 w-5" />
+                  <Lock className="h-5 w-5 text-primary" />
                   Contract Addresses
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -435,7 +654,7 @@ export default function DexDetail() {
                     +{dexDetails.addresses.length - 12} more addresses
                   </p>
                 )}
-              </div>
+              </Card>
             )}
           </div>
         )}

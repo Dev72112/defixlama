@@ -94,7 +94,7 @@ export default function Dexs() {
           />
           <StatCard
             title="Avg. 24h Change"
-            value={`${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(2)}%`}
+            value={`${Number(avgChange || 0) >= 0 ? "+" : ""}${Number(avgChange || 0).toFixed(2)}%`}
             change={avgChange}
             icon={TrendingUp}
             loading={isLoading}

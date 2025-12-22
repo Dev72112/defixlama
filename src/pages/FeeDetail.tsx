@@ -2,10 +2,14 @@ import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
 import { useFeesData, useProtocolDetails } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { ArrowLeft, Wallet, TrendingUp, TrendingDown, DollarSign, BarChart3, ExternalLink } from "lucide-react";
+import { ArrowLeft, Wallet, TrendingUp, TrendingDown, DollarSign, BarChart3, ExternalLink, Award, Zap, Target, Flame, Crown, Users, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
 import { useMemo } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { cn } from "@/lib/utils";
 import {
   BarChart,
   Bar,
@@ -14,9 +18,23 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 export default function FeeDetail() {
+  return (
+    <ErrorBoundary>
+      <FeeDetailContent />
+    </ErrorBoundary>
+  );
+}
+
+function FeeDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: fees, isLoading } = useFeesData();
 
@@ -42,7 +60,10 @@ export default function FeeDetail() {
     });
   }, [fees, id]);
 
-  const protocolSlug = item?.slug || item?.name?.toLowerCase().replace(/\s+/g, "-") || null;
+  const protocolSlug = useMemo(() => {
+    return item?.slug || item?.name?.toLowerCase().replace(/\s+/g, "-") || null;
+  }, [item]);
+  
   const { data: protoDetails } = useProtocolDetails(protocolSlug);
 
   // Calculate rank
@@ -62,6 +83,51 @@ export default function FeeDetail() {
       { name: "All Time", fees: item.totalAllTime || 0 },
     ];
   }, [item]);
+
+  // Fee comparison with other protocols
+  const comparisonData = useMemo(() => {
+    if (!fees || !item) return [];
+    const sorted = [...fees]
+      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
+      .slice(0, 6);
+    
+    return sorted.map((f) => ({
+      name: (f.displayName || f.name || "").substring(0, 12),
+      fees: f.total24h || 0,
+      isCurrentItem: f.name === item.name,
+    }));
+  }, [fees, item]);
+
+  // Calculate analytics
+  const feeAnalytics = useMemo(() => {
+    if (!item) return null;
+    const current24h = item.total24h || 0;
+    const current7d = item.total7d || 0;
+    const avg7d = current7d / 7;
+    
+    // Safe division by zero checks
+    const growth7d = avg7d !== 0 ? ((current24h - avg7d) / avg7d) * 100 : 0;
+    const volatility = avg7d !== 0 ? ((current24h - avg7d) / avg7d) * 100 : 0;
+    
+    const ranking = fees?.findIndex((f) => f.name === item.name) || 0;
+    const percentile = fees && fees.length > 0 ? ((fees.length - ranking) / fees.length) * 100 : 0;
+    
+    return {
+      growth7d: isFinite(growth7d) ? growth7d : 0,
+      percentile: isFinite(percentile) ? percentile : 0,
+      avgDaily: isFinite(avg7d) ? avg7d : 0,
+      volatility: isFinite(volatility) ? volatility : 0,
+    };
+  }, [item, fees]);
+
+  // Related protocols by category
+  const relatedProtocols = useMemo(() => {
+    if (!fees || !item || !item.category) return [];
+    return fees
+      .filter((f) => f.category === item.category && f.name !== item.name)
+      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
+      .slice(0, 5);
+  }, [fees, item]);
 
   if (isLoading) {
     return (
@@ -100,8 +166,29 @@ export default function FeeDetail() {
     );
   }
 
-  const change1d = item.change_1d || 0;
-  const change7d = item.change_7d || 0;
+  // Defensive checks for item data
+  if (!item || !item.total24h) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <Wallet className="h-16 w-16 text-muted-foreground mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">Fee data not found</h2>
+          <p className="text-muted-foreground mb-4">
+            The protocol "{id}" fee data could not be found.
+          </p>
+          <Link to="/fees">
+            <Button variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Fees
+            </Button>
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  const change1d = typeof item.change_1d === "number" ? item.change_1d : 0;
+  const change7d = typeof item.change_7d === "number" ? item.change_7d : 0;
 
   return (
     <Layout>
@@ -114,47 +201,71 @@ export default function FeeDetail() {
           </Button>
         </Link>
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {item.logo ? (
-            <img
-              src={item.logo}
-              alt={item.displayName || item.name}
-              className="h-16 w-16 rounded-full bg-muted flex-shrink-0"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          ) : (
-            <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl flex-shrink-0">
-              {(item.displayName || item.name || "?").charAt(0)}
+        {/* Enhanced Header */}
+        <div className="rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+            <div>
+              {item.logo ? (
+                <img
+                  src={item.logo}
+                  alt={item.displayName || item.name}
+                  className="h-20 w-20 rounded-full bg-muted flex-shrink-0 shadow-lg"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-3xl flex-shrink-0 shadow-lg">
+                  {(item.displayName || item.name || "?").charAt(0)}
+                </div>
+              )}
             </div>
-          )}
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">{item.displayName || item.name}</h1>
+            
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-foreground">{item.displayName || item.name}</h1>
+                {rank > 0 && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Crown className="h-3 w-3" />
+                    Rank #{rank}
+                  </Badge>
+                )}
+              </div>
               {item.category && (
-                <span className="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs">
-                  {item.category}
-                </span>
+                <Badge className="mb-3">{item.category}</Badge>
               )}
-              {rank > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  Rank #{rank}
-                </span>
-              )}
+              <p className="text-muted-foreground mb-4">
+                Transparent fee revenue tracking and analytics
+              </p>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">24h Fees</p>
+                  <p className="text-xl font-bold text-primary">{formatCurrency(item.total24h || 0)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">7d Avg</p>
+                  <p className="text-xl font-bold">{formatCurrency((item.total7d || 0) / 7)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">24h Change</p>
+                  <p className={cn(
+                    "text-xl font-bold",
+                    change1d >= 0 ? "text-success" : "text-destructive"
+                  )}>
+                    {formatPercentage(change1d)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Percentile</p>
+                  <p className="text-xl font-bold text-amber-500">{feeAnalytics?.percentile.toFixed(1)}%</p>
+                </div>
+              </div>
             </div>
-            <p className="text-muted-foreground mt-1">
-              Protocol fee revenue tracker
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-primary">{formatCurrency(item.total24h || 0)}</p>
-            <p className="text-sm text-muted-foreground">24h Fees</p>
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Enhanced Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="24h Fees"
@@ -162,27 +273,29 @@ export default function FeeDetail() {
             icon={DollarSign}
           />
           <StatCard
-            title="7d Fees"
-            value={formatCurrency(item.total7d || 0)}
-            icon={Wallet}
+            title="7d Avg Daily"
+            value={formatCurrency((item.total7d || 0) / 7)}
+            icon={BarChart3}
           />
           <StatCard
-            title="24h Change"
-            value={formatPercentage(change1d)}
-            change={change1d}
-            icon={change1d >= 0 ? TrendingUp : TrendingDown}
+            title="Growth (7d)"
+            value={`${feeAnalytics?.growth7d.toFixed(2) || 0}%`}
+            change={feeAnalytics?.growth7d || 0}
+            icon={feeAnalytics?.growth7d || 0 >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
-            title="7d Change"
-            value={formatPercentage(change7d)}
-            change={change7d}
-            icon={change7d >= 0 ? TrendingUp : TrendingDown}
+            title="Fee Rank"
+            value={`#${rank}`}
+            icon={Award}
           />
         </div>
 
-        {/* Fee Comparison Chart */}
-        <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Fee Overview</h3>
+        {/* Fee Overview Chart */}
+        <Card className="p-4 md:p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            Fee Timeline
+          </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={feeData}>
@@ -197,7 +310,7 @@ export default function FeeDetail() {
                   tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => formatCurrency(v)}
+                  tickFormatter={(v) => `$${(v / 1e6).toFixed(1)}M`}
                 />
                 <Tooltip
                   contentStyle={{
@@ -211,68 +324,175 @@ export default function FeeDetail() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </Card>
 
+        {/* Comparison Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Fee Details */}
-          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Fee Details</h3>
+          {/* Fee Comparison Chart */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Fee Ranking
+            </h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={comparisonData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    type="number"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => `$${(v / 1e6).toFixed(1)}M`}
+                  />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={80}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), "24h Fees"]}
+                  />
+                  <Bar 
+                    dataKey="fees" 
+                    fill="hsl(var(--primary))" 
+                    radius={[0, 4, 4, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* Analytics Card */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              Fee Analytics
+            </h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">Protocol</span>
-                <span className="font-medium text-foreground">{item.displayName || item.name}</span>
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">7-Day Growth Rate</span>
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    (feeAnalytics?.growth7d || 0) >= 0 ? "text-success" : "text-destructive"
+                  )}>
+                    {feeAnalytics?.growth7d.toFixed(2) || 0}%
+                  </span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${Math.min(Math.max((feeAnalytics?.growth7d || 0) + 50, 0), 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">Category</span>
-                <span className="font-medium text-foreground">{item.category || "-"}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">24h Fees</span>
-                <span className="font-mono font-medium text-foreground">{formatCurrency(item.total24h || 0)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">7d Fees</span>
-                <span className="font-mono text-foreground">{formatCurrency(item.total7d || 0)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">30d Fees</span>
-                <span className="font-mono text-foreground">{formatCurrency(item.total30d || 0)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground">All Time</span>
-                <span className="font-mono text-foreground">{formatCurrency(item.totalAllTime || 0)}</span>
+
+              <div className="space-y-3 pt-4">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Flame className="h-4 w-4" />
+                    Percentile Rank
+                  </span>
+                  <span className="font-mono font-bold">{feeAnalytics?.percentile.toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Average Daily Fees
+                  </span>
+                  <span className="font-mono font-bold">{formatCurrency(feeAnalytics?.avgDaily || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Volatility Index
+                  </span>
+                  <span className={cn(
+                    "font-mono font-bold",
+                    (feeAnalytics?.volatility || 0) > 30 ? "text-destructive" : "text-success"
+                  )}>
+                    {feeAnalytics?.volatility.toFixed(2) || 0}%
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          </Card>
+        </div>
+
+        {/* Details Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Fee Details */}
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Fee Breakdown
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-3 border-b border-border">
+                <span className="text-muted-foreground">Category</span>
+                <Badge>{item.category || "Unknown"}</Badge>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-border">
+                <span className="text-muted-foreground">24h Fees</span>
+                <span className="font-mono font-bold text-primary">{formatCurrency(item.total24h || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-border">
+                <span className="text-muted-foreground">7d Total</span>
+                <span className="font-mono font-bold">{formatCurrency(item.total7d || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-border">
+                <span className="text-muted-foreground">30d Total</span>
+                <span className="font-mono font-bold">{formatCurrency(item.total30d || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center py-3">
+                <span className="text-muted-foreground">All Time Total</span>
+                <span className="font-mono font-bold">{formatCurrency(item.totalAllTime || 0)}</span>
+              </div>
+            </div>
+          </Card>
 
           {/* Protocol Details */}
-          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Protocol Information</h3>
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Protocol Details
+            </h3>
             {protoDetails ? (
               <div className="space-y-4">
                 {protoDetails.description && (
-                  <p className="text-sm text-muted-foreground">{protoDetails.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{protoDetails.description}</p>
                 )}
-                <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-muted-foreground">TVL</span>
-                  <span className="font-mono text-foreground">{formatCurrency(protoDetails.tvl || 0)}</span>
-                </div>
-                {protoDetails.chains && (
-                  <div className="py-2 border-b border-border">
-                    <span className="text-muted-foreground text-sm">Chains</span>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {protoDetails.chains.slice(0, 8).map((chain: string) => (
-                        <span
-                          key={chain}
-                          className="px-2 py-1 rounded-full bg-secondary text-secondary-foreground text-xs"
-                        >
-                          {chain}
-                        </span>
-                      ))}
+                <div className="pt-2 space-y-3">
+                  {protoDetails.tvl && (
+                    <div className="flex justify-between items-center py-2 border-b border-border">
+                      <span className="text-muted-foreground">Total Value Locked</span>
+                      <span className="font-mono font-bold">{formatCurrency(protoDetails.tvl)}</span>
                     </div>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2 pt-2">
+                  )}
+                  {protoDetails.chains && protoDetails.chains.length > 0 && (
+                    <div className="py-3 border-b border-border">
+                      <span className="text-muted-foreground text-sm block mb-2">Supported Chains</span>
+                      <div className="flex flex-wrap gap-2">
+                        {protoDetails.chains.slice(0, 6).map((chain: string) => (
+                          <Badge key={chain} variant="secondary">{chain}</Badge>
+                        ))}
+                        {protoDetails.chains.length > 6 && (
+                          <Badge variant="outline">+{protoDetails.chains.length - 6}</Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2 pt-4">
                   {protoDetails.url && (
                     <a href={protoDetails.url} target="_blank" rel="noopener noreferrer">
                       <Button variant="outline" size="sm">
@@ -293,27 +513,63 @@ export default function FeeDetail() {
                       </Button>
                     </a>
                   )}
+                  <a
+                    href={`https://defillama.com/fees/${encodeURIComponent(item.name?.toLowerCase() || "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" size="sm">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      DefiLlama
+                    </Button>
+                  </a>
                 </div>
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">No additional protocol information available.</p>
             )}
-
-            {/* DefiLlama Link */}
-            <div className="mt-6 pt-4 border-t border-border">
-              <a
-                href={`https://defillama.com/fees/${encodeURIComponent(item.name?.toLowerCase() || "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline" size="sm">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View on DefiLlama
-                </Button>
-              </a>
-            </div>
-          </div>
+          </Card>
         </div>
+
+        {/* Related Protocols */}
+        {relatedProtocols.length > 0 && (
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              Similar Protocols in {item.category}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {relatedProtocols.map((proto) => (
+                <Link key={proto.name} to={`/fees/${(proto.displayName || proto.name).toLowerCase().replace(/\s+/g, '-')}`}>
+                  <div className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {proto.displayName || proto.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{proto.category}</p>
+                      </div>
+                      {proto.logo && (
+                        <img
+                          src={proto.logo}
+                          alt={proto.name}
+                          className="h-8 w-8 rounded-full bg-muted"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <span className="text-sm text-muted-foreground">24h Fees</span>
+                      <span className="font-mono font-bold">{formatCurrency(proto.total24h || 0)}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </Layout>
   );

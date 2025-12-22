@@ -82,7 +82,7 @@ export default function Yields() {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Activity className="h-4 w-4 text-primary animate-pulse" />
-            Max APY: {maxApy.toFixed(2)}%
+            Max APY: {Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%
           </div>
         </div>
 
@@ -102,13 +102,13 @@ export default function Yields() {
           />
           <StatCard
             title="Average APY"
-            value={`${avgApy.toFixed(2)}%`}
+            value={`${Number(isNaN(avgApy) ? 0 : avgApy).toFixed(2)}%`}
             icon={TrendingUp}
             loading={isLoading}
           />
           <StatCard
             title="Max APY"
-            value={`${maxApy.toFixed(2)}%`}
+            value={`${Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%`}
             icon={Percent}
             loading={isLoading}
           />

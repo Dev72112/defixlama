@@ -5,8 +5,10 @@ import { useParams, Link } from "react-router-dom";
 import { useXLayerProtocols, useProtocolTVLHistory, useProtocolDetails } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
-import { ArrowLeft, TrendingUp, TrendingDown, Layers, ExternalLink, Globe, Shield, Twitter, Code, Lock, Zap } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Layers, ExternalLink, Globe, Shield, Twitter, Code, Lock, Zap, Award, Target, Flame, Crown, Users, BarChart3, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   AreaChart,
@@ -41,7 +43,10 @@ function ProtocolDetailContent() {
   // Find protocol
   const protocol = protocols?.find((p) => p.slug === slug || p.name.toLowerCase().replace(/\s+/g, "-") === slug);
 
-  // Format chart data (memoized + defensive)
+  // Safe data ensuring TVL exists before rendering composition
+  const hasTVLData = protocol?.tvl && protocol.tvl > 0;
+
+  // Format chart data (memoized + defensive) - ALWAYS CALL
   const chartData = useMemo(() => {
     try {
       const arr = Array.isArray(tvlHistory) ? tvlHistory : [];
@@ -52,10 +57,46 @@ function ProtocolDetailContent() {
         tvl: typeof item?.totalLiquidityUSD === "number" && !isNaN(item.totalLiquidityUSD) ? item.totalLiquidityUSD : 0,
       }));
     } catch (e) {
+      console.error("Error formatting chart data:", e);
       return [];
     }
   }, [tvlHistory]);
 
+  // TVL Analytics - ALWAYS CALL
+  const tvlAnalytics = useMemo(() => {
+    if (!chartData || chartData.length < 2) return null;
+    
+    const current = chartData[chartData.length - 1]?.tvl || 0;
+    const previous7d = chartData.length >= 7 ? chartData[chartData.length - 7]?.tvl || 0 : current;
+    const previous30d = chartData.length >= 30 ? chartData[chartData.length - 30]?.tvl || 0 : current;
+    const lowest = Math.min(...chartData.map(d => d.tvl));
+    const highest = Math.max(...chartData.map(d => d.tvl));
+    
+    const change7d = previous7d !== 0 ? ((current - previous7d) / previous7d) * 100 : 0;
+    const change30d = previous30d !== 0 ? ((current - previous30d) / previous30d) * 100 : 0;
+    const volatility = lowest !== 0 ? ((highest - lowest) / lowest) * 100 : 0;
+    
+    return {
+      current,
+      change7d: isFinite(change7d) ? change7d : 0,
+      change30d: isFinite(change30d) ? change30d : 0,
+      lowest,
+      highest,
+      volatility: isFinite(volatility) ? volatility : 0,
+      avgTVL: chartData.length > 0 ? chartData.reduce((a, d) => a + d.tvl, 0) / chartData.length : 0,
+    };
+  }, [chartData]);
+
+  // Related protocols - ALWAYS CALL
+  const relatedProtocols = useMemo(() => {
+    if (!protocols || !protocol) return [];
+    return protocols
+      .filter((p) => p.category === protocol.category && p.slug !== protocol.slug)
+      .sort((a, b) => (b.tvl || 0) - (a.tvl || 0))
+      .slice(0, 5);
+  }, [protocols, protocol]);
+
+  // Defensive: guard against null protocol with better error handling
   if (protocolsLoading) {
     return (
       <Layout>
@@ -164,15 +205,15 @@ function ProtocolDetailContent() {
           />
           <StatCard
             title="24h Change"
-            value={formatPercentage(protocol.change_1d)}
-            change={protocol.change_1d}
-            icon={protocol.change_1d && protocol.change_1d >= 0 ? TrendingUp : TrendingDown}
+            value={formatPercentage(typeof protocol.change_1d === "number" ? protocol.change_1d : 0)}
+            change={typeof protocol.change_1d === "number" ? protocol.change_1d : 0}
+            icon={typeof protocol.change_1d === "number" && protocol.change_1d >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
             title="7d Change"
-            value={formatPercentage(protocol.change_7d)}
-            change={protocol.change_7d}
-            icon={protocol.change_7d && protocol.change_7d >= 0 ? TrendingUp : TrendingDown}
+            value={formatPercentage(typeof protocol.change_7d === "number" ? protocol.change_7d : 0)}
+            change={typeof protocol.change_7d === "number" ? protocol.change_7d : 0}
+            icon={typeof protocol.change_7d === "number" && protocol.change_7d >= 0 ? TrendingUp : TrendingDown}
           />
           {protocol.mcap ? (
             <StatCard
@@ -183,15 +224,15 @@ function ProtocolDetailContent() {
           ) : (
             <StatCard
               title="1h Change"
-              value={formatPercentage(protocol.change_1h)}
-              change={protocol.change_1h}
-              icon={protocol.change_1h && protocol.change_1h >= 0 ? TrendingUp : TrendingDown}
+              value={formatPercentage(typeof protocol.change_1h === "number" ? protocol.change_1h : 0)}
+              change={typeof protocol.change_1h === "number" ? protocol.change_1h : 0}
+              icon={typeof protocol.change_1h === "number" && protocol.change_1h >= 0 ? TrendingUp : TrendingDown}
             />
           )}
         </div>
 
         {/* TVL Composition Breakdown */}
-        {protocol.tvl && protocol.tvl > 0 && (protocol.pool2 || protocol.staking) && (
+        {hasTVLData && (protocol.pool2 || protocol.staking) && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
             <h3 className="text-lg font-semibold text-foreground mb-6">TVL Composition</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -506,63 +547,187 @@ function ProtocolDetailContent() {
         )}
 
         {/* Additional Info */}
+        {/* TVL Analytics Section */}
+        {tvlAnalytics && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Analytics Card */}
+            <Card className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                TVL Analytics
+              </h3>
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">7-Day Growth</span>
+                    <span className={cn(
+                      "text-2xl font-bold",
+                      tvlAnalytics.change7d >= 0 ? "text-success" : "text-destructive"
+                    )}>
+                      {tvlAnalytics.change7d.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${Math.min(Math.max((tvlAnalytics.change7d || 0) + 50, 0), 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-4">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <Flame className="h-4 w-4" />
+                      30-Day Growth
+                    </span>
+                    <span className={cn(
+                      "font-mono font-bold",
+                      tvlAnalytics.change30d >= 0 ? "text-success" : "text-destructive"
+                    )}>
+                      {tvlAnalytics.change30d.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Average TVL
+                    </span>
+                    <span className="font-mono font-bold">{formatCurrency(tvlAnalytics.avgTVL)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <Crown className="h-4 w-4" />
+                      Peak TVL
+                    </span>
+                    <span className="font-mono font-bold">{formatCurrency(tvlAnalytics.highest)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <Zap className="h-4 w-4" />
+                      Volatility
+                    </span>
+                    <span className={cn(
+                      "font-mono font-bold",
+                      tvlAnalytics.volatility > 30 ? "text-destructive" : "text-success"
+                    )}>
+                      {tvlAnalytics.volatility.toFixed(2)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* TVL Range Card */}
+            <Card className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                TVL Range
+              </h3>
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm text-muted-foreground">Current TVL</span>
+                    <span className="text-2xl font-bold text-primary">{formatCurrency(tvlAnalytics.current)}</span>
+                  </div>
+                  <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary"
+                      style={{
+                        width: `${tvlAnalytics.highest !== 0 ? (tvlAnalytics.current / tvlAnalytics.highest) * 100 : 0}%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Lowest</p>
+                    <p className="font-mono font-bold">{formatCurrency(tvlAnalytics.lowest)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Highest</p>
+                    <p className="font-mono font-bold">{formatCurrency(tvlAnalytics.highest)}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-xs text-muted-foreground mb-2">TVL Stability Score</p>
+                  <div className="flex items-center justify-between">
+                    <div className="h-2 flex-1 bg-secondary rounded-full overflow-hidden mr-3">
+                      <div
+                        className={cn(
+                          "h-full",
+                          tvlAnalytics.volatility < 20 ? "bg-success" : tvlAnalytics.volatility < 40 ? "bg-amber-500" : "bg-destructive"
+                        )}
+                        style={{
+                          width: `${100 - Math.min(tvlAnalytics.volatility, 100)}%`
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm font-mono font-bold">{(100 - Math.min(tvlAnalytics.volatility, 100)).toFixed(0)}%</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Chains */}
           {protocol.chains && protocol.chains.length > 0 && (
-            <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <Card className="p-4 md:p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Zap className="h-5 w-5" />
+                <Globe className="h-5 w-5 text-primary" />
                 Deployed Chains
               </h3>
               <div className="flex flex-wrap gap-2">
                 {protocol.chains.map((chain) => (
-                  <span
+                  <Badge
                     key={chain}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-                      chain.toLowerCase().includes("xlayer")
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary/50 text-secondary-foreground hover:bg-secondary"
-                    )}
+                    variant={chain.toLowerCase().includes("xlayer") ? "default" : "secondary"}
                   >
                     {chain}
-                  </span>
+                  </Badge>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Oracles */}
           {protocol.oracles && protocol.oracles.length > 0 && (
-            <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Oracles Used</h3>
+            <Card className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Oracles Used
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {protocol.oracles.map((oracle) => (
-                  <span
-                    key={oracle}
-                    className="px-3 py-1.5 rounded-full bg-secondary/50 text-secondary-foreground text-sm font-medium hover:bg-secondary transition-colors"
-                  >
+                  <Badge key={oracle} variant="secondary">
                     {oracle}
-                  </span>
+                  </Badge>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Additional Protocol Stats */}
-          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Additional Stats</h3>
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Protocol Details
+            </h3>
             <div className="space-y-3">
               {protocol.category && (
                 <div className="flex justify-between items-center pb-3 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">Category</span>
-                  <span className="font-medium text-foreground">{protocol.category}</span>
+                  <Badge>{protocol.category}</Badge>
                 </div>
               )}
               {protocol.symbol && (
                 <div className="flex justify-between items-center pb-3 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">Symbol</span>
-                  <span className="font-mono font-medium text-foreground">${protocol.symbol}</span>
+                  <span className="font-mono font-bold">${protocol.symbol}</span>
                 </div>
               )}
               {protocol.chain && (
@@ -572,8 +737,46 @@ function ProtocolDetailContent() {
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
+
+        {/* Related Protocols */}
+        {relatedProtocols.length > 0 && (
+          <Card className="p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              Similar Protocols in {protocol.category || "DeFi"}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {relatedProtocols.map((proto) => (
+                <Link key={proto.slug} to={`/protocols/${proto.slug}`}>
+                  <div className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {proto.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{proto.category}</p>
+                      </div>
+                      {proto.logo && (
+                        <img
+                          src={proto.logo}
+                          alt={proto.name}
+                          className="h-8 w-8 rounded-full bg-muted"
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <span className="text-sm text-muted-foreground">TVL</span>
+                      <span className="font-mono font-bold">{formatCurrency(proto.tvl || 0)}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </Layout>
   );
