@@ -80,6 +80,46 @@ export interface DexVolume {
   chains?: string[];
 }
 
+// Helpers to normalize dex payloads from various endpoints
+function firstNumber(obj: any, keys: string[]): number | undefined {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (typeof v === "number" && !isNaN(v)) return v;
+    if (typeof v === "string" && !isNaN(Number(v))) return Number(v);
+  }
+  return undefined;
+}
+
+function normalizeDexVolume(raw: any): DexVolume {
+  if (!raw) return { name: "unknown" };
+  const name = raw.displayName || raw.name || raw.id || "unknown";
+  const displayName = raw.displayName || raw.name;
+  const chains = raw.chains || raw.chain ? (Array.isArray(raw.chains) ? raw.chains : [raw.chain]) : [];
+
+  const total24h = firstNumber(raw, ["total24h", "total_24h", "total24hUsd", "total24hVolume", "totalVolume24h", "totalVolume", "tvl"]);
+  const total7d = firstNumber(raw, ["total7d", "total_7d", "total7dUsd", "total7dVolume", "totalVolume7d"]);
+  const total30d = firstNumber(raw, ["total30d", "total_30d", "total30dUsd", "total30dVolume"]);
+  const totalAllTime = firstNumber(raw, ["totalAllTime", "total_all_time", "totalAllTimeUsd", "totalVolumeAllTime", "totalVolume"]);
+
+  const change_1d = firstNumber(raw, ["change_1d", "change1d", "change_24h"]);
+  const change_7d = firstNumber(raw, ["change_7d", "change7d"]);
+
+  const logo = raw.logo || raw.icon || raw.image;
+
+  return {
+    name,
+    displayName,
+    total24h,
+    total7d,
+    total30d,
+    totalAllTime,
+    change_1d,
+    change_7d,
+    logo,
+    chains,
+  };
+}
+
 export interface YieldPool {
   chain: string;
   project: string;
@@ -187,7 +227,8 @@ export async function fetchDexVolumes(): Promise<DexVolume[]> {
     if (!response.ok) throw new Error("Failed to fetch DEX volumes");
     const data = await response.json();
     const protocols = data?.protocols;
-    return Array.isArray(protocols) ? protocols : [];
+    if (!Array.isArray(protocols)) return [];
+    return protocols.map(normalizeDexVolume);
   } catch (error) {
     console.error("Error fetching DEX volumes:", error);
     return [];
@@ -197,19 +238,76 @@ export async function fetchDexVolumes(): Promise<DexVolume[]> {
 // Fetch DEX volumes for XLayer
 export async function fetchXLayerDexVolumes(): Promise<DexVolume[]> {
   try {
-    const response = await fetch("https://api.llama.fi/overview/dexs/xlayer?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyVolume");
-    if (!response.ok) {
-      // Fallback: filter from all dexes
-      const allDexes = await fetchDexVolumes();
-      return Array.isArray(allDexes) ? allDexes.filter((d) =>
-        d.chains?.some(
-          (c) => c.toLowerCase() === "xlayer" || c.toLowerCase() === "x layer"
-        )
-      ) : [];
+    // Attempt DEX-specific endpoint first
+    let dexes: DexVolume[] = [];
+    try {
+      const response = await fetch("https://api.llama.fi/overview/dexs/xlayer?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyVolume");
+      if (response.ok) {
+        const data = await response.json();
+        const protocols = data?.protocols;
+        if (Array.isArray(protocols)) {
+          dexes = protocols.map(normalizeDexVolume);
+        }
+      }
+    } catch (e) {
+      console.warn("DefiLlama XLayer DEX endpoint failed, falling back to aggregated DEX list");
     }
-    const data = await response.json();
-    const protocols = data?.protocols;
-    return Array.isArray(protocols) ? protocols : [];
+
+    // Fallback: filter from the general DEX list
+    if (dexes.length === 0) {
+      const allDexes = await fetchDexVolumes();
+      dexes = Array.isArray(allDexes)
+        ? allDexes.filter((d) => d.chains?.some((c) => c.toLowerCase().includes("xlayer")))
+        : [];
+    }
+
+    // Enrich with any protocols that look like DEXs but are missing from the DEX endpoint
+    try {
+      const protocols = await fetchProtocols();
+      const existingNames = new Set(dexes.map((d) => (d.displayName || d.name || "").toLowerCase()));
+
+      const dexCandidates = protocols.filter((p) => {
+        const name = (p.name || "").toLowerCase();
+        const isDexLike = p.module === "dex" || name.includes("dex") || name.includes("swap");
+        const chains = p.chains || (p.chain ? [p.chain] : []);
+        const onXLayer = Array.isArray(chains) && chains.some((c) => String(c).toLowerCase().includes("xlayer"));
+        return isDexLike && onXLayer;
+      });
+
+      for (const p of dexCandidates) {
+        const key = (p.name || "").toLowerCase();
+        if (existingNames.has(key)) continue;
+        existingNames.add(key);
+        dexes.push(normalizeDexVolume(p));
+      }
+
+      // Also include DEX-like protocols discovered by fetchXLayerProtocols (some may not have chains populated)
+      try {
+        const xlayerProtocols = await fetchXLayerProtocols();
+        for (const p of xlayerProtocols) {
+          const nameLower = (p.name || "").toLowerCase();
+          const isDexLike = p.module === "dex" || nameLower.includes("dex") || nameLower.includes("swap") || nameLower.includes("amm");
+          if (!isDexLike) continue;
+          const key = (p.name || "").toLowerCase();
+          if (existingNames.has(key)) continue;
+          existingNames.add(key);
+          dexes.push(normalizeDexVolume(p));
+        }
+      } catch (e) {
+        // non-fatal
+      }
+    } catch (e) {
+      console.warn("Failed to enrich DEX data from protocols", e);
+    }
+
+    // final dedupe by display/name
+    const seen = new Set<string>();
+    return dexes.filter((d) => {
+      const key = (d.displayName || d.name || "").toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   } catch (error) {
     console.error("Error fetching XLayer DEX volumes:", error);
     return [];
@@ -278,7 +376,13 @@ export async function fetchProtocolTVLHistory(slug: string): Promise<{ date: num
     const response = await fetch(`${DEFILLAMA_BASE_URL}/protocol/${encodeURIComponent(slug)}`);
     if (!response.ok) throw new Error("Failed to fetch protocol TVL");
     const data = await response.json();
-    return data.tvl || [];
+    const tvlArray = data.tvl || [];
+    
+    // Limit to 365 days max to prevent memory issues with huge datasets
+    if (Array.isArray(tvlArray)) {
+      return tvlArray.slice(-365);
+    }
+    return [];
   } catch (error) {
     console.error("Error fetching protocol TVL:", error);
     return [];
@@ -291,6 +395,12 @@ export async function fetchProtocolDetails(slug: string): Promise<any | null> {
     const response = await fetch(`${DEFILLAMA_BASE_URL}/protocol/${encodeURIComponent(slug)}`);
     if (!response.ok) throw new Error("Failed to fetch protocol details");
     const data = await response.json();
+    
+    // Limit addresses to 100 max to prevent rendering crashes
+    if (data?.addresses && Array.isArray(data.addresses)) {
+      data.addresses = data.addresses.slice(0, 100);
+    }
+    
     return data || null;
   } catch (error) {
     console.error("Error fetching protocol details:", error);
@@ -309,6 +419,22 @@ export async function fetchFeesData(): Promise<any[]> {
   } catch (error) {
     console.error("Error fetching fees data:", error);
     return [];
+  }
+}
+
+// Fetch full DEX details from DefiLlama (used to enrich DEX detail pages)
+export async function fetchDexDetails(name: string): Promise<any | null> {
+  try {
+    // Try DEX-specific endpoint first
+    const response = await fetch(`${DEFILLAMA_BASE_URL}/dexs/${encodeURIComponent(name)}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching DEX details:", error);
+    return null;
   }
 }
 

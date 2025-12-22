@@ -5,6 +5,21 @@ import { formatCurrency, ChainData } from "@/lib/api/defillama";
 import { Layers, TrendingUp, Search, PieChart, Globe, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -12,15 +27,22 @@ export default function Chains() {
   const { data: chains, isLoading } = useChainsTVL();
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
   // Filter and sort chains
   const filteredChains = useMemo(() => {
     if (!chains) return [];
-    
+
     return chains
       .filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      .sort((a, b) => (b.tvl || 0) - (a.tvl || 0))
-      .slice(0, 50);
+      .sort((a, b) => (b.tvl || 0) - (a.tvl || 0));
   }, [chains, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredChains.length / pageSize));
+  if (page > totalPages) setPage(1);
+  const paginatedChains = filteredChains.slice((page - 1) * pageSize, page * pageSize);
 
   // Find XLayer
   const xlayer = chains?.find(
@@ -153,7 +175,7 @@ export default function Chains() {
                 </tr>
               </thead>
               <tbody>
-                {filteredChains.map((chain, index) => {
+                {paginatedChains.map((chain, index) => {
                   const isXLayer = chain.name.toLowerCase() === "xlayer" || chain.name.toLowerCase() === "x layer";
                   const share = totalTVL > 0 ? (chain.tvl / totalTVL) * 100 : 0;
                   
@@ -170,7 +192,7 @@ export default function Chains() {
                       onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/chains/${chain.name.toLowerCase().replace(/\s+/g, '-')}`); }}
                     >
                       <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
-                        {index + 1}
+                        { (page - 1) * pageSize + index + 1 }
                       </td>
                       <td>
                         <div className="flex items-center gap-3">
@@ -218,11 +240,52 @@ export default function Chains() {
           </div>
         )}
 
-        {/* Results count */}
+        {/* Pagination controls */}
         {!isLoading && (
-          <p className="text-sm text-muted-foreground">
-            Showing {filteredChains.length} of {chainCount} chains
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {Math.min((page - 1) * pageSize + 1, filteredChains.length)}-
+              {Math.min(page * pageSize, filteredChains.length)} of {filteredChains.length} chains
+            </p>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Per page</span>
+                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                  <SelectTrigger className="w-[90px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }).slice(0, 7).map((_, i) => {
+                    const p = i + 1;
+                    return (
+                      <PaginationItem key={p}>
+                        <PaginationLink isActive={p === page} onClick={() => setPage(p)}>
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
         )}
       </div>
     </Layout>

@@ -12,6 +12,7 @@ import {
   fetchFeesData,
   fetchProtocolTVLHistory,
   fetchProtocolDetails,
+  fetchDexDetails,
   Protocol,
   ChainTVL,
   ChainData,
@@ -162,8 +163,8 @@ export function useProtocolTVLHistory(slug: string | null) {
       return Array.isArray(data) ? data : [];
     },
     enabled: !!slug,
-    staleTime: STANDARD_REFRESH,
-    refetchInterval: STANDARD_REFRESH,
+    staleTime: 10 * 60 * 1000, // 10 min stale
+    refetchInterval: false, // Disable auto-refetch on detail pages to prevent crashes
   });
 }
 
@@ -177,8 +178,23 @@ export function useProtocolDetails(slug: string | null) {
       return data || null;
     },
     enabled: !!slug,
-    staleTime: STANDARD_REFRESH,
-    refetchInterval: STANDARD_REFRESH,
+    staleTime: 10 * 60 * 1000, // 10 min stale
+    refetchInterval: false, // Disable auto-refetch on detail pages to prevent crashes
+  });
+}
+
+// Hook to fetch full DEX details
+export function useDexDetails(name: string | null) {
+  return useQuery({
+    queryKey: ["dex-details", name],
+    queryFn: async () => {
+      if (!name) return null;
+      const data = await fetchDexDetails(name);
+      return data || null;
+    },
+    enabled: !!name,
+    staleTime: 10 * 60 * 1000, // 10 min stale
+    refetchInterval: false, // Disable auto-refetch on detail pages to prevent crashes
   });
 }
 

@@ -92,6 +92,8 @@
   body {
     @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   /* Prevent horizontal overflow on mobile */

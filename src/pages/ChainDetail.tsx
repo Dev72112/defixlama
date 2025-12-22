@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useChainsTVL, useChainTVLHistory } from "@/hooks/useDefiData";
+import { useChainsTVL, useChainTVLHistory, useAllProtocols, useAllDexVolumes } from "@/hooks/useDefiData";
 import {
   AreaChart,
   Area,
@@ -22,6 +22,8 @@ import { useMemo } from "react";
 export default function ChainDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: chains, isLoading } = useChainsTVL();
+  const { data: protocols } = useAllProtocols();
+  const { data: allDexs } = useAllDexVolumes();
 
   // Find chain FIRST before using it
   const chain = useMemo(() => {
@@ -73,6 +75,65 @@ export default function ChainDetail() {
       isSelected: c.name === chain.name,
     }));
   }, [chains, chain]);
+
+  // Top protocols and DEXs on this chain
+  const topProtocols = useMemo(() => {
+    if (!protocols || !chain) return [];
+    const chainName = chain.name;
+    const list = protocols
+      .map((p: any) => ({
+        ...p,
+        chainTvl: p.chainTvls?.[chainName] || 0,
+      }))
+      .filter((p: any) => (p.chains || (p.chain ? [p.chain] : [])).some((c: string) => String(c).toLowerCase().includes(chainName.toLowerCase())) || (p.chainTvls && p.chainTvls[chainName] > 0))
+      .sort((a: any, b: any) => (b.chainTvl || 0) - (a.chainTvl || 0))
+      .slice(0, 12);
+    return list;
+  }, [protocols, chain]);
+
+  const topDexs = useMemo(() => {
+    if (!chain) return [];
+    const chainName = (chain.name || "").toLowerCase();
+
+    const dexFromAll = Array.isArray(allDexs)
+      ? allDexs.filter((d: any) => (d.chains || []).some((c: string) => String(c).toLowerCase().includes(chainName)))
+      : [];
+
+    const dexFromProtocols = Array.isArray(protocols)
+      ? protocols
+          .filter((p: any) => {
+            const name = (p.name || "").toLowerCase();
+            const isDexLike = p.module === "dex" || name.includes("dex") || name.includes("swap") || name.includes("amm");
+            const chains = p.chains || (p.chain ? [p.chain] : []);
+            const onChain = Array.isArray(chains) && chains.some((c: string) => String(c).toLowerCase().includes(chainName));
+            return isDexLike && onChain;
+          })
+          .map((p: any) => ({
+            name: p.name,
+            displayName: p.name,
+            total24h: p.tvl || 0,
+            total7d: 0,
+            total30d: 0,
+            totalAllTime: 0,
+            change_1d: p.change_1d || 0,
+            change_7d: p.change_7d || 0,
+            logo: p.logo,
+            chains: p.chains || (p.chain ? [p.chain] : []),
+          }))
+      : [];
+
+    // Merge and dedupe by name/displayName, preferring higher total24h
+    const merged = [...dexFromAll, ...dexFromProtocols];
+    const map = new Map<string, any>();
+    for (const d of merged) {
+      const key = (d.displayName || d.name || "").toLowerCase();
+      const existing = map.get(key);
+      if (!existing) map.set(key, d);
+      else if ((d.total24h || 0) > (existing.total24h || 0)) map.set(key, d);
+    }
+
+    return Array.from(map.values()).sort((a: any, b: any) => (b.total24h || 0) - (a.total24h || 0)).slice(0, 12);
+  }, [allDexs, chain]);
 
   const COLORS = [
     "hsl(var(--primary))",
@@ -222,7 +283,7 @@ export default function ChainDetail() {
           </div>
         </div>
 
-        {/* Market Share Comparison */}
+          {/* Market Share Comparison */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Market Share (Top 10)</h3>
@@ -341,6 +402,65 @@ export default function ChainDetail() {
                 ) : null}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Top Protocols & DEXs on Chain */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Top Protocols on {chain.name}</h3>
+            {topProtocols.length === 0 ? (
+              <div className="text-muted-foreground">No protocols found for this chain.</div>
+            ) : (
+              <div className="space-y-2">
+                {topProtocols.map((p: any, idx: number) => (
+                  <div key={p.name || idx} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
+                        {p.logo ? (
+                          <img src={p.logo} alt={p.name} className="h-8 w-8 rounded-full" loading="lazy" />
+                        ) : (
+                          <span>{(p.name || "?").charAt(0)}</span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-medium text-foreground truncate max-w-[200px]">{p.name}</div>
+                        <div className="text-xs text-muted-foreground">{p.module || "Protocol"}</div>
+                      </div>
+                    </div>
+                    <div className="text-right font-mono text-sm text-foreground">{formatCurrency(p.chainTvl)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Top DEXs on {chain.name}</h3>
+            {topDexs.length === 0 ? (
+              <div className="text-muted-foreground">No DEXs found for this chain.</div>
+            ) : (
+              <div className="space-y-2">
+                {topDexs.map((d: any, idx: number) => (
+                  <div key={d.name || idx} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
+                        {d.logo ? (
+                          <img src={d.logo} alt={d.displayName || d.name} className="h-8 w-8 rounded-full" loading="lazy" />
+                        ) : (
+                          <span>{(d.displayName || d.name || "?").charAt(0)}</span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-medium text-foreground truncate max-w-[200px]">{d.displayName || d.name}</div>
+                        <div className="text-xs text-muted-foreground">{(d.chains || []).slice(0,3).join(", ")}</div>
+                      </div>
+                    </div>
+                    <div className="text-right font-mono text-sm text-foreground">{formatCurrency(d.total24h)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

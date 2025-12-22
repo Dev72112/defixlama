@@ -132,15 +132,7 @@ export function Sidebar() {
           <p className="px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
             Resources
           </p>
-          <a
-            href="https://www.okx.com/xlayer/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
-          >
-            <ExternalLink className="h-4 w-4" />
-            <span>XLayer Docs</span>
-          </a>
+          
           <a
             href="https://defillama.com/docs/api"
             target="_blank"
@@ -150,15 +142,20 @@ export function Sidebar() {
             <ExternalLink className="h-4 w-4" />
             <span>DefiLlama API</span>
           </a>
-          <a
-            href="https://defillama.com/chain/xlayer"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/docs"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
           >
             <ExternalLink className="h-4 w-4" />
-            <span>XLayer on DefiLlama</span>
-          </a>
+            <span>Docs</span>
+          </Link>
+          <Link
+            to="/donations"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
+          >
+            <Wallet className="h-4 w-4" />
+            <span>Donations</span>
+          </Link>
         </div>
       </nav>
 

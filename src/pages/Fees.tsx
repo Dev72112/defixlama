@@ -5,6 +5,21 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { BarChart3, TrendingUp, Search, DollarSign, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -13,14 +28,21 @@ export default function Fees() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  // Filter and sort fee entries
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(200);
+
+  // Filter and sort fee entries (no hard slice here)
   const filteredFees = useMemo(() => {
     if (!fees) return [];
     return fees
       .filter((f) => (f.displayName || f.name || "").toLowerCase().includes(searchQuery.toLowerCase()))
-      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
-      .slice(0, 200);
+      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0));
   }, [fees, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredFees.length / pageSize));
+  if (page > totalPages) setPage(1);
+  const paginatedFees = filteredFees.slice((page - 1) * pageSize, page * pageSize);
 
   const total24h = fees?.reduce((acc, f) => acc + (f.total24h || 0), 0) || 0;
   const protocolsCount = fees?.length || 0;
@@ -121,7 +143,7 @@ export default function Fees() {
                 </tr>
               </thead>
               <tbody>
-                {filteredFees.map((fee, index) => {
+                {paginatedFees.map((fee, index) => {
                   const slug = (fee.displayName || fee.name || index).toString().toLowerCase().replace(/\s+/g, '-');
                   return (
                     <tr
@@ -184,11 +206,53 @@ export default function Fees() {
           </div>
         )}
 
-        {/* Results count */}
+        {/* Pagination controls */}
         {!isLoading && (
-          <p className="text-sm text-muted-foreground">
-            Showing {filteredFees.length} of {protocolsCount} protocols
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {Math.min((page - 1) * pageSize + 1, filteredFees.length)}-
+              {Math.min(page * pageSize, filteredFees.length)} of {filteredFees.length} results
+            </p>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Per page</span>
+                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                  <SelectTrigger className="w-[90px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="200">200</SelectItem>
+                    <SelectItem value="500">500</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }).slice(0, 7).map((_, i) => {
+                    const p = i + 1;
+                    return (
+                      <PaginationItem key={p}>
+                        <PaginationLink isActive={p === page} onClick={() => setPage(p)}>
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
         )}
       </div>
     </Layout>

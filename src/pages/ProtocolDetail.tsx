@@ -1,9 +1,11 @@
 import { Layout } from "@/components/layout/Layout";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import React, { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useXLayerProtocols, useProtocolTVLHistory, useProtocolDetails } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
-import { ArrowLeft, TrendingUp, TrendingDown, Layers, ExternalLink, Globe, Shield, Twitter } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Layers, ExternalLink, Globe, Shield, Twitter, Code, Lock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -14,9 +16,23 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 export default function ProtocolDetail() {
+  return (
+    <ErrorBoundary>
+      <ProtocolDetailContent />
+    </ErrorBoundary>
+  );
+}
+
+function ProtocolDetailContent() {
   const { slug } = useParams<{ slug: string }>();
   const { data: protocols, isLoading: protocolsLoading } = useXLayerProtocols();
   const { data: tvlHistory, isLoading: historyLoading } = useProtocolTVLHistory(slug || null);
@@ -25,11 +41,20 @@ export default function ProtocolDetail() {
   // Find protocol
   const protocol = protocols?.find((p) => p.slug === slug || p.name.toLowerCase().replace(/\s+/g, "-") === slug);
 
-  // Format chart data
-  const chartData = (tvlHistory || []).slice(-90).map((item: any) => ({
-    date: new Date(item.date * 1000).toLocaleDateString(),
-    tvl: item.totalLiquidityUSD || 0,
-  }));
+  // Format chart data (memoized + defensive)
+  const chartData = useMemo(() => {
+    try {
+      const arr = Array.isArray(tvlHistory) ? tvlHistory : [];
+      // guard against extremely large payloads
+      const safe = arr.slice(-90);
+      return safe.map((item: any) => ({
+        date: isNaN(Number(item?.date)) ? "" : new Date(item.date * 1000).toLocaleDateString(),
+        tvl: typeof item?.totalLiquidityUSD === "number" && !isNaN(item.totalLiquidityUSD) ? item.totalLiquidityUSD : 0,
+      }));
+    } catch (e) {
+      return [];
+    }
+  }, [tvlHistory]);
 
   if (protocolsLoading) {
     return (
@@ -81,6 +106,7 @@ export default function ProtocolDetail() {
             <img
               src={protocol.logo}
               alt={protocol.name}
+              loading="lazy"
               className="h-16 w-16 rounded-full bg-muted flex-shrink-0"
             />
           ) : (
@@ -148,12 +174,100 @@ export default function ProtocolDetail() {
             change={protocol.change_7d}
             icon={protocol.change_7d && protocol.change_7d >= 0 ? TrendingUp : TrendingDown}
           />
-          <StatCard
-            title="Market Cap"
-            value={formatCurrency(protocol.mcap || 0)}
-            icon={TrendingUp}
-          />
+          {protocol.mcap ? (
+            <StatCard
+              title="Market Cap"
+              value={formatCurrency(protocol.mcap)}
+              icon={TrendingUp}
+            />
+          ) : (
+            <StatCard
+              title="1h Change"
+              value={formatPercentage(protocol.change_1h)}
+              change={protocol.change_1h}
+              icon={protocol.change_1h && protocol.change_1h >= 0 ? TrendingUp : TrendingDown}
+            />
+          )}
         </div>
+
+        {/* TVL Composition Breakdown */}
+        {protocol.tvl && protocol.tvl > 0 && (protocol.pool2 || protocol.staking) && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-6">TVL Composition</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Composition Cards */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Core TVL</p>
+                    <p className="font-mono font-medium text-foreground">
+                      {formatCurrency((protocol.tvl - (protocol.pool2 || 0) - (protocol.staking || 0)) || 0)}
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {(((protocol.tvl - (protocol.pool2 || 0) - (protocol.staking || 0)) / protocol.tvl) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                {protocol.pool2 ? (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Pool2 (LP Tokens)</p>
+                      <p className="font-mono font-medium text-foreground">{formatCurrency(protocol.pool2)}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {((protocol.pool2 / protocol.tvl) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                ) : null}
+                {protocol.staking ? (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Staking</p>
+                      <p className="font-mono font-medium text-foreground">{formatCurrency(protocol.staking)}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {((protocol.staking / protocol.tvl) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Pie Chart */}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    {(() => {
+                      const pieData = [
+                        { name: "Core", value: (protocol.tvl - (protocol.pool2 || 0) - (protocol.staking || 0)) || 0 },
+                        ...(protocol.pool2 ? [{ name: "Pool2", value: protocol.pool2 }] : []),
+                        ...(protocol.staking ? [{ name: "Staking", value: protocol.staking }] : []),
+                      ];
+                      const fills = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))"];
+
+                      return (
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {pieData.map((_, i) => (
+                            <Cell key={i} fill={fills[i % fills.length]} />
+                          ))}
+                        </Pie>
+                      );
+                    })()}
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* TVL Chart */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">
@@ -215,70 +329,200 @@ export default function ProtocolDetail() {
         {/* Chain TVLs */}
         {protocol.chainTvls && Object.keys(protocol.chainTvls).length > 0 && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">TVL by Chain</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Object.entries(protocol.chainTvls)
-                .sort(([, a], [, b]) => (b as number) - (a as number))
-                .slice(0, 8)
-                .map(([chain, tvl]) => (
-                  <div key={chain} className="p-3 rounded-lg bg-muted/30">
-                    <p className="text-sm text-muted-foreground capitalize">{chain}</p>
-                    <p className="font-mono font-medium text-foreground">{formatCurrency(tvl as number)}</p>
-                  </div>
-                ))}
+            <h3 className="text-lg font-semibold text-foreground mb-6">TVL by Chain</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Chain Grid */}
+              <div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-4">
+                  {(() => {
+                    try {
+                      return Object.entries(protocol.chainTvls || {})
+                        .filter(([, tvl]) => typeof tvl === 'number' && !isNaN(tvl as number))
+                        .sort(([, a], [, b]) => (b as number) - (a as number))
+                        .slice(0, 6)
+                        .map(([chain, tvl]) => (
+                          <div key={chain} className="p-4 rounded-lg bg-gradient-to-br from-muted/50 to-muted/20 border border-border/50 hover:border-primary/50 transition-colors">
+                            <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">{chain}</p>
+                            <p className="font-mono font-bold text-foreground text-lg">{formatCurrency(tvl as number)}</p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {((tvl as number / protocol.tvl) * 100).toFixed(1)}% of total
+                            </p>
+                          </div>
+                        ));
+                    } catch {
+                      return null;
+                    }
+                  })()}
+                </div>
+              </div>
+
+              {/* Bar Chart */}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={(() => {
+                      try {
+                        return Object.entries(protocol.chainTvls || {})
+                          .filter(([, tvl]) => typeof tvl === 'number' && !isNaN(tvl as number))
+                          .map(([k, v]) => ({ chain: k, tvl: v as number }))
+                          .sort((a, b) => b.tvl - a.tvl)
+                          .slice(0, 6);
+                      } catch {
+                        return [];
+                      }
+                    })()}
+                    margin={{ left: -20, right: 10, top: 10, bottom: 60 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="chain" 
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis 
+                      tickFormatter={(v) => `$${(v / 1e6).toFixed(0)}M`} 
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                    />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Bar dataKey="tvl" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         )}
 
         {/* Additional DeFiLlama details */}
         {protocolDetails && (
-          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Detailed Data (DefiLlama)</h3>
-            <div className="space-y-3">
-              <div>
-                <strong className="text-sm text-muted-foreground">Module:</strong>
-                <div className="text-foreground">{protocolDetails.module || '-'}</div>
-              </div>
-              <div>
-                <strong className="text-sm text-muted-foreground">Listed At:</strong>
-                <div className="text-foreground">{protocolDetails.listedAt ? new Date(protocolDetails.listedAt * 1000).toLocaleDateString() : '-'}</div>
-              </div>
-              <div>
-                <strong className="text-sm text-muted-foreground">Addresses:</strong>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(protocolDetails.addresses || []).slice(0, 8).map((a: any) => (
-                    <a
-                      key={a}
-                      href={`https://www.okx.com/explorer/xlayer/address/${a}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm"
-                    >
-                      {a.slice(0, 6)}...{a.slice(-4)}
-                    </a>
-                  ))}
+          <div className="space-y-6">
+            {/* Core Metadata */}
+            <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Protocol Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <strong className="text-sm text-muted-foreground block mb-1">Module</strong>
+                    <div className="text-foreground font-mono text-sm">{protocolDetails.module || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <strong className="text-sm text-muted-foreground block mb-1">Listed On</strong>
+                    <div className="text-foreground">
+                      {protocolDetails.listedAt 
+                        ? new Date(protocolDetails.listedAt * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                        : 'N/A'}
+                    </div>
+                  </div>
+                  {protocolDetails.audits && (
+                    <div>
+                      <strong className="text-sm text-muted-foreground block mb-1">Audit Status</strong>
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-green-500" />
+                        <span className="text-foreground">Audited</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  {protocolDetails.forkedFrom && protocolDetails.forkedFrom.length > 0 && (
+                    <div>
+                      <strong className="text-sm text-muted-foreground block mb-2">Forked From</strong>
+                      <div className="flex flex-wrap gap-2">
+                        {protocolDetails.forkedFrom.map((fork: string) => (
+                          <span key={fork} className="px-2 py-1 rounded bg-secondary/30 text-secondary-foreground text-xs">
+                            {fork}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {protocolDetails.gecko_id && (
+                    <div>
+                      <strong className="text-sm text-muted-foreground block mb-1">CoinGecko</strong>
+                      <a 
+                        href={`https://www.coingecko.com/en/coins/${protocolDetails.gecko_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-1 text-sm"
+                      >
+                        {protocolDetails.gecko_id}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-            <pre className="mt-4 text-xs text-muted-foreground overflow-auto max-h-48">{JSON.stringify(protocolDetails, null, 2)}</pre>
+
+            {/* Methodology */}
+            {protocolDetails.methodology && (
+              <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Code className="h-5 w-5" />
+                  Methodology
+                </h3>
+                <p className="text-foreground text-sm leading-relaxed line-clamp-6">
+                  {protocolDetails.methodology}
+                </p>
+              </div>
+            )}
+
+            {/* Contract Addresses */}
+            {protocolDetails.addresses && protocolDetails.addresses.length > 0 && (
+              <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Contract Addresses
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {protocolDetails.addresses.slice(0, 12).map((addr: string, idx: number) => (
+                    <a
+                      key={addr}
+                      href={`https://www.okx.com/explorer/xlayer/address/${addr}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded bg-muted/40 hover:bg-muted/60 transition-colors group"
+                      title={addr}
+                    >
+                      <div className="flex items-center gap-2 justify-between">
+                        <span className="font-mono text-xs text-muted-foreground group-hover:text-foreground truncate">
+                          {addr.slice(0, 10)}...{addr.slice(-8)}
+                        </span>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+                {protocolDetails.addresses.length > 12 && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    +{protocolDetails.addresses.length - 12} more addresses
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {/* Additional Info */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Chains */}
           {protocol.chains && protocol.chains.length > 0 && (
             <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Deployed Chains</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Deployed Chains
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {protocol.chains.map((chain) => (
                   <span
                     key={chain}
                     className={cn(
-                      "px-3 py-1 rounded-full text-sm",
+                      "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
                       chain.toLowerCase().includes("xlayer")
-                        ? "bg-primary/20 text-primary"
-                        : "bg-secondary text-secondary-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary/50 text-secondary-foreground hover:bg-secondary"
                     )}
                   >
                     {chain}
@@ -296,7 +540,7 @@ export default function ProtocolDetail() {
                 {protocol.oracles.map((oracle) => (
                   <span
                     key={oracle}
-                    className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm"
+                    className="px-3 py-1.5 rounded-full bg-secondary/50 text-secondary-foreground text-sm font-medium hover:bg-secondary transition-colors"
                   >
                     {oracle}
                   </span>
@@ -304,6 +548,31 @@ export default function ProtocolDetail() {
               </div>
             </div>
           )}
+
+          {/* Additional Protocol Stats */}
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Additional Stats</h3>
+            <div className="space-y-3">
+              {protocol.category && (
+                <div className="flex justify-between items-center pb-3 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Category</span>
+                  <span className="font-medium text-foreground">{protocol.category}</span>
+                </div>
+              )}
+              {protocol.symbol && (
+                <div className="flex justify-between items-center pb-3 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Symbol</span>
+                  <span className="font-mono font-medium text-foreground">${protocol.symbol}</span>
+                </div>
+              )}
+              {protocol.chain && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Primary Chain</span>
+                  <span className="font-medium text-foreground">{protocol.chain}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </Layout>

@@ -203,7 +203,7 @@ export default function SecurityDetail() {
           </div>
         </div>
 
-        {/* TVL History Chart */}
+          {/* TVL History Chart */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">TVL History (90 Days)</h3>
           <div className="h-[300px]">
@@ -258,7 +258,7 @@ export default function SecurityDetail() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Oracles */}
           {proto.oracles && proto.oracles.length > 0 && (
             <div className="rounded-lg border border-border bg-card p-4 md:p-6">
@@ -301,6 +301,95 @@ export default function SecurityDetail() {
             </div>
           )}
         </div>
+
+        {/* Security Insights */}
+        {protoDetails && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Security Insights</h3>
+
+            {/* Risk / score */}
+            {(
+              protoDetails.riskView || protoDetails.risk || protoDetails.securityScore || protoDetails.security || protoDetails.score
+            ) && (
+              <div className="mb-4">
+                <strong className="text-sm text-muted-foreground block mb-1">Risk / Score</strong>
+                <div className="flex items-center gap-3">
+                  <div className="font-mono text-foreground">
+                    {protoDetails.riskView?.score ?? protoDetails.risk ?? protoDetails.securityScore ?? protoDetails.score ?? "N/A"}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{protoDetails.riskView?.note || protoDetails.security?.note || "Protocol risk overview from DefiLlama."}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Audits / Reports */}
+            {(
+              protoDetails.audits || protoDetails.audit_links || protoDetails.audit_urls || protoDetails.reports || protoDetails.auditReports
+            ) && (
+              <div className="mb-4">
+                <strong className="text-sm text-muted-foreground block mb-2">Audits & Reports</strong>
+                <div className="flex flex-col gap-2">
+                  {Array.isArray(protoDetails.audit_links) && protoDetails.audit_links.map((u: string, i: number) => (
+                    <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2">
+                      <ExternalLink className="h-3 w-3" />
+                      {u}
+                    </a>
+                  ))}
+                  {Array.isArray(protoDetails.audit_urls) && protoDetails.audit_urls.map((u: string, i: number) => (
+                    <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2">
+                      <ExternalLink className="h-3 w-3" />
+                      {u}
+                    </a>
+                  ))}
+                  {Array.isArray(protoDetails.reports) && protoDetails.reports.map((r: any, i: number) => (
+                    <a key={i} href={r.url || r.link || '#'} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2">
+                      <ExternalLink className="h-3 w-3" />
+                      {r.title || r.name || r.url || r.link}
+                    </a>
+                  ))}
+                  {typeof protoDetails.audits === 'string' && (
+                    <div className="text-sm text-muted-foreground">{protoDetails.audits}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Vulnerabilities / Exploits */}
+            {(
+              protoDetails.vulnerabilities || protoDetails.vulns || protoDetails.exploits || protoDetails.security?.vulnerabilities
+            ) && (
+              <div className="mb-4">
+                <strong className="text-sm text-muted-foreground block mb-2">Vulnerabilities / Exploits</strong>
+                <div className="space-y-2">
+                  {(protoDetails.vulnerabilities || protoDetails.vulns || protoDetails.exploits || protoDetails.security?.vulnerabilities).map((v: any, i: number) => (
+                    <div key={i} className="p-3 rounded bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-foreground">{v.title || v.name || `Issue #${i + 1}`}</div>
+                          <div className="text-xs text-muted-foreground">{v.severity || v.level || v.risk || ''}</div>
+                        </div>
+                        {v.link && (
+                          <a href={v.link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                            Details <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                      {v.description && <p className="text-sm text-muted-foreground mt-2">{v.description}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Contracts summary (link to Protocol page addresses) */}
+            {protoDetails.addresses && Array.isArray(protoDetails.addresses) && (
+              <div>
+                <strong className="text-sm text-muted-foreground block mb-2">Verified Contracts</strong>
+                <div className="text-sm text-muted-foreground">{protoDetails.addresses.length} contract addresses (showing up to 100 on protocol page).</div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Protocol Info */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">

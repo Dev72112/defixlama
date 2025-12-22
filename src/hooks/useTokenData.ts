@@ -78,6 +78,24 @@ export function useTokenPrices() {
         // ignore
       }
 
+      // Ensure we have logos where possible by querying DefiLlama coins endpoint
+      try {
+        const missingLogoContracts = communityTokens.filter((ct) => !ct.logo || ct.logo.includes('ui-avatars')).map((ct) => ct.contract);
+        for (const contract of missingLogoContracts) {
+          try {
+            const details = await fetchCommunityTokenDetailsByContract(contract);
+            if (details && details.image && details.image.large) {
+              const ct = communityTokens.find((c) => c.contract === contract);
+              if (ct) ct.logo = details.image.large;
+            }
+          } catch (e) {
+            // ignore per-token failures
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+
       return [...mapped, ...communityTokens];
     },
     staleTime: 5 * 1000,
@@ -100,56 +118,127 @@ export function useTokenDetails(id: string | null) {
       );
       
       if (communityMatch) {
-        // Try to get data from DexScreener
+        // Try DefiLlama coins endpoint for richer token details (logo, price, etc.)
+        try {
+          const dl = await fetchCommunityTokenDetailsByContract(communityMatch.contract);
+          if (dl) {
+            return {
+              ...dl,
+              id: communityMatch.contract,
+              contract: communityMatch.contract,
+              isCommunityToken: true,
+            };
+          }
+        } catch (e) {
+          // ignore dl failure and continue to other fallbacks
+        }
+
+        // Try DefiLlama current prices (coins.llama) as a lightweight fallback
+        try {
+          const prices = await fetchCommunityPricesByContracts([communityMatch.contract]);
+          const key = `xlayer:${communityMatch.contract}`;
+          const coin = prices[key] || prices[communityMatch.contract.toLowerCase()];
+          if (coin) {
+            return {
+              id: communityMatch.contract,
+              name: communityMatch.name,
+              symbol: communityMatch.symbol,
+              image: { large: communityMatch.logo, small: communityMatch.logo },
+              contract: communityMatch.contract,
+              market_data: {
+                current_price: { usd: coin.price ?? coin.price_usd ?? 0 },
+                price_change_percentage_24h: coin.change24h ?? 0,
+                total_volume: { usd: coin.volume ?? 0 },
+                market_cap: { usd: 0 },
+              },
+              description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
+              isCommunityToken: true,
+            };
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // Try to get data from DexScreener as a further fallback
         try {
           const dexData = await fetchDexScreenerPrices([communityMatch.contract]);
           const tokenData = dexData[communityMatch.contract.toLowerCase()];
-          
-          return {
-            id: communityMatch.contract,
-            name: communityMatch.name,
-            symbol: communityMatch.symbol,
-            image: { large: communityMatch.logo, small: communityMatch.logo },
-            contract: communityMatch.contract,
-            market_data: {
-              current_price: { usd: tokenData?.price || 0 },
-              price_change_percentage_24h: tokenData?.change24h || 0,
-              total_volume: { usd: tokenData?.volume24h || 0 },
-              market_cap: { usd: 0 },
-              ath: { usd: 0 },
-              high_24h: { usd: 0 },
-              low_24h: { usd: 0 },
-              atl: { usd: 0 },
-              circulating_supply: 0,
-              total_supply: 0,
-              max_supply: null,
-            },
-            description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
-            isCommunityToken: true,
-          };
+          if (tokenData) {
+            return {
+              id: communityMatch.contract,
+              name: communityMatch.name,
+              symbol: communityMatch.symbol,
+              image: { large: communityMatch.logo, small: communityMatch.logo },
+              contract: communityMatch.contract,
+              market_data: {
+                current_price: { usd: tokenData?.price || 0 },
+                price_change_percentage_24h: tokenData?.change24h || 0,
+                total_volume: { usd: tokenData?.volume24h || 0 },
+                market_cap: { usd: 0 },
+                ath: { usd: 0 },
+                high_24h: { usd: 0 },
+                low_24h: { usd: 0 },
+                atl: { usd: 0 },
+                circulating_supply: 0,
+                total_supply: 0,
+                max_supply: null,
+              },
+              description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
+              isCommunityToken: true,
+            };
+          }
         } catch (e) {
-          // Return basic info
-          return {
-            id: communityMatch.contract,
-            name: communityMatch.name,
-            symbol: communityMatch.symbol,
-            image: { large: communityMatch.logo, small: communityMatch.logo },
-            contract: communityMatch.contract,
-            market_data: {
-              current_price: { usd: 0 },
-              price_change_percentage_24h: 0,
-              total_volume: { usd: 0 },
-              market_cap: { usd: 0 },
-            },
-            description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
-            isCommunityToken: true,
-          };
+          // continue to final fallback
         }
+
+        // Final: return basic info with logo placeholder and zeroed market data
+        return {
+          id: communityMatch.contract,
+          name: communityMatch.name,
+          symbol: communityMatch.symbol,
+          image: { large: communityMatch.logo, small: communityMatch.logo },
+          contract: communityMatch.contract,
+          market_data: {
+            current_price: { usd: 0 },
+            price_change_percentage_24h: 0,
+            total_volume: { usd: 0 },
+            market_cap: { usd: 0 },
+          },
+          description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
+          isCommunityToken: true,
+        };
       }
       
       // Try CoinGecko for standard tokens
       const cg = await fetchTokenDetails(id);
       if (cg) return cg;
+
+      // Try OKLink for on-chain contract info as a fallback after CoinGecko
+      try {
+        // OKLink expects a contract/address; only attempt when `id` looks like one
+        const lowerId = id.toLowerCase();
+        if (/^0x[a-f0-9]{40}$/.test(lowerId)) {
+          const ok = await oklink.fetchOklinkContractInfo(lowerId);
+          if (ok) {
+            return {
+              id: lowerId,
+              name: ok.name || ok.contract || id,
+              symbol: ok.symbol || "",
+              image: { large: ok.logo || "", small: ok.logo || "" },
+              contract: lowerId,
+              market_data: {
+                current_price: { usd: 0 },
+                price_change_percentage_24h: 0,
+                total_volume: { usd: 0 },
+                market_cap: { usd: 0 },
+              },
+              description: { en: ok.description || "" },
+            };
+          }
+        }
+      } catch (e) {
+        // ignore OKLink failures
+      }
 
       // If looks like address
       const isAddress = /^0x[a-f0-9]{40}$/i.test(lower);

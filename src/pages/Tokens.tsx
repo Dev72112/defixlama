@@ -177,10 +177,17 @@ export default function Tokens() {
                       </div>
                     </td>
                     <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                      {token.price > 0 
-                        ? `$${token.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: token.price < 1 ? 6 : 2 })}`
-                        : <span className="text-muted-foreground">Fetching...</span>
-                      }
+                      {token.price > 0 ? (
+                        (() => {
+                          const p = token.price;
+                          if (p >= 1) return `$${p.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                          // small prices: show up to 8 decimals, trim trailing zeros
+                          const s = p.toFixed(8).replace(/(?:\.0+|(?<=\.[0-9]*?)0+)$/, "");
+                          return `$${s}`;
+                        })()
+                      ) : (
+                        <span className="text-muted-foreground">Fetching...</span>
+                      )}
                     </td>
                     <td className="text-right whitespace-nowrap">
                       {token.price > 0 ? (

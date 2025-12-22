@@ -20,6 +20,8 @@ import FeeDetail from "./pages/FeeDetail";
 import Security from "./pages/Security";
 import SecurityDetail from "./pages/SecurityDetail";
 import NotFound from "./pages/NotFound";
+import Donations from "./pages/Donations";
+import Docs from "./pages/Docs";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +56,8 @@ const App = () => (
           <Route path="/fees/:id" element={<FeeDetail />} />
           <Route path="/security" element={<Security />} />
           <Route path="/security/:id" element={<SecurityDetail />} />
+          <Route path="/donations" element={<Donations />} />
+          <Route path="/docs" element={<Docs />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -5,7 +5,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn, stripHtml, safeEncode } from "@/lib/utils";
+import { cn, stripHtml, safeEncode, formatTokenPrice } from "@/lib/utils";
 import {
   AreaChart,
   Area,
@@ -128,7 +128,7 @@ export default function TokenDetail() {
             )}
             <div className="flex items-center gap-4 mt-2">
               <span className="text-3xl font-bold text-foreground">
-                ${token.market_data?.current_price?.usd?.toLocaleString() || "-"}
+                {formatTokenPrice(token.market_data?.current_price?.usd)}
               </span>
               <span
                 className={cn(
@@ -206,7 +206,7 @@ export default function TokenDetail() {
                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                    tickFormatter={(value) => formatTokenPrice(value)}
                     domain={["auto", "auto"]}
                   />
                   <Tooltip
@@ -216,7 +216,7 @@ export default function TokenDetail() {
                       borderRadius: "8px",
                     }}
                     labelStyle={{ color: "hsl(var(--foreground))" }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, "Price"]}
+                    formatter={(value: number) => [formatTokenPrice(value), "Price"]}
                   />
                   <Area
                     type="monotone"

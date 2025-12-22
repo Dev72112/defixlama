@@ -1,11 +1,11 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useXLayerDexVolumes, useAllDexVolumes } from "@/hooks/useDefiData";
+import { useXLayerDexVolumes, useAllDexVolumes, useDexDetails } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
-import { ArrowLeft, Activity, TrendingUp, TrendingDown, BarChart3, ExternalLink, Globe } from "lucide-react";
+import { ArrowLeft, Activity, TrendingUp, TrendingDown, BarChart3, ExternalLink, Globe, Code, Lock, Twitter, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -23,6 +23,7 @@ export default function DexDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: xlayerDexs, isLoading: xlayerLoading } = useXLayerDexVolumes();
   const { data: allDexs, isLoading: allLoading } = useAllDexVolumes();
+  const { data: dexDetails, isLoading: detailsLoading } = useDexDetails(id?.toLowerCase() || null);
 
   const isLoading = xlayerLoading || allLoading;
 
@@ -327,6 +328,117 @@ export default function DexDetail() {
             </div>
           </div>
         </div>
+
+        {/* Additional DEX Details from API */}
+        {dexDetails && (
+          <div className="space-y-6">
+            {/* Core Metadata */}
+            <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">DEX Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <strong className="text-sm text-muted-foreground block mb-1">Module</strong>
+                    <div className="text-foreground font-mono text-sm">{dexDetails.module || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <strong className="text-sm text-muted-foreground block mb-1">Listed On</strong>
+                    <div className="text-foreground">
+                      {dexDetails.listedAt 
+                        ? new Date(dexDetails.listedAt * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                        : 'N/A'}
+                    </div>
+                  </div>
+                  {dexDetails.audits && (
+                    <div>
+                      <strong className="text-sm text-muted-foreground block mb-1">Audit Status</strong>
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-green-500" />
+                        <span className="text-foreground">Audited</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  {dexDetails.forkedFrom && dexDetails.forkedFrom.length > 0 && (
+                    <div>
+                      <strong className="text-sm text-muted-foreground block mb-2">Forked From</strong>
+                      <div className="flex flex-wrap gap-2">
+                        {dexDetails.forkedFrom.map((fork: string) => (
+                          <span key={fork} className="px-2 py-1 rounded bg-secondary/30 text-secondary-foreground text-xs">
+                            {fork}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {dexDetails.gecko_id && (
+                    <div>
+                      <strong className="text-sm text-muted-foreground block mb-1">CoinGecko</strong>
+                      <a 
+                        href={`https://www.coingecko.com/en/coins/${dexDetails.gecko_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-1 text-sm"
+                      >
+                        {dexDetails.gecko_id}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Methodology */}
+            {dexDetails.methodology && (
+              <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Code className="h-5 w-5" />
+                  Methodology
+                </h3>
+                <p className="text-foreground text-sm leading-relaxed line-clamp-6">
+                  {dexDetails.methodology}
+                </p>
+              </div>
+            )}
+
+            {/* Contract Addresses */}
+            {dexDetails.addresses && dexDetails.addresses.length > 0 && (
+              <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Contract Addresses
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {dexDetails.addresses.slice(0, 12).map((addr: string, idx: number) => (
+                    <a
+                      key={addr}
+                      href={`https://www.okx.com/explorer/xlayer/address/${addr}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded bg-muted/40 hover:bg-muted/60 transition-colors group"
+                      title={addr}
+                    >
+                      <div className="flex items-center gap-2 justify-between">
+                        <span className="font-mono text-xs text-muted-foreground group-hover:text-foreground truncate">
+                          {addr.slice(0, 10)}...{addr.slice(-8)}
+                        </span>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+                {dexDetails.addresses.length > 12 && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    +{dexDetails.addresses.length - 12} more addresses
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );
