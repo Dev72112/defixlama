@@ -100,13 +100,33 @@ export default function TokenDetail() {
     );
   }
 
-  // Use token data or create minimal one from oklink
-  const tokenName = token?.name || oklinkInfo?.contractName || "Unknown Token";
-  const tokenSymbol = token?.symbol || (oklinkInfo?.symbol || "").toUpperCase() || "???";
-  const isCommunityToken = token?.isCommunityToken || !token;
+  // Create a unified token object from available sources
+  const displayToken = token || {
+    id: contractAddress,
+    name: oklinkInfo?.name || oklinkInfo?.contractName || "Unknown Token",
+    symbol: oklinkInfo?.symbol?.toUpperCase() || "???",
+    image: { large: oklinkInfo?.logo || null, small: oklinkInfo?.logo || null },
+    contract: contractAddress,
+    market_data: {
+      current_price: { usd: oklinkInfo?.price || 0 },
+      price_change_percentage_24h: oklinkInfo?.change24h || 0,
+      price_change_percentage_7d: 0,
+      total_volume: { usd: oklinkInfo?.volume24h || 0 },
+      market_cap: { usd: oklinkInfo?.marketCap || 0 },
+      circulating_supply: 0,
+      total_supply: oklinkInfo?.totalSupply ? parseFloat(oklinkInfo.totalSupply) : 0,
+      max_supply: null,
+    },
+    description: { en: oklinkInfo?.description || "" },
+    isCommunityToken: true,
+  };
 
-  const priceChange24h = token.market_data?.price_change_percentage_24h || 0;
-  const priceChange7d = token.market_data?.price_change_percentage_7d || 0;
+  const tokenName = displayToken.name;
+  const tokenSymbol = displayToken.symbol;
+  const isCommunityToken = displayToken.isCommunityToken || !token;
+
+  const priceChange24h = displayToken.market_data?.price_change_percentage_24h || 0;
+  const priceChange7d = displayToken.market_data?.price_change_percentage_7d || 0;
 
   // Price Analytics
   const priceAnalytics = useMemo(() => {
@@ -135,12 +155,12 @@ export default function TokenDetail() {
 
   // Market metrics
   const marketMetrics = useMemo(() => {
-    if (!token?.market_data) return null;
-    const mcap = token.market_data.market_cap?.usd || 0;
-    const volume = token.market_data.total_volume?.usd || 0;
+    if (!displayToken?.market_data) return null;
+    const mcap = displayToken.market_data.market_cap?.usd || 0;
+    const volume = displayToken.market_data.total_volume?.usd || 0;
     const mcapVolumeRatio = volume !== 0 ? mcap / volume : 0;
-    const circulatingSupply = token.market_data.circulating_supply || 0;
-    const maxSupply = token.market_data.max_supply;
+    const circulatingSupply = displayToken.market_data.circulating_supply || 0;
+    const maxSupply = displayToken.market_data.max_supply;
     const supplyRatio = maxSupply && circulatingSupply > 0 ? (circulatingSupply / maxSupply) * 100 : 0;
     
     return {
@@ -148,7 +168,7 @@ export default function TokenDetail() {
       supplyRatio: isFinite(supplyRatio) ? supplyRatio : 0,
       circSupplyPercent: maxSupply ? supplyRatio : 100,
     };
-  }, [token?.market_data]);
+  }, [displayToken?.market_data]);
 
   return (
     <Layout>
@@ -173,39 +193,39 @@ export default function TokenDetail() {
 
         {/* Token Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {token.image?.large || token.image?.small ? (
+          {displayToken.image?.large || displayToken.image?.small ? (
             <img
-              src={token.image?.large || token.image?.small}
-              alt={token.name}
+              src={displayToken.image?.large || displayToken.image?.small}
+              alt={displayToken.name}
               className="h-16 w-16 rounded-full bg-muted"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${token.symbol}&background=1a1a2e&color=2dd4bf&size=64`;
+                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${displayToken.symbol}&background=1a1a2e&color=2dd4bf&size=64`;
               }}
             />
           ) : (
             <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl">
-              {token.symbol?.slice(0, 2) || "?"}
+              {displayToken.symbol?.slice(0, 2) || "?"}
             </div>
           )}
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">{token.name}</h1>
-              <span className="text-lg text-muted-foreground uppercase">{token.symbol}</span>
+              <h1 className="text-2xl font-bold text-foreground">{displayToken.name}</h1>
+              <span className="text-lg text-muted-foreground uppercase">{displayToken.symbol}</span>
               {isCommunityToken && (
                 <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium">
                   Community Token
                 </span>
               )}
-              {!isCommunityToken && token.market_cap_rank && (
+              {!isCommunityToken && displayToken.market_cap_rank && (
                 <span className="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs">
-                  Rank #{token.market_cap_rank}
+                  Rank #{displayToken.market_cap_rank}
                 </span>
               )}
             </div>
-            {token.contract && (
+            {displayToken.contract && (
               <div className="mt-2">
                 <a
-                  href={`https://www.okx.com/explorer/xlayer/address/${safeEncode(token.contract)}`}
+                  href={`https://www.okx.com/explorer/xlayer/address/${safeEncode(displayToken.contract)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary/80 hover:text-primary"
@@ -216,7 +236,7 @@ export default function TokenDetail() {
             )}
             <div className="flex items-center gap-4 mt-2">
               <span className="text-3xl font-bold text-foreground">
-                {formatTokenPrice(token.market_data?.current_price?.usd)}
+                {formatTokenPrice(displayToken.market_data?.current_price?.usd)}
               </span>
               <span
                 className={cn(
@@ -235,12 +255,12 @@ export default function TokenDetail() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Market Cap"
-            value={formatCurrency(token.market_data?.market_cap?.usd || 0)}
+            value={formatCurrency(displayToken.market_data?.market_cap?.usd || 0)}
             icon={DollarSign}
           />
           <StatCard
             title="24h Volume"
-            value={formatCurrency(token.market_data?.total_volume?.usd || 0)}
+            value={formatCurrency(displayToken.market_data?.total_volume?.usd || 0)}
             icon={Activity}
           />
           <StatCard
@@ -366,7 +386,7 @@ export default function TokenDetail() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Market Cap Rank</span>
                 <span className="font-mono text-foreground">
-                  {token.market_cap_rank ? `#${token.market_cap_rank}` : "-"}
+                  {displayToken.market_cap_rank ? `#${displayToken.market_cap_rank}` : "-"}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -378,14 +398,14 @@ export default function TokenDetail() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">FDV Rank</span>
                 <span className="font-mono text-foreground">
-                  {token.fully_diluted_valuation_rank ? `#${token.fully_diluted_valuation_rank}` : "-"}
+                  {displayToken.fully_diluted_valuation_rank ? `#${displayToken.fully_diluted_valuation_rank}` : "-"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Market Cap vs FDV</span>
                 <span className="font-mono text-foreground">
-                  {token.market_data?.market_cap && token.market_data?.fully_diluted_valuation
-                    ? `${((token.market_data.market_cap.usd / token.market_data.fully_diluted_valuation.usd) * 100).toFixed(1)}%`
+                  {displayToken.market_data?.market_cap && displayToken.market_data?.fully_diluted_valuation
+                    ? `${((displayToken.market_data.market_cap.usd / displayToken.market_data.fully_diluted_valuation.usd) * 100).toFixed(1)}%`
                     : "-"}
                 </span>
               </div>
@@ -399,22 +419,22 @@ export default function TokenDetail() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Circulating Supply</span>
                 <span className="font-mono text-foreground">
-                  {token.market_data?.circulating_supply?.toLocaleString() || "-"}
+                  {displayToken.market_data?.circulating_supply?.toLocaleString() || "-"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Supply</span>
                 <span className="font-mono text-foreground">
-                  {token.market_data?.total_supply?.toLocaleString() || "-"}
+                  {displayToken.market_data?.total_supply?.toLocaleString() || "-"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Max Supply</span>
                 <span className="font-mono text-foreground">
-                  {token.market_data?.max_supply?.toLocaleString() || "∞"}
+                  {displayToken.market_data?.max_supply?.toLocaleString() || "∞"}
                 </span>
               </div>
-              {token.market_data?.max_supply && (
+              {displayToken.market_data?.max_supply && (
                 <div className="mt-4 pt-3 border-t border-border">
                   <div className="flex justify-between mb-2">
                     <span className="text-xs text-muted-foreground">Circulating vs Max</span>
@@ -441,25 +461,25 @@ export default function TokenDetail() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">24h High</span>
                 <span className="font-mono text-foreground">
-                  ${token.market_data?.high_24h?.usd?.toLocaleString() || "-"}
+                  ${displayToken.market_data?.high_24h?.usd?.toLocaleString() || "-"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">24h Low</span>
                 <span className="font-mono text-foreground">
-                  ${token.market_data?.low_24h?.usd?.toLocaleString() || "-"}
+                  ${displayToken.market_data?.low_24h?.usd?.toLocaleString() || "-"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">All Time High</span>
                 <span className="font-mono text-foreground">
-                  ${token.market_data?.ath?.usd?.toLocaleString() || "-"}
+                  ${displayToken.market_data?.ath?.usd?.toLocaleString() || "-"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">All Time Low</span>
                 <span className="font-mono text-foreground">
-                  ${token.market_data?.atl?.usd?.toLocaleString() || "-"}
+                  ${displayToken.market_data?.atl?.usd?.toLocaleString() || "-"}
                 </span>
               </div>
             </div>
@@ -484,16 +504,16 @@ export default function TokenDetail() {
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">ATH Distance</span>
                 <span className="font-mono text-destructive">
-                  {token.market_data?.ath?.usd ? 
-                    `-${(((token.market_data.ath.usd - token.market_data.current_price.usd) / token.market_data.ath.usd) * 100).toFixed(1)}%`
+                  {displayToken.market_data?.ath?.usd ? 
+                    `-${(((displayToken.market_data.ath.usd - (displayToken.market_data.current_price?.usd || 0)) / displayToken.market_data.ath.usd) * 100).toFixed(1)}%`
                     : "-"}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">ATL Distance</span>
                 <span className="font-mono text-success">
-                  {token.market_data?.atl?.usd ?
-                    `+${(((token.market_data.current_price.usd - token.market_data.atl.usd) / token.market_data.atl.usd) * 100).toFixed(1)}%`
+                  {displayToken.market_data?.atl?.usd ?
+                    `+${((((displayToken.market_data.current_price?.usd || 0) - displayToken.market_data.atl.usd) / displayToken.market_data.atl.usd) * 100).toFixed(1)}%`
                     : "-"}
                 </span>
               </div>
@@ -502,26 +522,25 @@ export default function TokenDetail() {
         </div>
 
         {/* On-chain / Explorer */}
-        {token.contract && (
+        {displayToken.contract && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
             <h3 className="text-lg font-semibold text-foreground mb-3">On-Chain</h3>
             <div className="flex items-center justify-between">
               <div>
                 <a
-                  href={`https://www.okx.com/explorer/xlayer/address/${safeEncode(token.contract)}`}
+                  href={`https://www.okx.com/explorer/xlayer/address/${safeEncode(displayToken.contract)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary/80 hover:text-primary"
                 >
                   View contract on XLayer Explorer
                 </a>
-                {oklinkInfo?.address && (
-                  <p className="text-sm text-muted-foreground mt-2">{oklinkInfo.address.description || ''}</p>
+                {oklinkInfo?.description && (
+                  <p className="text-sm text-muted-foreground mt-2">{oklinkInfo.description}</p>
                 )}
               </div>
               <div className="text-right font-mono text-sm text-muted-foreground">
                 <div>Holders: {oklinkInfo?.holders ?? '-'}</div>
-                <div>Transfers: {oklinkInfo?.txCount ?? '-'}</div>
                 <div>Total Supply: {oklinkInfo?.totalSupply ?? '-'}</div>
               </div>
             </div>
@@ -532,12 +551,12 @@ export default function TokenDetail() {
         )}
 
         {/* Description */}
-        {token.description?.en && (
+        {displayToken.description?.en && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">About {token.name}</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">About {displayToken.name}</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {(() => {
-                const plain = stripHtml(token.description?.en || "");
+                const plain = stripHtml(displayToken.description?.en || "");
                 const snippet = plain.split(/\.\s+/).slice(0, 3).join('. ');
                 return snippet ? `${snippet}.` : "";
               })()}
