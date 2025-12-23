@@ -1,16 +1,19 @@
+import React, { Suspense, lazy, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Activity } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useDashboardData } from "@/hooks/useDefiData";
+import { useDashboardData, useChainsTVL, useFeesData } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TVLChart } from "@/components/dashboard/TVLChart";
-import { ProtocolTable } from "@/components/dashboard/ProtocolTable";
-import { DexTable } from "@/components/dashboard/DexTable";
-import { YieldTable } from "@/components/dashboard/YieldTable";
-import { formatCurrency } from "@/lib/api/defillama";
-import { Database, ArrowLeftRight, TrendingUp, Layers } from "lucide-react";
+import { formatCurrency, timeAgo } from "@/lib/api/defillama";
+import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+
+// Lazy load heavier tables to improve initial render performance
+const ProtocolTable = lazy(() => import("@/components/dashboard/ProtocolTable").then(mod => ({ default: mod.ProtocolTable })));
+const DexTable = lazy(() => import("@/components/dashboard/DexTable").then(mod => ({ default: mod.DexTable })));
+const YieldTable = lazy(() => import("@/components/dashboard/YieldTable").then(mod => ({ default: mod.YieldTable })));
 
 function ErrorFallback({ error }: { error: Error }) {
   return (
@@ -23,26 +26,31 @@ function ErrorFallback({ error }: { error: Error }) {
 
 function DashboardContent() {
   const dashboardData = useDashboardData();
-  
-  const protocols = dashboardData?.protocols;
-  const tvl = dashboardData?.tvl;
-  const tvlHistory = dashboardData?.tvlHistory;
-  const dexVolumes = dashboardData?.dexVolumes;
-  const yieldPools = dashboardData?.yieldPools;
+  const chainsTVL = useChainsTVL();
+  const feesData = useFeesData();
 
-  const totalTVL = tvl?.data?.tvl ?? 0;
-  const protocolCount = protocols?.data?.length ?? 0;
-  const totalDexVolume = dexVolumes?.data?.reduce((acc, dex) => acc + (dex?.total24h ?? 0), 0) ?? 0;
-  
-  const avgApy = (() => {
+  const protocols = dashboardData.protocols;
+  const tvl = dashboardData.tvl;
+  const tvlHistory = dashboardData.tvlHistory;
+  const dexVolumes = dashboardData.dexVolumes;
+  const yieldPools = dashboardData.yieldPools;
+
+  // Memoized derived values to avoid recalculations on every render
+  const totalTVL = useMemo(() => tvl?.data?.tvl ?? 0, [tvl?.data?.tvl]);
+  const protocolCount = useMemo(() => protocols?.data?.length ?? 0, [protocols?.data]);
+  const totalDexVolume = useMemo(() => {
+    return dexVolumes?.data?.reduce((acc, dex) => acc + (dex?.total24h ?? 0), 0) ?? 0;
+  }, [dexVolumes?.data]);
+
+  const avgApy = useMemo(() => {
     const pools = yieldPools?.data;
     if (!pools || pools.length === 0) return 0;
     const total = pools.reduce((acc, pool) => acc + ((pool?.apyBase ?? 0) + (pool?.apyReward ?? 0)), 0);
     const result = total / pools.length;
     return isNaN(result) ? 0 : result;
-  })();
+  }, [yieldPools?.data]);
 
-  const tvlChange = (() => {
+  const tvlChange = useMemo(() => {
     const data = tvlHistory?.data;
     if (!Array.isArray(data) || data.length < 2) return 0;
     const latest = data[data.length - 1]?.tvl ?? 0;
@@ -50,9 +58,113 @@ function DashboardContent() {
     if (dayAgo === 0) return 0;
     const result = ((latest - dayAgo) / dayAgo) * 100;
     return isNaN(result) ? 0 : result;
-  })();
+  }, [tvlHistory?.data]);
 
-  const miniChartData = Array.isArray(tvlHistory?.data) ? tvlHistory.data.slice(-14).map((d) => d?.tvl ?? 0) : [];
+  const miniChartData = useMemo(() => (
+    Array.isArray(tvlHistory?.data) ? tvlHistory.data.slice(-14).map((d) => d?.tvl ?? 0) : []
+  ), [tvlHistory?.data]);
+
+  // Additional KPI derivations
+  const marketCap = useMemo(() => {
+    const list = protocols?.data ?? [];
+    return list.reduce((acc: number, p: any) => acc + (p?.mcap ?? 0), 0);
+  }, [protocols?.data]);
+
+  const recentProtocols = useMemo(() => {
+    const list = protocols?.data ?? [];
+    return (Array.isArray(list) ? list : [])
+      .filter((p: any) => p?.listedAt)
+      .sort((a: any, b: any) => (b.listedAt || 0) - (a.listedAt || 0))
+      .slice(0, 6);
+  }, [protocols?.data]);
+
+  // Memoized top chains
+  const topChains = useMemo(() => {
+    const list = chainsTVL?.data ?? [];
+    return Array.isArray(list) ? list.slice(0, 5) : [];
+  }, [chainsTVL?.data]);
+
+  // Unified activity feed: protocols (with real timestamps) + top fees + top chains
+  const isActivityLoading = protocols?.isLoading || feesData?.isLoading || chainsTVL?.isLoading;
+
+  const activities = useMemo(() => {
+    const items: Array<any> = [];
+
+    // Protocol listings (real timestamps)
+    for (const p of recentProtocols) {
+      items.push({
+        type: "protocol",
+        id: p.id || p.slug || p.name,
+        title: p.name,
+        subtitle: `${p.category || "—"} • ${p.chain || "—"}`,
+        timestamp: p.listedAt || Math.floor(Date.now() / 1000),
+        meta: p,
+      });
+    }
+
+    // Top fees (no timestamp in payload) — give recent synthetic timestamps so they appear now
+    const feesList = feesData?.data ?? [];
+    if (Array.isArray(feesList) && feesList.length > 0) {
+      const topFees = feesList
+        .slice()
+        .sort((a: any, b: any) => (b.total24h || b.total_24h || 0) - (a.total24h || a.total_24h || 0))
+        .slice(0, 3);
+      topFees.forEach((f: any, i: number) => {
+        items.push({
+          type: "fee",
+          id: f.name || f.displayName || `fee-${i}`,
+          title: f.displayName || f.name,
+          subtitle: `24h ${formatCurrency(f.total24h || f.total_24h || 0)}`,
+          timestamp: Math.floor(Date.now() / 1000) - (i + 1) * 60,
+          meta: f,
+        });
+      });
+    }
+
+    // Top chains (no timestamp) — synthetic timestamps spaced further back
+    for (let i = 0; i < topChains.length && i < 3; i++) {
+      const c = topChains[i];
+      items.push({
+        type: "chain",
+        id: c?.name || `chain-${i}`,
+        title: c?.name || "unknown",
+        subtitle: `${formatCurrency(c?.tvl ?? 0)} TVL`,
+        timestamp: Math.floor(Date.now() / 1000) - (i + 1) * 120,
+        meta: c,
+      });
+    }
+
+    // Sort by timestamp desc and limit
+    return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
+  }, [recentProtocols, feesData?.data, topChains]);
+
+  const newProtocolsCount = useMemo(() => {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const weekAgo = nowSec - 7 * 24 * 60 * 60;
+    const list = protocols?.data ?? [];
+    return list.filter((p: any) => p?.listedAt && p.listedAt >= weekAgo).length;
+  }, [protocols?.data]);
+
+  const categoryCount = useMemo(() => {
+    const list = protocols?.data ?? [];
+    const map = new Map<string, number>();
+    for (const p of (Array.isArray(list) ? list : [])) {
+      const cat = p?.category || "unknown";
+      map.set(cat, (map.get(cat) || 0) + 1);
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, [protocols?.data]);
+
+  const fees24h = useMemo(() => {
+    const fees = feesData?.data ?? [];
+    if (!Array.isArray(fees) || fees.length === 0) return 0;
+    // Sum common 24h fields (fallbacks for various payload shapes)
+    const sum = fees.slice(0, 5).reduce((acc: number, f: any) => {
+      const v = f?.total24h ?? f?.total_24h ?? f?.total24hUsd ?? f?.fees24h ?? f?.fee_24h ?? 0;
+      return acc + (typeof v === 'number' && !isNaN(v) ? v : Number(v) || 0);
+    }, 0);
+    return sum;
+  }, [feesData?.data]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -103,6 +215,74 @@ function DashboardContent() {
         <TVLChart data={tvlHistory?.data ?? []} loading={tvlHistory?.isLoading ?? true} height={350} />
       </ErrorBoundary>
 
+      {/* Quick Insights */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard title="Estimated Market Cap" value={formatCurrency(marketCap)} icon={Database} loading={protocols?.isLoading ?? true} />
+        <StatCard title="New Protocols (7d)" value={String(newProtocolsCount)} icon={Layers} loading={protocols?.isLoading ?? true} />
+        <StatCard title="Top Categories" value={categoryCount.length.toString()} icon={TrendingUp} loading={protocols?.isLoading ?? true} />
+      </div>
+
+      {/* Insights: Categories + Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
+          <h3 className="text-lg font-semibold text-foreground mb-3">Protocol Categories</h3>
+          <div className="flex flex-col gap-2">
+            {categoryCount.map(([cat, count]: any) => (
+              <div key={cat} className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">{cat}</div>
+                <div className="font-medium">{count}</div>
+              </div>
+            ))}
+            {categoryCount.length === 0 && <div className="text-muted-foreground">No category data</div>}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-foreground mb-3">Recent Activity</h3>
+            <Link to="/activities">
+              <Button variant="ghost" size="sm" className="text-primary">View All →</Button>
+            </Link>
+          </div>
+          {isActivityLoading ? (
+            <ul className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <li key={i} className="flex items-start justify-between">
+                  <div>
+                    <div className="skeleton h-4 w-40 mb-1" />
+                    <div className="skeleton h-3 w-28" />
+                  </div>
+                  <div className="skeleton h-3 w-12" />
+                </li>
+              ))}
+            </ul>
+          ) : activities.length === 0 ? (
+            <div className="text-muted-foreground">No recent activity</div>
+          ) : (
+            <ul className="space-y-3">
+              {activities.map((a: any) => {
+                  const href = a.type === 'protocol' ? `/protocols/${(a.meta?.slug || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}` : a.type === 'fee' ? `/fees/${(a.meta?.displayName || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}` : a.type === 'chain' ? `/chains/${(a.meta?.name || a.id || '').toString().toLowerCase().replace(/\s+/g,'-')}` : null;
+                  const Icon = a.type === 'protocol' ? Layers : a.type === 'fee' ? DollarSign : Globe;
+                  return (
+                  <li key={a.id} className="flex items-start justify-between">
+                    <Link to={href ?? '#'} className="flex items-center gap-3 flex-1 group hover:bg-muted/5 p-2 rounded-md" onClick={(e) => { if (!href) e.preventDefault(); }}>
+                      <div className="h-8 w-8 rounded-full bg-muted/10 flex items-center justify-center text-muted flex-shrink-0">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-medium text-foreground truncate">{a.title}</div>
+                        <div className="text-xs text-muted-foreground truncate">{a.subtitle}</div>
+                      </div>
+                      <div className="ml-auto text-xs text-muted-foreground tabular-nums">{a.timestamp ? timeAgo(a.timestamp) : "—"}</div>
+                    </Link>
+                  </li>
+                  );
+                })}
+            </ul>
+          )}
+        </div>
+      </div>
+
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
@@ -113,7 +293,9 @@ function DashboardContent() {
             </Link>
           </div>
           <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <ProtocolTable protocols={protocols?.data ?? []} loading={protocols?.isLoading ?? true} showCategory={false} limit={5} />
+            <Suspense fallback={<div className="rounded-lg border border-border bg-card p-4"><div className="skeleton h-6 w-32 mb-4" /><div className="skeleton w-full h-28" /></div>}>
+              <ProtocolTable protocols={protocols?.data ?? []} loading={protocols?.isLoading ?? true} showCategory={false} limit={5} />
+            </Suspense>
           </ErrorBoundary>
         </div>
 
@@ -125,7 +307,9 @@ function DashboardContent() {
             </Link>
           </div>
           <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <DexTable dexes={dexVolumes?.data ?? []} loading={dexVolumes?.isLoading ?? true} limit={5} />
+            <Suspense fallback={<div className="rounded-lg border border-border bg-card p-4"><div className="skeleton h-6 w-32 mb-4" /><div className="skeleton w-full h-28" /></div>}>
+              <DexTable dexes={dexVolumes?.data ?? []} loading={dexVolumes?.isLoading ?? true} limit={5} />
+            </Suspense>
           </ErrorBoundary>
         </div>
       </div>
@@ -139,7 +323,9 @@ function DashboardContent() {
           </Link>
         </div>
         <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <YieldTable pools={yieldPools?.data ?? []} loading={yieldPools?.isLoading ?? true} limit={5} />
+          <Suspense fallback={<div className="rounded-lg border border-border bg-card p-4"><div className="skeleton h-6 w-32 mb-4" /><div className="skeleton w-full h-28" /></div>}>
+            <YieldTable pools={yieldPools?.data ?? []} loading={yieldPools?.isLoading ?? true} limit={5} />
+          </Suspense>
         </ErrorBoundary>
       </div>
 
@@ -158,6 +344,49 @@ function DashboardContent() {
               <Button>Get Started</Button>
             </a>
           </div>
+        </div>
+      </div>
+      
+      {/* Top Chains & Fees */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="space-y-4 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Top Chains by TVL</h2>
+            <Link to="/chains">
+              <Button variant="ghost" size="sm" className="text-primary">View All →</Button>
+            </Link>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <ul className="space-y-2">
+              {topChains.length === 0 && (
+                <li className="text-muted-foreground">No chain TVL data available</li>
+              )}
+              {topChains.map((c: any) => (
+                <li key={c?.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-muted/10 flex items-center justify-center text-muted">
+                      <Globe className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground">{c?.name}</div>
+                      <div className="text-xs text-muted-foreground">{c?.chainId ? `ID ${c.chainId}` : ""}</div>
+                    </div>
+                  </div>
+                  <div className="font-semibold">{formatCurrency(c?.tvl ?? 0)}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Fees (24h)</h2>
+          <StatCard
+            title="Estimated Fees (24h)"
+            value={formatCurrency(fees24h)}
+            icon={Database}
+            loading={feesData?.isLoading ?? true}
+          />
         </div>
       </div>
     </div>

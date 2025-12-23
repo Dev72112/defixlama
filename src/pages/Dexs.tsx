@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeftRight, TrendingUp, Activity, Search, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -19,6 +20,8 @@ export default function Dexs() {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("volume24h");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // Filter and sort DEXs
   const filteredDexes = useMemo(() => {
@@ -123,10 +126,48 @@ export default function Dexs() {
               <SelectItem value="name">Name (A-Z)</SelectItem>
             </SelectContent>
           </Select>
+          <div className="ml-auto flex items-center gap-2">
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Page size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => {
+              // CSV export for DEXs
+              const rows = [["name","displayName","24h","7d","chains"] , ...filteredDexes.map(d => [d.name || '', d.displayName || '', d.total24h || 0, d.total7d || 0, (d.chains||[]).join(';')])];
+              const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = `dexs_${Date.now()}.csv`; a.click(); URL.revokeObjectURL(url);
+            }}>Export CSV</Button>
+          </div>
         </div>
 
         {/* DEX Table */}
-        <DexTable dexes={filteredDexes} loading={isLoading} />
+        {/* pagination */}
+        {(() => {
+          const totalPages = Math.max(1, Math.ceil(filteredDexes.length / pageSize));
+          if (page > totalPages) setPage(1);
+          const paged = filteredDexes.slice((page-1)*pageSize, page*pageSize);
+          return (
+            <>
+              <DexTable dexes={paged} loading={isLoading} />
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">Showing {paged.length} of {filteredDexes.length} DEXs</div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" onClick={() => setPage((p)=>Math.max(1,p-1))} disabled={page===1}>Prev</Button>
+                  <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
+                  <Button variant="ghost" onClick={() => setPage((p)=>Math.min(totalPages,p+1))} disabled={page===totalPages}>Next</Button>
+                </div>
+              </div>
+            </>
+          )
+        })()}
 
         {/* Results count */}
         {!isLoading && (

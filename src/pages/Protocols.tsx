@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { Database, Layers, TrendingUp, Search, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,8 @@ export default function Protocols() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("tvl");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -69,6 +72,34 @@ export default function Protocols() {
       (p.change_1d || 0) > (max.change_1d || 0) ? p : max
     , protocols[0]);
   }, [protocols]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredProtocols.length / pageSize));
+  if (page > totalPages) setPage(1);
+  const pagedProtocols = filteredProtocols.slice((page - 1) * pageSize, page * pageSize);
+
+  const exportCSV = () => {
+    const rows = [
+      ["name", "slug", "chain", "category", "tvl", "change_1d", "change_7d"],
+      ...filteredProtocols.map((p) => [
+        p.name,
+        p.slug || "",
+        p.chain || "",
+        p.category || "",
+        p.tvl || 0,
+        p.change_1d || 0,
+        p.change_7d || 0,
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `protocols_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <Layout>
@@ -150,14 +181,37 @@ export default function Protocols() {
               <SelectItem value="name">Name (A-Z)</SelectItem>
             </SelectContent>
           </Select>
+          <div className="ml-auto flex items-center gap-2">
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Page size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={exportCSV}>Export CSV</Button>
+          </div>
         </div>
 
         {/* Protocols Table */}
         <ProtocolTable
-          protocols={filteredProtocols}
+          protocols={pagedProtocols}
           loading={protocolsLoading}
           showCategory={true}
         />
+
+        {/* Pagination controls */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">Showing {pagedProtocols.length} of {filteredProtocols.length} results</div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>
+            <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
+            <Button variant="ghost" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+          </div>
+        </div>
 
         {/* Results count */}
         {!protocolsLoading && (

@@ -17,6 +17,7 @@ import Chains from "./pages/Chains";
 import ChainDetail from "./pages/ChainDetail";
 import Fees from "./pages/Fees";
 import FeeDetail from "./pages/FeeDetail";
+import Activities from "./pages/Activities";
 import Security from "./pages/Security";
 import SecurityDetail from "./pages/SecurityDetail";
 import NotFound from "./pages/NotFound";
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/chains/:id" element={<ChainDetail />} />
           <Route path="/fees" element={<Fees />} />
           <Route path="/fees/:id" element={<FeeDetail />} />
+          <Route path="/activities" element={<Activities />} />
           <Route path="/security" element={<Security />} />
           <Route path="/security/:id" element={<SecurityDetail />} />
           <Route path="/donations" element={<Donations />} />
