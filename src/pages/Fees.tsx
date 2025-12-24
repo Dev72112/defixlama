@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { FeeTrendChart } from "@/components/dashboard/FeeTrendChart";
+import { RevenueBreakdown } from "@/components/dashboard/RevenueBreakdown";
 
 export default function Fees() {
   return (
@@ -84,17 +86,23 @@ function FeesContent() {
             loading={isLoading}
           />
           <StatCard
-            title="Top Change"
-            value={"-"}
+            title="Avg Fee/Protocol"
+            value={formatCurrency(protocolsCount > 0 ? total24h / protocolsCount : 0)}
             icon={TrendingUp}
             loading={isLoading}
           />
           <StatCard
-            title="Fees Chart"
-            value={"Live"}
+            title="7d Fees"
+            value={formatCurrency(fees?.reduce((acc, f) => acc + (f.total7d || 0), 0) || 0)}
             icon={BarChart3}
             loading={isLoading}
           />
+        </div>
+
+        {/* Fee Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <FeeTrendChart fees={filteredFees} loading={isLoading} />
+          <RevenueBreakdown fees={filteredFees} loading={isLoading} />
         </div>
 
         {/* Search */}

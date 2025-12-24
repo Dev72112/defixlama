@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { YieldDistributionChart } from "@/components/dashboard/YieldDistributionChart";
+import { TopYieldPools } from "@/components/dashboard/TopYieldPools";
 
 export default function Yields() {
   const { data: pools, isLoading } = useXLayerYieldPools();
@@ -112,6 +114,12 @@ export default function Yields() {
             icon={Percent}
             loading={isLoading}
           />
+        </div>
+
+        {/* Yield Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <YieldDistributionChart pools={pools || []} loading={isLoading} />
+          <TopYieldPools pools={pools || []} loading={isLoading} />
         </div>
 
         {/* Filters */}
