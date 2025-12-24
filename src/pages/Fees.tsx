@@ -2,8 +2,9 @@ import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useFeesData } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
-import { BarChart3, TrendingUp, Search, DollarSign, Activity } from "lucide-react";
+import { BarChart3, TrendingUp, Search, DollarSign, Activity, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
@@ -26,6 +27,7 @@ import { useNavigate } from "react-router-dom";
 import { FeeTrendChart } from "@/components/dashboard/FeeTrendChart";
 import { RevenueBreakdown } from "@/components/dashboard/RevenueBreakdown";
 import { HistoricalFeesChart } from "@/components/dashboard/HistoricalFeesChart";
+import { exportToCSV } from "@/lib/export";
 
 export default function Fees() {
   return (
@@ -59,6 +61,18 @@ function FeesContent() {
   const total24h = fees?.reduce((acc, f) => acc + (f.total24h || 0), 0) || 0;
   const protocolsCount = fees?.length || 0;
 
+  const handleExport = () => {
+    if (!filteredFees.length) return;
+    exportToCSV(
+      filteredFees.map(f => ({
+        Protocol: f.displayName || f.name,
+        "24h Fees": f.total24h || 0,
+        "7d Fees": f.total7d || 0,
+        "24h Change": f.change_1d || 0,
+      })),
+      "fees"
+    );
+  };
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -67,9 +81,15 @@ function FeesContent() {
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Fees</h1>
             <p className="text-muted-foreground mt-1">Protocol fee volumes across chains</p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Activity className="h-4 w-4 text-primary animate-pulse" />
-            {protocolsCount} protocols
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Activity className="h-4 w-4 text-primary animate-pulse" />
+              {protocolsCount} protocols
+            </div>
           </div>
         </div>
 

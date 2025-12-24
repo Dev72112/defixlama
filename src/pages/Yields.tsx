@@ -3,8 +3,9 @@ import { YieldTable } from "@/components/dashboard/YieldTable";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useXLayerYieldPools } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
-import { TrendingUp, Droplets, Search, Activity, Percent } from "lucide-react";
+import { TrendingUp, Droplets, Search, Activity, Percent, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import {
   Select,
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { YieldDistributionChart } from "@/components/dashboard/YieldDistributionChart";
 import { TopYieldPools } from "@/components/dashboard/TopYieldPools";
+import { exportToCSV } from "@/lib/export";
 
 export default function Yields() {
   const { data: pools, isLoading } = useXLayerYieldPools();
@@ -71,6 +73,19 @@ export default function Yields() {
     ? Math.max(...pools.map((p) => (p.apyBase || 0) + (p.apyReward || 0)))
     : 0;
 
+  const handleExport = () => {
+    if (!filteredPools.length) return;
+    exportToCSV(
+      filteredPools.map(p => ({
+        Symbol: p.symbol,
+        Project: p.project,
+        APY: ((p.apyBase || 0) + (p.apyReward || 0)).toFixed(2),
+        TVL: p.tvlUsd || 0,
+      })),
+      "yield_pools"
+    );
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -82,9 +97,15 @@ export default function Yields() {
               Discover yield farming opportunities on XLayer
             </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Activity className="h-4 w-4 text-primary animate-pulse" />
-            Max APY: {Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Activity className="h-4 w-4 text-primary animate-pulse" />
+              Max APY: {Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%
+            </div>
           </div>
         </div>
 
