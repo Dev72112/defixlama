@@ -40,13 +40,13 @@ export function StatCard({
     <div className={cn("stat-card card-hover group", className)}>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold text-foreground tabular-nums">
+          <p className="text-sm font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">{title}</p>
+          <p className="text-2xl font-bold text-foreground tabular-nums group-hover:text-gradient-primary transition-all">
             {value}
           </p>
         </div>
         {Icon && (
-          <div className="rounded-lg bg-primary/10 p-2 text-primary group-hover:bg-primary/20 transition-colors">
+          <div className="rounded-lg bg-primary/10 p-2.5 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 group-hover:shadow-lg transition-all duration-300">
             <Icon className="h-5 w-5" />
           </div>
         )}
