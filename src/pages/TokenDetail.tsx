@@ -21,14 +21,13 @@ import {
 import { useState, useMemo } from "react";
 
 export default function TokenDetail() {
-  const { chain, tokenId } = useParams<{ chain: string; tokenId: string }>();
-  const chainName = chain || "";
-  const contractAddress = tokenId || "";
+  const { id } = useParams<{ id: string }>();
+  const tokenId = id || "";
   
-  const { data: token, isLoading: isLoadingToken } = useTokenDetails(contractAddress);
+  const { data: token, isLoading: isLoadingToken } = useTokenDetails(tokenId);
   const [days, setDays] = useState(7);
-  const { data: priceHistory, isLoading: isLoadingPrice } = useTokenPriceHistory(contractAddress);
-  const { data: oklinkInfo, isLoading: isLoadingOklink } = useOklinkContract(contractAddress);
+  const { data: priceHistory, isLoading: isLoadingPrice } = useTokenPriceHistory(tokenId);
+  const { data: oklinkInfo, isLoading: isLoadingOklink } = useOklinkContract(tokenId);
 
   // Get token logo from multiple sources with fallback
   const tokenLogo = useMemo(() => {
@@ -81,14 +80,14 @@ export default function TokenDetail() {
   }
 
   // Show not found if we have no data from either source
-  if (!token && !oklinkInfo) {
+  if (!token && !oklinkInfo && !isLoadingToken && !isLoadingOklink) {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <Activity className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-xl font-bold text-foreground mb-2">Token not found</h2>
           <p className="text-muted-foreground mb-4">
-            The token "{contractAddress}" could not be found. It may not be listed yet.
+            The token "{tokenId}" could not be found. It may not be listed yet.
           </p>
           <Link to="/tokens">
             <Button variant="outline">
@@ -103,11 +102,11 @@ export default function TokenDetail() {
 
   // Create a unified token object from available sources
   const displayToken = token || {
-    id: contractAddress,
+    id: tokenId,
     name: oklinkInfo?.name || oklinkInfo?.contractName || "Unknown Token",
     symbol: oklinkInfo?.symbol?.toUpperCase() || "???",
     image: { large: oklinkInfo?.logo || null, small: oklinkInfo?.logo || null },
-    contract: contractAddress,
+    contract: tokenId,
     market_data: {
       current_price: { usd: oklinkInfo?.price || 0 },
       price_change_percentage_24h: oklinkInfo?.change24h || 0,
@@ -249,7 +248,7 @@ export default function TokenDetail() {
                 {priceChange24h >= 0 ? "+" : ""}{priceChange24h.toFixed(2)}%
               </span>
               <PriceAlertDialog
-                tokenId={contractAddress}
+                tokenId={tokenId}
                 symbol={tokenSymbol}
                 name={tokenName}
                 currentPrice={displayToken.market_data?.current_price?.usd || 0}
