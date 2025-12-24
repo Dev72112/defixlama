@@ -26,7 +26,7 @@ export default function TokenDetail() {
   
   const { data: token, isLoading: isLoadingToken } = useTokenDetails(tokenId);
   const [days, setDays] = useState(7);
-  const { data: priceHistory, isLoading: isLoadingPrice } = useTokenPriceHistory(tokenId);
+  const { data: priceHistory, isLoading: isLoadingPrice } = useTokenPriceHistory(tokenId, days);
   const { data: oklinkInfo, isLoading: isLoadingOklink } = useOklinkContract(tokenId);
 
   // Create a unified token object from available sources
@@ -68,22 +68,22 @@ export default function TokenDetail() {
   const chartData = useMemo(() => {
     if (!priceHistory) return [];
     
-    if (Array.isArray(priceHistory)) {
-      return priceHistory.map(([timestamp, price]) => ({
+    // CoinGecko format: { prices: [[timestamp, price], ...] }
+    if (priceHistory.prices && Array.isArray(priceHistory.prices)) {
+      return priceHistory.prices.map(([timestamp, price]: [number, number]) => ({
         date: new Date(timestamp).toLocaleDateString(),
-        price: typeof price === 'number' ? price : parseFloat(price),
+        price: typeof price === 'number' ? price : parseFloat(String(price)),
         timestamp,
       }));
     }
     
-    if (typeof priceHistory === 'object') {
-      return Object.entries(priceHistory)
-        .map(([timestamp, price]) => ({
-          date: new Date(parseInt(timestamp)).toLocaleDateString(),
-          price: typeof price === 'number' ? price : parseFloat(price as any),
-          timestamp: parseInt(timestamp),
-        }))
-        .sort((a, b) => a.timestamp - b.timestamp);
+    // Direct array format: [[timestamp, price], ...]
+    if (Array.isArray(priceHistory)) {
+      return priceHistory.map(([timestamp, price]: [number, number]) => ({
+        date: new Date(timestamp).toLocaleDateString(),
+        price: typeof price === 'number' ? price : parseFloat(String(price)),
+        timestamp,
+      }));
     }
     
     return [];
