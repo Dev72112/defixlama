@@ -125,6 +125,7 @@ export default function Docs() {
           <h3 className="font-medium mt-3">Missing protocol data?</h3>
           <p>Open an issue with the protocol name and chain; we will verify and add enrichment where possible.</p>
         </div>
+      </Card>
       </div>
     </Layout>
   );
