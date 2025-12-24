@@ -71,75 +71,69 @@ export function useTokenPrices() {
       // Map to our format
       const mapped = prices.map(mapTokenData);
       
-      // Add community tokens
-      const communityTokens = XLAYER_COMMUNITY_TOKENS.map((t) => ({
-        symbol: t.symbol,
-        name: t.name,
-        price: 0,
-        change24h: 0,
-        volume24h: 0,
-        mcap: 0,
-        logo: t.logo,
-        sparkline: [] as number[],
-        contract: t.contract,
-        isCommunityToken: true,
-      }));
-
-      // Try OKLink for community token prices
-      for (const ct of communityTokens) {
-        try {
-          const oklinkPrice = await oklink.fetchOklinkLivePrice(ct.contract);
-          if (oklinkPrice && oklinkPrice.price > 0) {
-            ct.price = oklinkPrice.price;
-            ct.change24h = oklinkPrice.change24h;
-            ct.volume24h = oklinkPrice.volume24h;
+      // Add community tokens - now fetch from CoinGecko since they're listed!
+      const communityTokens = await Promise.all(
+        XLAYER_COMMUNITY_TOKENS.map(async (t) => {
+          let price = 0;
+          let change24h = 0;
+          let volume24h = 0;
+          let mcap = 0;
+          
+          // Try CoinGecko via edge function (primary source - they're listed!)
+          if (t.coingeckoId) {
+            try {
+              const cgData = await fetchTokenDetails(t.coingeckoId);
+              if (cgData?.market_data) {
+                price = cgData.market_data.current_price?.usd || 0;
+                change24h = cgData.market_data.price_change_percentage_24h || 0;
+                volume24h = cgData.market_data.total_volume?.usd || 0;
+                mcap = cgData.market_data.market_cap?.usd || 0;
+              }
+            } catch (e) {
+              console.log(`CoinGecko failed for ${t.symbol}, trying fallbacks`);
+            }
           }
-        } catch (e) {
-          // ignore
-        }
-      }
-
-      // Try DefiLlama for tokens still missing prices
-      const missingAfterOklink = communityTokens.filter((ct) => ct.price === 0).map((ct) => ct.contract);
-      if (missingAfterOklink.length > 0) {
-        try {
-          const pricesData = await fetchCommunityPricesByContracts(missingAfterOklink);
-          communityTokens.forEach((ct) => {
-            if (ct.price === 0) {
-              const key = `xlayer:${ct.contract}`;
-              const coin = pricesData[key];
-              if (coin) {
-                ct.price = typeof coin.price === 'number' ? coin.price : Number(coin.price) || 0;
-                ct.change24h = coin.change24h ?? 0;
-                ct.volume24h = coin.volume ?? 0;
-                if (coin.logo) ct.logo = coin.logo;
+          
+          // Fallback: Try OKLink
+          if (price === 0) {
+            try {
+              const oklinkPrice = await oklink.fetchOklinkLivePrice(t.contract);
+              if (oklinkPrice && oklinkPrice.price > 0) {
+                price = oklinkPrice.price;
+                change24h = oklinkPrice.change24h;
+                volume24h = oklinkPrice.volume24h;
               }
-            }
-          });
-        } catch (err) {
-          // ignore
-        }
-      }
-
-      // Try DexScreener as final fallback
-      try {
-        const missingContracts = communityTokens.filter((ct) => ct.price === 0).map((ct) => ct.contract);
-        if (missingContracts.length > 0) {
-          const dexPrices = await fetchDexScreenerPrices(missingContracts);
-          communityTokens.forEach((ct) => {
-            if (ct.price === 0) {
-              const dexData = dexPrices[ct.contract.toLowerCase()];
+            } catch (e) {}
+          }
+          
+          // Fallback: Try DexScreener
+          if (price === 0) {
+            try {
+              const dexPrices = await fetchDexScreenerPrices([t.contract]);
+              const dexData = dexPrices[t.contract.toLowerCase()];
               if (dexData) {
-                ct.price = dexData.price || 0;
-                ct.change24h = dexData.change24h || 0;
-                ct.volume24h = dexData.volume24h || 0;
+                price = dexData.price || 0;
+                change24h = dexData.change24h || 0;
+                volume24h = dexData.volume24h || 0;
               }
-            }
-          });
-        }
-      } catch (err) {
-        // ignore
-      }
+            } catch (e) {}
+          }
+          
+          return {
+            id: t.coingeckoId || t.contract,
+            symbol: t.symbol,
+            name: t.name,
+            price,
+            change24h,
+            volume24h,
+            mcap,
+            logo: t.logo,
+            sparkline: [] as number[],
+            contract: t.contract,
+            isCommunityToken: true,
+          };
+        })
+      );
 
       // Log data source for debugging
       if (source !== "none") {
@@ -170,7 +164,24 @@ export function useTokenDetails(id: string | null) {
       );
       
       if (communityMatch) {
-        // Try OKLink first
+        // Try CoinGecko first (these tokens ARE listed now!)
+        if (communityMatch.coingeckoId) {
+          try {
+            const cgData = await fetchTokenDetails(communityMatch.coingeckoId);
+            if (cgData) {
+              return {
+                ...cgData,
+                contract: communityMatch.contract,
+                isCommunityToken: true,
+                image: cgData.image || { large: communityMatch.logo, small: communityMatch.logo },
+              };
+            }
+          } catch (e) {
+            console.log(`CoinGecko failed for ${communityMatch.symbol}`);
+          }
+        }
+        
+        // Try OKLink as fallback
         try {
           const oklinkData = await oklink.fetchOklinkContractInfo(communityMatch.contract);
           if (oklinkData) {
@@ -194,13 +205,7 @@ export function useTokenDetails(id: string | null) {
           }
         } catch (e) {}
 
-        // Try DefiLlama
-        try {
-          const dl = await fetchCommunityTokenDetailsByContract(communityMatch.contract);
-          if (dl) return { ...dl, contract: communityMatch.contract, isCommunityToken: true };
-        } catch (e) {}
-
-        // Try DexScreener
+        // Try DexScreener as fallback
         try {
           const dexData = await fetchDexScreenerPrices([communityMatch.contract]);
           const tokenData = dexData[communityMatch.contract.toLowerCase()];
@@ -301,19 +306,15 @@ export function useTokenPriceHistory(id: string | null, days: number = 7) {
       
       const lower = id.toLowerCase();
       
-      // Check if it's a community token (by contract address)
-      const isCommunityToken = XLAYER_COMMUNITY_TOKENS.some(
+      // Check if it's a community token (by contract address or symbol)
+      const communityToken = XLAYER_COMMUNITY_TOKENS.find(
         (t) => t.contract.toLowerCase() === lower || t.symbol.toLowerCase() === lower
       );
       
-      if (isCommunityToken) {
-        const contract = XLAYER_COMMUNITY_TOKENS.find(
-          (t) => t.contract.toLowerCase() === lower || t.symbol.toLowerCase() === lower
-        )?.contract;
-        if (contract) {
-          const history = await fetchCommunityTokenPriceHistory(contract, days);
-          if (history) return history;
-        }
+      if (communityToken?.coingeckoId) {
+        // Use CoinGecko since these tokens are now listed!
+        const history = await fetchTokenPriceHistory(communityToken.coingeckoId, days);
+        if (history) return history;
       }
       
       // Standard CoinGecko token

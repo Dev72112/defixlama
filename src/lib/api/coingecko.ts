@@ -70,11 +70,29 @@ export function resolveToCoinGeckoId(identifier: string): string | null {
   return null;
 }
 
-// XLayer community tokens (not on CoinGecko)
+// XLayer community tokens (now on CoinGecko with proper IDs!)
 export const XLAYER_COMMUNITY_TOKENS = [
-  { symbol: "DOG", name: "DOG", contract: "0x903358faf7c6304afbd560e9e29b12ab1b8fddc5", logo: "https://ui-avatars.com/api/?name=DOG&background=f59e0b&color=fff&size=64" },
-  { symbol: "NIUMA", name: "NIUMA", contract: "0x87669801a1fad6dad9db70d27ac752f452989667", logo: "https://ui-avatars.com/api/?name=NM&background=8b5cf6&color=fff&size=64" },
-  { symbol: "XDOG", name: "XDOG", contract: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", logo: "https://ui-avatars.com/api/?name=XD&background=ec4899&color=fff&size=64" },
+  { 
+    symbol: "NIUMA", 
+    name: "Niuma", 
+    contract: "0x87669801a1fad6dad9db70d27ac752f452989667", 
+    coingeckoId: "niuma",
+    logo: "https://assets.coingecko.com/coins/images/69429/standard/photo_2025-09-15_18-40-45.jpg" 
+  },
+  { 
+    symbol: "XDOG", 
+    name: "XDOG", 
+    contract: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", 
+    coingeckoId: "xdog",
+    logo: "https://assets.coingecko.com/coins/images/68279/standard/xdog_logo_.png" 
+  },
+  { 
+    symbol: "DOG", 
+    name: "DOG", 
+    contract: "0x903358faf7c6304afbd560e9e29b12ab1b8fddc5", 
+    coingeckoId: "dog-3",
+    logo: "https://assets.coingecko.com/coins/images/69178/standard/1000071357.jpg" 
+  },
 ];
 
 export function findCommunityToken(identifier: string) {
