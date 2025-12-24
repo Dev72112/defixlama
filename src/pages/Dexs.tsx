@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { DexTable } from "@/components/dashboard/DexTable";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { VolumeComparisonChart } from "@/components/dashboard/VolumeComparisonChart";
+import { HistoricalVolumeChart } from "@/components/dashboard/HistoricalVolumeChart";
 import { useXLayerDexVolumes } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeftRight, TrendingUp, Activity, Search, BarChart3 } from "lucide-react";
@@ -105,8 +106,11 @@ export default function Dexs() {
           />
         </div>
 
-        {/* Volume Comparison Chart */}
-        <VolumeComparisonChart dexes={dexes || []} loading={isLoading} limit={8} />
+        {/* Volume Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <VolumeComparisonChart dexes={dexes || []} loading={isLoading} limit={8} />
+          <HistoricalVolumeChart data={dexes || []} loading={isLoading} title="DEX Volume Analysis" />
+        </div>
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1 max-w-md">

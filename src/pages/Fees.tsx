@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { FeeTrendChart } from "@/components/dashboard/FeeTrendChart";
 import { RevenueBreakdown } from "@/components/dashboard/RevenueBreakdown";
+import { HistoricalFeesChart } from "@/components/dashboard/HistoricalFeesChart";
 
 export default function Fees() {
   return (
@@ -104,6 +105,9 @@ function FeesContent() {
           <FeeTrendChart fees={filteredFees} loading={isLoading} />
           <RevenueBreakdown fees={filteredFees} loading={isLoading} />
         </div>
+
+        {/* Historical Fees Chart */}
+        <HistoricalFeesChart data={filteredFees} loading={isLoading} title="Fee Revenue by Protocol" />
 
         {/* Search */}
         <div className="relative max-w-md">
