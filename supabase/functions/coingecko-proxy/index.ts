@@ -39,9 +39,10 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`CoinGecko API error: ${response.status} - ${errorText}`);
+      // Return generic error to client without exposing internal details
       return new Response(
-        JSON.stringify({ error: `CoinGecko API error: ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "External API error" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -52,9 +53,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error in coingecko-proxy:", error);
+    // Return generic error to client without exposing internal details
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Service temporarily unavailable" }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
