@@ -6,6 +6,8 @@ import { Link } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Protocol, formatCurrency } from "@/lib/api/defillama";
+import { SecurityOverviewChart } from "@/components/dashboard/SecurityOverviewChart";
+import { TVLByAuditChart } from "@/components/dashboard/TVLByAuditChart";
 
 export default function Security() {
   const { data: protocols, isLoading } = useXLayerProtocols();
@@ -82,6 +84,12 @@ export default function Security() {
             </div>
             <p className="text-2xl font-bold text-foreground">{protocols?.length || 0}</p>
           </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SecurityOverviewChart audited={auditedCount} unaudited={unauditedCount} loading={isLoading} />
+          <TVLByAuditChart protocols={filteredProtocols} loading={isLoading} />
         </div>
 
         {/* Security Notice */}

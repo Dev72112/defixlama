@@ -6,6 +6,8 @@ import { Database, Layers, Globe, DollarSign, Search, RefreshCw } from "lucide-r
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
+import { ActivityBreakdown } from "@/components/dashboard/ActivityBreakdown";
 
 export default function Activities() {
   const dashboardData = useDashboardData();
@@ -129,6 +131,12 @@ export default function Activities() {
             </div>
             <Button variant="outline" onClick={() => { setFilter("all"); setQuery(""); }}>Reset</Button>
           </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ActivityTimeline activities={items} loading={isLoading} />
+          <ActivityBreakdown protocols={protocols} fees={fees} chains={chains} loading={isLoading} />
         </div>
 
         {/* Filter Buttons */}
