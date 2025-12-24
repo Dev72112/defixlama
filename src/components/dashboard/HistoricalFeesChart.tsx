@@ -28,10 +28,22 @@ export function HistoricalFeesChart({
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return [];
     
-    // Get top 8 fee earners
+    // Determine which fee field to use based on date range
+    const getFeeValue = (item: FeeData) => {
+      switch (dateRange) {
+        case "7d": return item.total7d || 0;
+        case "30d": return item.total30d || 0;
+        case "90d": return (item.total30d || 0) * 3; // Approximate
+        case "1y": return (item.total30d || 0) * 12; // Approximate
+        case "all": return (item.total30d || 0) * 12; // Approximate
+        default: return item.total24h || 0;
+      }
+    };
+
+    // Get top 8 fee earners based on selected range
     const topFees = [...data]
-      .filter((d) => d.total24h && d.total24h > 0)
-      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
+      .filter((d) => getFeeValue(d) > 0)
+      .sort((a, b) => getFeeValue(b) - getFeeValue(a))
       .slice(0, 8);
 
     return topFees.map((item) => {
@@ -39,12 +51,12 @@ export function HistoricalFeesChart({
       return {
         name: name.length > 12 ? name.slice(0, 12) + "…" : name,
         fullName: name,
+        fees: getFeeValue(item),
         fees24h: item.total24h || 0,
-        fees7d: item.total7d || 0,
         change: item.change_1d || 0,
       };
     });
-  }, [data]);
+  }, [data, dateRange]);
 
   const stats = useMemo(() => {
     if (!data || data.length === 0) return { total24h: 0, total7d: 0, avgChange: 0 };
@@ -117,23 +129,23 @@ export function HistoricalFeesChart({
                 }}
                 formatter={(value: number, name: string) => [
                   formatCurrency(value),
-                  name === "fees24h" ? "24h Fees" : "7d Fees"
+                  name === "fees" ? `${dateRange === "7d" ? "7d" : dateRange === "30d" ? "30d" : dateRange} Fees` : "24h Fees"
                 ]}
                 labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
               />
               <Legend />
               <Line
                 type="monotone"
-                dataKey="fees24h"
-                name="24h Fees"
+                dataKey="fees"
+                name={`${dateRange === "7d" ? "7d" : dateRange === "30d" ? "30d" : dateRange} Fees`}
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ fill: "hsl(var(--primary))", r: 4 }}
               />
               <Line
                 type="monotone"
-                dataKey="fees7d"
-                name="7d Fees"
+                dataKey="fees24h"
+                name="24h Fees"
                 stroke="hsl(var(--chart-2))"
                 strokeWidth={2}
                 dot={{ fill: "hsl(var(--chart-2))", r: 4 }}
