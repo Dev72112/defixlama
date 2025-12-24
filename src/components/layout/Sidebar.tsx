@@ -15,6 +15,7 @@ import {
   BarChart3,
   Shield,
   Activity,
+  Bell,
   X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { label: "Stablecoins", href: "/stablecoins", icon: Coins },
   { label: "Tokens", href: "/tokens", icon: Wallet },
   { label: "Portfolio", href: "/portfolio", icon: PieChart, badge: "NEW" },
+  { label: "Alerts", href: "/alerts", icon: Bell },
 ];
 
 const moreItems: NavItem[] = [
