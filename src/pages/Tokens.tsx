@@ -1,17 +1,20 @@
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight } from "lucide-react";
+import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight, GitCompare } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/api/defillama";
 import { useTokenPrices } from "@/hooks/useTokenData";
-import { Link, useNavigate } from "react-router-dom";
-import { TOKEN_IDS } from "@/lib/api/coingecko";
+import { useNavigate } from "react-router-dom";
+import { TOKEN_IDS, XLAYER_COMMUNITY_TOKENS } from "@/lib/api/coingecko";
+import { PriceComparison } from "@/components/PriceComparison";
 
 export default function Tokens() {
   const { data: tokens, isLoading } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState("");
+  const [showComparison, setShowComparison] = useState(false);
   const navigate = useNavigate();
 
   // Filter tokens
@@ -28,6 +31,37 @@ export default function Tokens() {
     ? validTokens.reduce((acc, t) => acc + (t.change24h || 0), 0) / validTokens.length 
     : 0;
 
+  // Get the correct route ID for each token
+  const getTokenRouteId = (token: any) => {
+    // For community tokens, use the contract address
+    if (token.isCommunityToken && token.contract) {
+      return token.contract;
+    }
+    
+    // For standard tokens, use CoinGecko ID if available, otherwise the stored id
+    if (token.id) {
+      return token.id;
+    }
+    
+    // Check if we have a mapping for this symbol
+    const cgId = TOKEN_IDS[token.symbol];
+    if (cgId) {
+      return cgId;
+    }
+    
+    // Fallback to lowercase symbol
+    return token.symbol.toLowerCase();
+  };
+
+  // Prepare tokens for price comparison component
+  const comparisonTokens = (tokens || []).map((t) => ({
+    symbol: t.symbol,
+    name: t.name,
+    price: t.price,
+    change24h: t.change24h,
+    logo: t.logo,
+  }));
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -39,9 +73,20 @@ export default function Tokens() {
               Live token prices on XLayer
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
-            <Activity className="h-4 w-4 animate-pulse" />
-            Live Prices
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowComparison(true)}
+              className="gap-2"
+            >
+              <GitCompare className="h-4 w-4" />
+              Compare Prices
+            </Button>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
+              <Activity className="h-4 w-4 animate-pulse" />
+              Live Prices
+            </div>
           </div>
         </div>
 
@@ -113,7 +158,7 @@ export default function Tokens() {
                   </tr>
                 ))
               ) : filteredTokens.map((token, index) => {
-                const tokenId = TOKEN_IDS[token.symbol];
+                const routeId = getTokenRouteId(token);
                 const isCommunity = token.isCommunityToken;
                 return (
                   <tr
@@ -122,10 +167,10 @@ export default function Tokens() {
                       "group hover:bg-muted/30 transition-colors cursor-pointer",
                       isCommunity && "bg-primary/5"
                     )}
-                    onClick={() => navigate(`/tokens/${tokenId || token.contract || token.symbol.toLowerCase()}`)}
+                    onClick={() => navigate(`/tokens/${routeId}`)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${tokenId || token.contract || token.symbol.toLowerCase()}`); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${routeId}`); }}
                   >
                     <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                       {index + 1}
@@ -252,6 +297,13 @@ export default function Tokens() {
           </div>
         </div>
       </div>
+
+      {/* Price Comparison Modal */}
+      <PriceComparison
+        tokens={comparisonTokens}
+        isOpen={showComparison}
+        onClose={() => setShowComparison(false)}
+      />
     </Layout>
   );
 }

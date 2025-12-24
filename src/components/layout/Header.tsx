@@ -1,7 +1,8 @@
-import { Search, Bell, Moon, Sun, Menu } from "lucide-react";
+import { Search, Moon, Sun, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import { NotificationsPanel } from "@/components/NotificationsPanel";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -26,7 +27,6 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-4 lg:px-6">
-      {/* (announcement banner removed) */}
       {/* Mobile menu button */}
       <Button
         variant="ghost"
@@ -66,10 +66,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
-        </Button>
+        <NotificationsPanel />
 
         {/* Theme toggle */}
         <Button

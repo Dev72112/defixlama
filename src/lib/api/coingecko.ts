@@ -21,8 +21,9 @@ export interface TokenMarketData {
   total_volumes: [number, number][];
 }
 
-// Token IDs for major tokens on XLayer
+// Token IDs for major tokens on XLayer - bidirectional mapping
 export const TOKEN_IDS: Record<string, string> = {
+  // Symbol -> CoinGecko ID
   OKB: "okb",
   WETH: "weth",
   WBTC: "wrapped-bitcoin",
@@ -32,12 +33,49 @@ export const TOKEN_IDS: Record<string, string> = {
   LINK: "chainlink",
 };
 
+// Reverse mapping: CoinGecko ID -> Symbol
+export const TOKEN_IDS_REVERSE: Record<string, string> = {
+  okb: "OKB",
+  weth: "WETH",
+  "wrapped-bitcoin": "WBTC",
+  tether: "USDT",
+  "usd-coin": "USDC",
+  dai: "DAI",
+  chainlink: "LINK",
+};
+
+// Get CoinGecko ID from any identifier (symbol, id, or contract)
+export function resolveToCoinGeckoId(identifier: string): string | null {
+  const lower = identifier.toLowerCase();
+  
+  // Check if it's already a CoinGecko ID
+  if (TOKEN_IDS_REVERSE[lower]) {
+    return lower;
+  }
+  
+  // Check if it's a symbol
+  const upper = identifier.toUpperCase();
+  if (TOKEN_IDS[upper]) {
+    return TOKEN_IDS[upper];
+  }
+  
+  return null;
+}
+
 // XLayer community tokens (not on CoinGecko, we'll try to fetch from DEX/DefiLlama)
 export const XLAYER_COMMUNITY_TOKENS = [
   { symbol: "DOG", name: "DOG", contract: "0x903358faf7c6304afbd560e9e29b12ab1b8fddc5", logo: "https://ui-avatars.com/api/?name=DOG&background=f59e0b&color=fff&size=64" },
   { symbol: "NIUMA", name: "NIUMA", contract: "0x87669801a1fad6dad9db70d27ac752f452989667", logo: "https://ui-avatars.com/api/?name=NM&background=8b5cf6&color=fff&size=64" },
   { symbol: "XDOG", name: "XDOG", contract: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", logo: "https://ui-avatars.com/api/?name=XD&background=ec4899&color=fff&size=64" },
 ];
+
+// Find community token by any identifier
+export function findCommunityToken(identifier: string) {
+  const lower = identifier.toLowerCase();
+  return XLAYER_COMMUNITY_TOKENS.find(
+    (t) => t.symbol.toLowerCase() === lower || t.contract.toLowerCase() === lower
+  );
+}
 
 // Alternative price fetching through DexScreener API for community tokens
 export async function fetchDexScreenerPrices(contracts: string[]) {
@@ -119,6 +157,7 @@ export async function fetchTokenPriceHistory(id: string, days: number = 7): Prom
 // Map CoinGecko data to our token format
 export function mapTokenData(token: TokenPrice) {
   return {
+    id: token.id,
     symbol: token.symbol.toUpperCase(),
     name: token.name,
     price: token.current_price || 0,
