@@ -240,44 +240,40 @@ export async function fetchCommunityPricesByContracts(contracts: string[]) {
 export async function fetchCommunityTokenDetailsByContract(contract: string) {
   try {
     if (!contract) return null;
-    const endpoints = [
-      `${DEFILLAMA_COINS_URL}/coins/xlayer:${encodeURIComponent(contract)}`,
-      `${DEFILLAMA_COINS_URL}/coins/xlayer/${encodeURIComponent(contract)}`,
-    ];
-
-    for (const url of endpoints) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const data = await res.json();
-        if (!data) continue;
-        
-        return {
-          id: data.address || contract,
-          name: data.name || data.coin || data.address || contract,
-          symbol: (data.symbol || data.ticker || '').toUpperCase(),
-          image: { large: data.logo || data.icon || null, small: data.logo || data.icon || null },
-          contract,
-          market_data: {
-            current_price: { usd: data.price || data.market_price || 0 },
-            price_change_percentage_24h: data.change24h || 0,
-            total_volume: { usd: data.volume || data.total_volume || 0 },
-            market_cap: { usd: data.marketCap || data.market_cap || 0 },
-            ath: { usd: data.ath || 0 },
-            high_24h: { usd: data.high_24h || 0 },
-            low_24h: { usd: data.low_24h || 0 },
-            atl: { usd: data.atl || 0 },
-            circulating_supply: data.circulating || data.circulating_supply || 0,
-            total_supply: data.total || data.total_supply || 0,
-            max_supply: data.max || data.max_supply || null,
-          },
-          description: { en: data.description || data.about || '' },
-        };
-      } catch (err) {
-        // try next endpoint
-      }
-    }
-    return null;
+    
+    // Use the correct DefiLlama prices endpoint
+    const tokenKey = `xlayer:${contract}`;
+    const response = await fetch(`${DEFILLAMA_COINS_URL}/prices/current/${encodeURIComponent(tokenKey)}`);
+    
+    if (!response.ok) return null;
+    const data = await response.json();
+    
+    if (!data.coins || !data.coins[tokenKey]) return null;
+    
+    const coin = data.coins[tokenKey];
+    const communityToken = findCommunityToken(contract);
+    
+    return {
+      id: contract,
+      name: communityToken?.name || coin.symbol || contract,
+      symbol: (coin.symbol || communityToken?.symbol || '').toUpperCase(),
+      image: { 
+        large: communityToken?.logo || null, 
+        small: communityToken?.logo || null 
+      },
+      contract,
+      market_data: {
+        current_price: { usd: coin.price || 0 },
+        price_change_percentage_24h: coin.change24h || 0,
+        price_change_percentage_7d: 0,
+        total_volume: { usd: coin.volume || 0 },
+        market_cap: { usd: coin.mcap || 0 },
+        circulating_supply: 0,
+        total_supply: 0,
+        max_supply: null,
+      },
+      description: { en: `${communityToken?.name || coin.symbol} is a community token on XLayer.` },
+    };
   } catch (error) {
     console.error('Error fetching community token details:', error);
     return null;
