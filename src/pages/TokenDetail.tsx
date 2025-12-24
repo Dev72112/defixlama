@@ -29,6 +29,33 @@ export default function TokenDetail() {
   const { data: priceHistory, isLoading: isLoadingPrice } = useTokenPriceHistory(tokenId);
   const { data: oklinkInfo, isLoading: isLoadingOklink } = useOklinkContract(tokenId);
 
+  // Create a unified token object from available sources
+  const displayToken = useMemo(() => {
+    if (token) return token;
+    if (oklinkInfo) {
+      return {
+        id: tokenId,
+        name: oklinkInfo?.name || oklinkInfo?.contractName || "Unknown Token",
+        symbol: oklinkInfo?.symbol?.toUpperCase() || "???",
+        image: { large: oklinkInfo?.logo || null, small: oklinkInfo?.logo || null },
+        contract: tokenId,
+        market_data: {
+          current_price: { usd: oklinkInfo?.price || 0 },
+          price_change_percentage_24h: oklinkInfo?.change24h || 0,
+          price_change_percentage_7d: 0,
+          total_volume: { usd: oklinkInfo?.volume24h || 0 },
+          market_cap: { usd: oklinkInfo?.marketCap || 0 },
+          circulating_supply: 0,
+          total_supply: oklinkInfo?.totalSupply ? parseFloat(oklinkInfo.totalSupply) : 0,
+          max_supply: null,
+        },
+        description: { en: oklinkInfo?.description || "" },
+        isCommunityToken: true,
+      };
+    }
+    return null;
+  }, [token, oklinkInfo, tokenId]);
+
   // Get token logo from multiple sources with fallback
   const tokenLogo = useMemo(() => {
     if (token?.image) return token.image;
@@ -61,72 +88,6 @@ export default function TokenDetail() {
     
     return [];
   }, [priceHistory]);
-
-  // Show loading state
-  if (isLoadingToken && !token && !oklinkInfo) {
-    return (
-      <Layout>
-        <div className="space-y-6 animate-fade-in">
-          <div className="skeleton h-8 w-48" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array(4).fill(0).map((_, i) => (
-              <div key={i} className="skeleton h-24 rounded-lg" />
-            ))}
-          </div>
-          <div className="skeleton h-[400px] rounded-lg" />
-        </div>
-      </Layout>
-    );
-  }
-
-  // Show not found if we have no data from either source
-  if (!token && !oklinkInfo && !isLoadingToken && !isLoadingOklink) {
-    return (
-      <Layout>
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-          <Activity className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-bold text-foreground mb-2">Token not found</h2>
-          <p className="text-muted-foreground mb-4">
-            The token "{tokenId}" could not be found. It may not be listed yet.
-          </p>
-          <Link to="/tokens">
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Tokens
-            </Button>
-          </Link>
-        </div>
-      </Layout>
-    );
-  }
-
-  // Create a unified token object from available sources
-  const displayToken = token || {
-    id: tokenId,
-    name: oklinkInfo?.name || oklinkInfo?.contractName || "Unknown Token",
-    symbol: oklinkInfo?.symbol?.toUpperCase() || "???",
-    image: { large: oklinkInfo?.logo || null, small: oklinkInfo?.logo || null },
-    contract: tokenId,
-    market_data: {
-      current_price: { usd: oklinkInfo?.price || 0 },
-      price_change_percentage_24h: oklinkInfo?.change24h || 0,
-      price_change_percentage_7d: 0,
-      total_volume: { usd: oklinkInfo?.volume24h || 0 },
-      market_cap: { usd: oklinkInfo?.marketCap || 0 },
-      circulating_supply: 0,
-      total_supply: oklinkInfo?.totalSupply ? parseFloat(oklinkInfo.totalSupply) : 0,
-      max_supply: null,
-    },
-    description: { en: oklinkInfo?.description || "" },
-    isCommunityToken: true,
-  };
-
-  const tokenName = displayToken.name;
-  const tokenSymbol = displayToken.symbol;
-  const isCommunityToken = displayToken.isCommunityToken || !token;
-
-  const priceChange24h = displayToken.market_data?.price_change_percentage_24h || 0;
-  const priceChange7d = displayToken.market_data?.price_change_percentage_7d || 0;
 
   // Price Analytics
   const priceAnalytics = useMemo(() => {
@@ -169,6 +130,51 @@ export default function TokenDetail() {
       circSupplyPercent: maxSupply ? supplyRatio : 100,
     };
   }, [displayToken?.market_data]);
+
+  // Derived values (non-hooks, safe to compute after hooks)
+  const tokenName = displayToken?.name || "";
+  const tokenSymbol = displayToken?.symbol || "";
+  const isCommunityToken = displayToken?.isCommunityToken || !token;
+  const priceChange24h = displayToken?.market_data?.price_change_percentage_24h || 0;
+  const priceChange7d = displayToken?.market_data?.price_change_percentage_7d || 0;
+
+  // Show loading state
+  if (isLoadingToken && !token && !oklinkInfo) {
+    return (
+      <Layout>
+        <div className="space-y-6 animate-fade-in">
+          <div className="skeleton h-8 w-48" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array(4).fill(0).map((_, i) => (
+              <div key={i} className="skeleton h-24 rounded-lg" />
+            ))}
+          </div>
+          <div className="skeleton h-[400px] rounded-lg" />
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show not found if we have no data from either source
+  if (!displayToken && !isLoadingToken && !isLoadingOklink) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <Activity className="h-16 w-16 text-muted-foreground mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">Token not found</h2>
+          <p className="text-muted-foreground mb-4">
+            The token "{tokenId}" could not be found. It may not be listed yet.
+          </p>
+          <Link to="/tokens">
+            <Button variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Tokens
+            </Button>
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
