@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { ExternalLink, TrendingUp, TrendingDown, Shield, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { WatchlistButton } from "@/components/WatchlistButton";
 
 interface ProtocolTableProps {
   protocols: Protocol[];
@@ -102,6 +103,7 @@ export function ProtocolTable({
       <table className="data-table w-full min-w-[500px]">
         <thead>
           <tr className="bg-muted/30">
+            <th className="w-10 hidden sm:table-cell"></th>
             <th className="w-12 hidden sm:table-cell">#</th>
             <th>Name</th>
             {showCategory && <th className="hidden md:table-cell">Category</th>}
@@ -117,6 +119,16 @@ export function ProtocolTable({
             const slug = protocol.slug || protocol.name.toLowerCase().replace(/\s+/g, "-");
             return (
             <tr key={protocol.id || protocol.name} className="group cursor-pointer" onClick={() => window.location.href = `/protocols/${slug}`}>
+              <td className="hidden sm:table-cell" onClick={(e) => e.stopPropagation()}>
+                <WatchlistButton
+                  item={{
+                    id: slug,
+                    symbol: protocol.symbol || protocol.name.slice(0, 4).toUpperCase(),
+                    name: protocol.name,
+                    type: "protocol",
+                  }}
+                />
+              </td>
               <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                 {index + 1}
               </td>

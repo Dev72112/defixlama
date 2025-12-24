@@ -2,6 +2,7 @@ import { DexVolume, formatCurrency, formatPercentage, getChangeColor } from "@/l
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { ExternalLink, TrendingUp, TrendingDown, ArrowLeftRight } from "lucide-react";
+import { WatchlistButton } from "@/components/WatchlistButton";
 
 interface DexTableProps {
   dexes: DexVolume[];
@@ -67,6 +68,7 @@ export function DexTable({
       <table className="data-table w-full min-w-[500px]">
         <thead>
           <tr className="bg-muted/30">
+            <th className="w-10 hidden sm:table-cell"></th>
             <th className="w-12 hidden sm:table-cell">#</th>
             <th>Name</th>
             <th className="text-right">24h Volume</th>
@@ -86,6 +88,16 @@ export function DexTable({
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/dexs/${slug}`); }}
               >
+                <td className="hidden sm:table-cell" onClick={(e) => e.stopPropagation()}>
+                  <WatchlistButton
+                    item={{
+                      id: slug,
+                      symbol: (dex.displayName || dex.name).slice(0, 4).toUpperCase(),
+                      name: dex.displayName || dex.name,
+                      type: "dex",
+                    }}
+                  />
+                </td>
                 <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                   {index + 1}
                 </td>
