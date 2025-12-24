@@ -23,6 +23,7 @@ import SecurityDetail from "./pages/SecurityDetail";
 import NotFound from "./pages/NotFound";
 import Donations from "./pages/Donations";
 import Docs from "./pages/Docs";
+import Portfolio from "./pages/Portfolio";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +60,7 @@ const App = () => (
           <Route path="/security" element={<Security />} />
           <Route path="/security/:id" element={<SecurityDetail />} />
           <Route path="/donations" element={<Donations />} />
+          <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

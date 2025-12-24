@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight, GitCompare } from "lucide-react";
+import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight, GitCompare, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { TOKEN_IDS, XLAYER_COMMUNITY_TOKENS } from "@/lib/api/coingecko";
 import { PriceComparison } from "@/components/PriceComparison";
 import { WatchlistButton } from "@/components/WatchlistButton";
+import { exportToCSV } from "@/lib/export";
 
 export default function Tokens() {
   const { data: tokens, isLoading } = useTokenPrices();
@@ -63,6 +64,21 @@ export default function Tokens() {
     logo: t.logo,
   }));
 
+  const handleExport = () => {
+    if (!filteredTokens.length) return;
+    exportToCSV(
+      filteredTokens.map(t => ({
+        Symbol: t.symbol,
+        Name: t.name,
+        Price: t.price,
+        "24h Change": t.change24h,
+        Volume: t.volume24h,
+        "Market Cap": t.mcap,
+      })),
+      "tokens"
+    );
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -75,6 +91,10 @@ export default function Tokens() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -82,11 +102,11 @@ export default function Tokens() {
               className="gap-2"
             >
               <GitCompare className="h-4 w-4" />
-              Compare Prices
+              Compare
             </Button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
               <Activity className="h-4 w-4 animate-pulse" />
-              Live Prices
+              Live
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn, stripHtml, safeEncode, formatTokenPrice } from "@/lib/utils";
+import { PriceAlertDialog } from "@/components/PriceAlertDialog";
 import {
   AreaChart,
   Area,
@@ -247,6 +248,12 @@ export default function TokenDetail() {
                 {priceChange24h >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                 {priceChange24h >= 0 ? "+" : ""}{priceChange24h.toFixed(2)}%
               </span>
+              <PriceAlertDialog
+                tokenId={contractAddress}
+                symbol={tokenSymbol}
+                name={tokenName}
+                currentPrice={displayToken.market_data?.current_price?.usd || 0}
+              />
             </div>
           </div>
         </div>
