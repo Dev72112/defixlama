@@ -14,8 +14,11 @@ import {
   Wallet,
   BarChart3,
   Shield,
+  Activity,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 interface NavItem {
   label: string;
@@ -37,24 +40,53 @@ const navItems: NavItem[] = [
 const moreItems: NavItem[] = [
   { label: "Chains", href: "/chains", icon: PieChart },
   { label: "Fees", href: "/fees", icon: BarChart3 },
+  { label: "Activities", href: "/activities", icon: Activity },
   { label: "Security", href: "/security", icon: Shield },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  mobile?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ mobile = false, onClose }: SidebarProps) {
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
 
+  // Auto-expand more section if current route is in it
+  useEffect(() => {
+    const isMoreActive = moreItems.some((item) => location.pathname === item.href);
+    if (isMoreActive) setMoreOpen(true);
+  }, [location.pathname]);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    if (mobile && onClose) {
+      onClose();
+    }
+  }, [location.pathname]);
+
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-[220px] border-r border-sidebar-border bg-sidebar flex flex-col">
+    <aside className={cn(
+      "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar flex flex-col",
+      mobile ? "w-[280px]" : "w-[220px]"
+    )}>
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70">
-          <span className="text-lg font-bold text-primary-foreground">dX</span>
+      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70">
+            <span className="text-lg font-bold text-primary-foreground">dX</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-base font-semibold text-foreground">defiXlama</span>
+            <span className="text-xs text-muted-foreground">XLayer Analytics</span>
+          </div>
         </div>
-        <div className="flex flex-col">
-          <span className="text-base font-semibold text-foreground">defiXlama</span>
-          <span className="text-xs text-muted-foreground">XLayer Analytics</span>
-        </div>
+        {mobile && onClose && (
+          <Button variant="ghost" size="icon" onClick={onClose} className="lg:hidden">
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
       {/* Navigation */}

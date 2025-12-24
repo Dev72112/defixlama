@@ -20,14 +20,14 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         >
           <div
-            className="fixed left-0 top-0 h-full w-[220px]"
+            className="fixed left-0 top-0 h-full w-[280px] animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
-            <Sidebar />
+            <Sidebar mobile onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
       )}

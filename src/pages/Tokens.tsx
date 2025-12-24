@@ -10,6 +10,7 @@ import { useTokenPrices } from "@/hooks/useTokenData";
 import { useNavigate } from "react-router-dom";
 import { TOKEN_IDS, XLAYER_COMMUNITY_TOKENS } from "@/lib/api/coingecko";
 import { PriceComparison } from "@/components/PriceComparison";
+import { WatchlistButton } from "@/components/WatchlistButton";
 
 export default function Tokens() {
   const { data: tokens, isLoading } = useTokenPrices();
@@ -135,6 +136,7 @@ export default function Tokens() {
           <table className="data-table w-full">
             <thead>
               <tr className="bg-muted/30">
+                <th className="w-10 hidden sm:table-cell"></th>
                 <th className="w-12 hidden sm:table-cell">#</th>
                 <th className="text-left">Token</th>
                 <th className="text-right">Price</th>
@@ -148,6 +150,7 @@ export default function Tokens() {
               {isLoading ? (
                 Array(8).fill(0).map((_, i) => (
                   <tr key={i}>
+                    <td className="hidden sm:table-cell"></td>
                     <td className="hidden sm:table-cell"><div className="skeleton h-4 w-6" /></td>
                     <td><div className="skeleton h-8 w-32" /></td>
                     <td><div className="skeleton h-4 w-20 ml-auto" /></td>
@@ -172,6 +175,16 @@ export default function Tokens() {
                     tabIndex={0}
                     onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${routeId}`); }}
                   >
+                    <td className="hidden sm:table-cell">
+                      <WatchlistButton
+                        item={{
+                          id: routeId,
+                          symbol: token.symbol,
+                          name: token.name,
+                          type: "token",
+                        }}
+                      />
+                    </td>
                     <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                       {index + 1}
                     </td>
