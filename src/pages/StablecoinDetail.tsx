@@ -234,6 +234,32 @@ export default function StablecoinDetail() {
           />
         </div>
 
+        {/* Stablecoin Health Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Peg Stability</p>
+            <div className="flex items-end gap-2">
+              <span className="text-2xl font-bold text-primary">
+                {coin.price ? (Math.abs(1 - coin.price) < 0.01 ? "Stable" : Math.abs(1 - coin.price) < 0.05 ? "Minor Deviation" : "Depegged") : "Stable"}
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Decentralization</p>
+            <p className="text-2xl font-bold">
+              {(supplyAnalytics?.concentration || 0) < 30 ? "High" : (supplyAnalytics?.concentration || 0) < 60 ? "Medium" : "Low"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Peg Type</p>
+            <p className="text-xl font-bold truncate">{coin.pegType || "USD"}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Stablecoin Rank</p>
+            <p className="text-2xl font-bold">#{rank || "—"}</p>
+          </div>
+        </div>
+
         {/* Supply Analytics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

@@ -290,6 +290,42 @@ function FeeDetailContent() {
           />
         </div>
 
+        {/* Fee Revenue Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Revenue Score</p>
+            <div className="flex items-end gap-2">
+              <span className="text-2xl font-bold text-primary">
+                {feeAnalytics?.percentile?.toFixed(0) || "—"}
+              </span>
+              <span className="text-sm text-muted-foreground mb-0.5">/ 100</span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Fee Tier</p>
+            <p className="text-2xl font-bold">
+              {(item.total24h || 0) > 1000000 ? "Mega" : (item.total24h || 0) > 100000 ? "Major" : (item.total24h || 0) > 10000 ? "Mid" : "Emerging"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Momentum</p>
+            <div className="flex items-center gap-2">
+              {change1d >= 0 ? (
+                <TrendingUp className="h-5 w-5 text-success" />
+              ) : (
+                <TrendingDown className="h-5 w-5 text-destructive" />
+              )}
+              <span className={`text-2xl font-bold ${change1d >= 0 ? "text-success" : "text-destructive"}`}>
+                {change1d >= 0 ? "Growing" : "Declining"}
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Category</p>
+            <p className="text-xl font-bold truncate">{item.category || "DeFi"}</p>
+          </div>
+        </div>
+
         {/* Fee Overview Chart */}
         <Card className="p-4 md:p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">

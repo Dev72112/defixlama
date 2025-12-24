@@ -238,46 +238,65 @@ function DashboardContent() {
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground mb-3">Recent Activity</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-foreground">Recent Activity</h3>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                Live
+              </div>
+            </div>
             <Link to="/activities">
               <Button variant="ghost" size="sm" className="text-primary">View All →</Button>
             </Link>
           </div>
           {isActivityLoading ? (
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {Array.from({ length: 6 }).map((_, i) => (
-                <li key={i} className="flex items-start justify-between">
-                  <div>
-                    <div className="skeleton h-4 w-40 mb-1" />
-                    <div className="skeleton h-3 w-28" />
+                <li key={i} className="flex items-center gap-3 p-2">
+                  <div className="skeleton h-10 w-10 rounded-full" />
+                  <div className="flex-1">
+                    <div className="skeleton h-4 w-32 mb-1.5" />
+                    <div className="skeleton h-3 w-24" />
                   </div>
-                  <div className="skeleton h-3 w-12" />
+                  <div className="skeleton h-3 w-14" />
                 </li>
               ))}
             </ul>
           ) : activities.length === 0 ? (
-            <div className="text-muted-foreground">No recent activity</div>
+            <div className="text-muted-foreground text-center py-8">No recent activity</div>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-1">
               {activities.map((a: any) => {
-                  const href = a.type === 'protocol' ? `/protocols/${(a.meta?.slug || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}` : a.type === 'fee' ? `/fees/${(a.meta?.displayName || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}` : a.type === 'chain' ? `/chains/${(a.meta?.name || a.id || '').toString().toLowerCase().replace(/\s+/g,'-')}` : null;
-                  const Icon = a.type === 'protocol' ? Layers : a.type === 'fee' ? DollarSign : Globe;
-                  return (
-                  <li key={a.id} className="flex items-start justify-between">
-                    <Link to={href ?? '#'} className="flex items-center gap-3 flex-1 group hover:bg-muted/5 p-2 rounded-md" onClick={(e) => { if (!href) e.preventDefault(); }}>
-                      <div className="h-8 w-8 rounded-full bg-muted/10 flex items-center justify-center text-muted flex-shrink-0">
-                        <Icon className="h-4 w-4" />
+                const href = a.type === 'protocol' ? `/protocols/${(a.meta?.slug || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}` : a.type === 'fee' ? `/fees/${(a.meta?.displayName || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}` : a.type === 'chain' ? `/chains/${(a.meta?.name || a.id || '').toString().toLowerCase().replace(/\s+/g,'-')}` : null;
+                const Icon = a.type === 'protocol' ? Layers : a.type === 'fee' ? DollarSign : Globe;
+                const typeColor = a.type === 'protocol' ? 'bg-primary/10 text-primary' : a.type === 'fee' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500';
+                const value = a.type === 'protocol' ? formatCurrency(a.meta?.tvl || 0) : a.type === 'fee' ? formatCurrency(a.meta?.total24h || 0) : formatCurrency(a.meta?.tvl || 0);
+                return (
+                  <li key={a.id}>
+                    <Link 
+                      to={href ?? '#'} 
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors group" 
+                      onClick={(e) => { if (!href) e.preventDefault(); }}
+                    >
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${typeColor}`}>
+                        <Icon className="h-5 w-5" />
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-medium text-foreground truncate">{a.title}</div>
-                        <div className="text-xs text-muted-foreground truncate">{a.subtitle}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground truncate">{a.title}</span>
+                          <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{a.type}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="truncate">{a.subtitle}</span>
+                          <span className="text-primary font-medium">{value}</span>
+                        </div>
                       </div>
-                      <div className="ml-auto text-xs text-muted-foreground tabular-nums">{a.timestamp ? timeAgo(a.timestamp) : "—"}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">{a.timestamp ? timeAgo(a.timestamp) : "—"}</div>
                     </Link>
                   </li>
-                  );
-                })}
+                );
+              })}
             </ul>
           )}
         </div>

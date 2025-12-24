@@ -289,6 +289,45 @@ export default function DexDetail() {
                 icon={Award}
               />
             </div>
+
+            {/* Volume Metrics Row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Volume Score</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-2xl font-bold text-primary">
+                    {volumeAnalytics?.percentile?.toFixed(0) || "—"}
+                  </span>
+                  <span className="text-sm text-muted-foreground mb-0.5">/ 100</span>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Activity Level</p>
+                <p className="text-2xl font-bold">
+                  {(dex.total24h || 0) > 10000000 ? "Very High" : (dex.total24h || 0) > 1000000 ? "High" : (dex.total24h || 0) > 100000 ? "Medium" : "Low"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Momentum</p>
+                <div className="flex items-center gap-2">
+                  {change1d >= 0 ? (
+                    <TrendingUp className="h-5 w-5 text-success" />
+                  ) : (
+                    <TrendingDown className="h-5 w-5 text-destructive" />
+                  )}
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    change1d >= 0 ? "text-success" : "text-destructive"
+                  )}>
+                    {change1d >= 0 ? "Positive" : "Negative"}
+                  </span>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Chain Coverage</p>
+                <p className="text-2xl font-bold">{dex.chains?.length || 0} chains</p>
+              </div>
+            </div>
           </>
         ) : (
           <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-6">
