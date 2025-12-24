@@ -12,6 +12,7 @@ import { DominanceChart } from "@/components/dashboard/DominanceChart";
 import { EcosystemHealth } from "@/components/dashboard/EcosystemHealth";
 import { HistoricalTVLChart } from "@/components/dashboard/HistoricalTVLChart";
 import { HistoricalComparisonChart } from "@/components/dashboard/HistoricalComparisonChart";
+import { PriceAlertsPanel } from "@/components/PriceAlertsPanel";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -462,6 +463,7 @@ function DashboardContent() {
             icon={Database}
             loading={feesData?.isLoading ?? true}
           />
+          <PriceAlertsPanel />
         </div>
       </div>
     </div>
