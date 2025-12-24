@@ -69,22 +69,22 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar flex flex-col",
-      mobile ? "w-[280px]" : "w-[220px]"
+      "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar flex flex-col transition-all duration-300",
+      mobile ? "w-[280px] animate-slide-in-left" : "w-[220px]"
     )}>
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70">
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
             <span className="text-lg font-bold text-primary-foreground">dX</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-base font-semibold text-foreground">defiXlama</span>
+            <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">defiXlama</span>
             <span className="text-xs text-muted-foreground">XLayer Analytics</span>
           </div>
-        </div>
+        </Link>
         {mobile && onClose && (
-          <Button variant="ghost" size="icon" onClick={onClose} className="lg:hidden">
+          <Button variant="ghost" size="icon" onClick={onClose} className="lg:hidden hover:bg-destructive/10 hover:text-destructive transition-colors">
             <X className="h-5 w-5" />
           </Button>
         )}

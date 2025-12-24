@@ -176,21 +176,21 @@ function DashboardContent() {
   }, [feesData?.data]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 page-enter">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground text-gradient-primary">XLayer DeFi Overview</h1>
-          <p className="text-muted-foreground mt-1">Real-time analytics for the XLayer ecosystem</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">XLayer DeFi Overview</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Real-time analytics for the XLayer ecosystem</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium pulse-live">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium pulse-live badge-pulse">
           <Activity className="h-4 w-4 animate-pulse" />
           Live Data
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Total Value Locked"
           value={formatCurrency(totalTVL)}

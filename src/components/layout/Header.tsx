@@ -36,12 +36,12 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-4 lg:px-6">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 backdrop-blur-md px-4 lg:px-6 transition-all duration-300">
         {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden"
+          className="lg:hidden hover:bg-primary/10 hover:text-primary transition-colors"
           onClick={onMenuClick}
         >
           <Menu className="h-5 w-5" />
@@ -51,13 +51,13 @@ export function Header({ onMenuClick }: HeaderProps) {
         <div className="flex-1 max-w-xl mx-4">
           <Button
             variant="secondary"
-            className="w-full justify-start text-muted-foreground font-normal h-10"
+            className="w-full justify-start text-muted-foreground font-normal h-10 hover:border-primary/50 hover:bg-secondary/80 transition-all duration-200 group"
             onClick={() => setSearchOpen(true)}
           >
-            <Search className="h-4 w-4 mr-2" />
+            <Search className="h-4 w-4 mr-2 group-hover:text-primary transition-colors" />
             <span className="hidden sm:inline">Search protocols, tokens, chains...</span>
             <span className="sm:hidden">Search...</span>
-            <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground group-hover:border-primary/30 transition-colors">
               /
             </kbd>
           </Button>
@@ -66,7 +66,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Live indicator */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-xs font-medium">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-xs font-medium badge-pulse">
             <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
             Live
           </div>
@@ -89,6 +89,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             aria-label="Toggle theme"
             onClick={() => setTheme((t) => (t === "dark" ? "bright" : "dark"))}
             title="Toggle theme"
+            className="hover:bg-primary/10 hover:text-primary transition-all duration-200"
           >
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>

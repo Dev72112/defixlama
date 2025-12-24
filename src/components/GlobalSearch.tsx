@@ -166,8 +166,8 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 gap-0">
-        <div className="flex items-center border-b border-border px-3">
+      <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden">
+        <div className="flex items-center border-b border-border px-3 bg-card">
           <Search className="h-5 w-5 text-muted-foreground" />
           <Input
             ref={inputRef}
@@ -175,13 +175,13 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search tokens, protocols, DEXs, chains..."
-            className="border-0 focus-visible:ring-0 text-base"
+            className="border-0 focus-visible:ring-0 text-base bg-transparent"
           />
           {query && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors"
               onClick={() => setQuery("")}
             >
               <X className="h-4 w-4" />
@@ -191,7 +191,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
         <div className="max-h-[400px] overflow-y-auto">
           {query && results.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
+            <div className="p-8 text-center text-muted-foreground animate-fade-in">
               <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No results found for "{query}"</p>
             </div>
@@ -207,17 +207,29 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                       onOpenChange(false);
                     }}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors",
-                      index === selectedIndex && "bg-muted/50"
+                      "w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-all duration-200",
+                      index === selectedIndex && "bg-muted/50 border-l-2 border-l-primary"
                     )}
+                    style={{ animationDelay: `${index * 30}ms` }}
                   >
-                    <Icon className={cn("h-5 w-5", getTypeColor(result.type))} />
-                    <div className="flex-1 text-left">
-                      <p className="font-medium text-foreground">
+                    <div className={cn(
+                      "h-8 w-8 rounded-lg flex items-center justify-center transition-all duration-200",
+                      index === selectedIndex ? "bg-primary/20 scale-110" : "bg-muted"
+                    )}>
+                      <Icon className={cn("h-4 w-4", getTypeColor(result.type))} />
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="font-medium text-foreground truncate">
                         {result.symbol ? `${result.symbol} - ${result.name}` : result.name}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground capitalize px-2 py-1 rounded bg-muted">
+                    <span className={cn(
+                      "text-xs capitalize px-2 py-1 rounded-full transition-colors",
+                      result.type === "token" && "bg-amber-500/10 text-amber-500",
+                      result.type === "protocol" && "bg-primary/10 text-primary",
+                      result.type === "dex" && "bg-blue-500/10 text-blue-500",
+                      result.type === "chain" && "bg-green-500/10 text-green-500"
+                    )}>
                       {result.type}
                     </span>
                   </button>
@@ -227,11 +239,11 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
           )}
         </div>
 
-        <div className="border-t border-border px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="border-t border-border px-4 py-2.5 flex items-center justify-between text-xs text-muted-foreground bg-muted/30">
           <div className="flex items-center gap-4">
-            <span><kbd className="px-1.5 py-0.5 bg-muted rounded">↑↓</kbd> Navigate</span>
-            <span><kbd className="px-1.5 py-0.5 bg-muted rounded">↵</kbd> Select</span>
-            <span><kbd className="px-1.5 py-0.5 bg-muted rounded">Esc</kbd> Close</span>
+            <span><kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-[10px]">↑↓</kbd> Navigate</span>
+            <span><kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-[10px]">↵</kbd> Select</span>
+            <span><kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-[10px]">Esc</kbd> Close</span>
           </div>
         </div>
       </DialogContent>

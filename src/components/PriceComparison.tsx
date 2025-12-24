@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { X, Plus, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,8 @@ interface PriceComparisonProps {
   onClose: () => void;
 }
 
-export function PriceComparison({ tokens, isOpen, onClose }: PriceComparisonProps) {
+export const PriceComparison = forwardRef<HTMLDivElement, PriceComparisonProps>(
+  function PriceComparison({ tokens, isOpen, onClose }, ref) {
   const [selectedTokens, setSelectedTokens] = useState<string[]>([]);
   
   if (!isOpen) return null;
@@ -43,16 +44,20 @@ export function PriceComparison({ tokens, isOpen, onClose }: PriceComparisonProp
   const availableTokens = tokens.filter((t) => !selectedTokens.includes(t.symbol));
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
+    <div 
+      ref={ref}
+      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden animate-scale-in">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold">Price Comparison</h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-destructive/10 hover:text-destructive transition-colors">
             <X className="h-4 w-4" />
           </Button>
         </div>
         
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(80vh-60px)]">
           {/* Token selector */}
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-sm text-muted-foreground">Compare:</span>
@@ -61,13 +66,17 @@ export function PriceComparison({ tokens, isOpen, onClose }: PriceComparisonProp
               return (
                 <div 
                   key={symbol} 
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm animate-scale-in hover:bg-primary/20 transition-colors"
                 >
                   {token?.logo && (
                     <img src={token.logo} alt={symbol} className="h-4 w-4 rounded-full" />
                   )}
                   {symbol}
-                  <button onClick={() => removeToken(symbol)} className="hover:text-destructive">
+                  <button 
+                    onClick={() => removeToken(symbol)} 
+                    className="hover:text-destructive transition-colors"
+                    aria-label={`Remove ${symbol}`}
+                  >
                     <X className="h-3 w-3" />
                   </button>
                 </div>
@@ -75,11 +84,11 @@ export function PriceComparison({ tokens, isOpen, onClose }: PriceComparisonProp
             })}
             {selectedTokens.length < 4 && availableTokens.length > 0 && (
               <Select onValueChange={addToken}>
-                <SelectTrigger className="w-[140px] h-8">
+                <SelectTrigger className="w-[140px] h-8 hover:border-primary/50 transition-colors">
                   <Plus className="h-3 w-3 mr-1" />
                   <SelectValue placeholder="Add token" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover border-border">
                   {availableTokens.map((t) => (
                     <SelectItem key={t.symbol} value={t.symbol}>
                       <div className="flex items-center gap-2">
@@ -98,10 +107,11 @@ export function PriceComparison({ tokens, isOpen, onClose }: PriceComparisonProp
           {/* Comparison grid */}
           {comparisonTokens.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {comparisonTokens.map((token) => (
+              {comparisonTokens.map((token, index) => (
                 <div 
                   key={token.symbol}
-                  className="rounded-lg border border-border bg-card p-4 space-y-3"
+                  className="rounded-lg border border-border bg-card p-4 space-y-3 hover:border-primary/30 hover:shadow-md transition-all duration-300"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-center gap-2">
                     {token.logo && (
@@ -113,13 +123,13 @@ export function PriceComparison({ tokens, isOpen, onClose }: PriceComparisonProp
                     </div>
                   </div>
                   <div>
-                    <p className="text-xl font-bold">
+                    <p className="text-xl font-bold tabular-nums">
                       ${token.price >= 1 
                         ? token.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : token.price.toFixed(8).replace(/\.?0+$/, '')}
                     </p>
                     <p className={cn(
-                      "flex items-center gap-1 text-sm",
+                      "flex items-center gap-1 text-sm font-medium",
                       token.change24h >= 0 ? "text-success" : "text-destructive"
                     )}>
                       {token.change24h >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -137,32 +147,32 @@ export function PriceComparison({ tokens, isOpen, onClose }: PriceComparisonProp
 
           {/* Quick comparison table */}
           {comparisonTokens.length >= 2 && (
-            <div className="rounded-lg border border-border overflow-hidden">
+            <div className="rounded-lg border border-border overflow-hidden animate-fade-in">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/30">
-                    <th className="text-left p-3">Metric</th>
+                    <th className="text-left p-3 font-medium">Metric</th>
                     {comparisonTokens.map((t) => (
-                      <th key={t.symbol} className="text-right p-3">{t.symbol}</th>
+                      <th key={t.symbol} className="text-right p-3 font-medium">{t.symbol}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  <tr>
+                  <tr className="hover:bg-muted/20 transition-colors">
                     <td className="p-3 text-muted-foreground">Price</td>
                     {comparisonTokens.map((t) => (
-                      <td key={t.symbol} className="p-3 text-right font-mono">
+                      <td key={t.symbol} className="p-3 text-right font-mono tabular-nums">
                         ${t.price >= 1 ? t.price.toFixed(2) : t.price.toFixed(6)}
                       </td>
                     ))}
                   </tr>
-                  <tr>
+                  <tr className="hover:bg-muted/20 transition-colors">
                     <td className="p-3 text-muted-foreground">24h Change</td>
                     {comparisonTokens.map((t) => (
                       <td 
                         key={t.symbol} 
                         className={cn(
-                          "p-3 text-right font-mono",
+                          "p-3 text-right font-mono tabular-nums",
                           t.change24h >= 0 ? "text-success" : "text-destructive"
                         )}
                       >
@@ -178,4 +188,4 @@ export function PriceComparison({ tokens, isOpen, onClose }: PriceComparisonProp
       </div>
     </div>
   );
-}
+});
