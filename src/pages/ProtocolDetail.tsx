@@ -231,6 +231,53 @@ function ProtocolDetailContent() {
           )}
         </div>
 
+        {/* Performance Metrics Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Performance Score</p>
+            <div className="flex items-end gap-2">
+              <span className="text-2xl font-bold text-primary">
+                {tvlAnalytics ? Math.max(0, Math.min(100, 50 + (tvlAnalytics.change7d || 0))).toFixed(0) : "—"}
+              </span>
+              <span className="text-sm text-muted-foreground mb-0.5">/ 100</span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Stability</p>
+            <p className="text-2xl font-bold">
+              {tvlAnalytics?.volatility !== undefined ? (
+                tvlAnalytics.volatility < 15 ? "High" : tvlAnalytics.volatility < 40 ? "Medium" : "Low"
+              ) : "—"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Trend</p>
+            <div className="flex items-center gap-2">
+              {tvlAnalytics?.change30d !== undefined ? (
+                <>
+                  {tvlAnalytics.change30d >= 0 ? (
+                    <TrendingUp className="h-5 w-5 text-success" />
+                  ) : (
+                    <TrendingDown className="h-5 w-5 text-destructive" />
+                  )}
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    tvlAnalytics.change30d >= 0 ? "text-success" : "text-destructive"
+                  )}>
+                    {tvlAnalytics.change30d >= 0 ? "Up" : "Down"}
+                  </span>
+                </>
+              ) : <span className="text-2xl font-bold">—</span>}
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Category Rank</p>
+            <p className="text-2xl font-bold">
+              #{relatedProtocols.findIndex((p) => (p.tvl || 0) < (protocol.tvl || 0)) + 1 || "—"}
+            </p>
+          </div>
+        </div>
+
         {/* TVL Composition Breakdown */}
         {hasTVLData && (protocol.pool2 || protocol.staking) && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">

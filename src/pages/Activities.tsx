@@ -85,9 +85,16 @@ export default function Activities() {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Activities</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground text-gradient-primary">Activities</h1>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                Live Feed
+              </div>
+            </div>
             <p className="text-muted-foreground mt-1">Chronological activity across protocols, fees and chains</p>
           </div>
           <div className="flex items-center gap-3">
@@ -104,53 +111,79 @@ export default function Activities() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant={filter === 'all' ? 'default' : 'ghost'} onClick={() => setFilter('all')}>All</Button>
-          <Button variant={filter === 'protocol' ? 'default' : 'ghost'} onClick={() => setFilter('protocol')}>Protocols</Button>
-          <Button variant={filter === 'fee' ? 'default' : 'ghost'} onClick={() => setFilter('fee')}>Fees</Button>
-          <Button variant={filter === 'chain' ? 'default' : 'ghost'} onClick={() => setFilter('chain')}>Chains</Button>
+        {/* Filter Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant={filter === 'all' ? 'default' : 'ghost'} onClick={() => setFilter('all')} size="sm">
+            All ({items.length})
+          </Button>
+          <Button variant={filter === 'protocol' ? 'default' : 'ghost'} onClick={() => setFilter('protocol')} size="sm">
+            <Layers className="h-4 w-4 mr-1" />
+            Protocols
+          </Button>
+          <Button variant={filter === 'fee' ? 'default' : 'ghost'} onClick={() => setFilter('fee')} size="sm">
+            <DollarSign className="h-4 w-4 mr-1" />
+            Fees
+          </Button>
+          <Button variant={filter === 'chain' ? 'default' : 'ghost'} onClick={() => setFilter('chain')} size="sm">
+            <Globe className="h-4 w-4 mr-1" />
+            Chains
+          </Button>
         </div>
 
-        <div className="rounded-lg border border-border bg-card p-4">
+        {/* Activity List */}
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           {paged.length === 0 ? (
-            <div className="text-muted-foreground p-6 text-center">No activities found</div>
+            <div className="text-muted-foreground p-8 text-center">
+              <Search className="h-12 w-12 mx-auto mb-3 text-muted" />
+              <p className="font-medium">No activities found</p>
+              <p className="text-sm mt-1">Try adjusting your search or filters</p>
+            </div>
           ) : (
-            <ul className="divide-y">
-              {paged.map((a: any) => (
-                <li key={a.id} className="flex items-center gap-4 py-3">
-                  <div className="h-10 w-10 rounded-full bg-muted/10 flex items-center justify-center">
-                    {a.type === 'protocol' ? <Layers className="h-5 w-5" /> : a.type === 'fee' ? <DollarSign className="h-5 w-5" /> : <Globe className="h-5 w-5" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium truncate">{a.title}</div>
-                      <div className="text-xs text-muted-foreground truncate">{a.subtitle}</div>
+            <ul className="divide-y divide-border">
+              {paged.map((a: any) => {
+                const typeColor = a.type === 'protocol' ? 'bg-primary/10 text-primary' : a.type === 'fee' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500';
+                const value = a.type === 'protocol' ? formatCurrency(a.meta?.tvl || 0) : a.type === 'fee' ? formatCurrency(a.meta?.total24h || 0) : formatCurrency(a.meta?.tvl || 0);
+                return (
+                  <li key={a.id} className="flex items-center gap-4 p-4 hover:bg-accent/30 transition-colors">
+                    <div className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${typeColor}`}>
+                      {a.type === 'protocol' ? <Layers className="h-5 w-5" /> : a.type === 'fee' ? <DollarSign className="h-5 w-5" /> : <Globe className="h-5 w-5" />}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">{a.timestamp ? timeAgo(a.timestamp) : '—'}</div>
-                  </div>
-                  <div>
-                    {a.type === 'protocol' && (
-                      <Button size="sm" variant="ghost" onClick={() => navigate(`/protocols/${(a.meta?.slug || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View</Button>
-                    )}
-                    {a.type === 'fee' && (
-                      <Button size="sm" variant="ghost" onClick={() => navigate(`/fees/${(a.meta?.displayName || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View</Button>
-                    )}
-                    {a.type === 'chain' && (
-                      <Button size="sm" variant="ghost" onClick={() => navigate(`/chains/${(a.meta?.name || a.id || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View</Button>
-                    )}
-                  </div>
-                </li>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground truncate">{a.title}</span>
+                        <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex-shrink-0">{a.type}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                        <span className="truncate">{a.subtitle}</span>
+                        <span className="text-primary font-mono font-medium">{value}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">{a.timestamp ? timeAgo(a.timestamp) : '—'}</div>
+                    </div>
+                    <div>
+                      {a.type === 'protocol' && (
+                        <Button size="sm" variant="ghost" onClick={() => navigate(`/protocols/${(a.meta?.slug || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View →</Button>
+                      )}
+                      {a.type === 'fee' && (
+                        <Button size="sm" variant="ghost" onClick={() => navigate(`/fees/${(a.meta?.displayName || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View →</Button>
+                      )}
+                      {a.type === 'chain' && (
+                        <Button size="sm" variant="ghost" onClick={() => navigate(`/chains/${(a.meta?.name || a.id || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View →</Button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
 
+        {/* Pagination */}
         <div className="flex items-center justify-between">
-          <div className="text-muted-foreground">{items.length} activities</div>
+          <div className="text-sm text-muted-foreground">{items.length} total activities</div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>
-            <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
-            <Button variant="ghost" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← Prev</Button>
+            <div className="text-sm text-muted-foreground px-3">Page {page} of {totalPages}</div>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next →</Button>
           </div>
         </div>
       </div>

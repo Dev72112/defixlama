@@ -275,6 +275,44 @@ export default function TokenDetail() {
           />
         </div>
 
+        {/* Token Performance Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Liquidity Score</p>
+            <div className="flex items-end gap-2">
+              <span className="text-2xl font-bold text-primary">
+                {displayToken.market_data?.total_volume?.usd && displayToken.market_data?.market_cap?.usd
+                  ? Math.min(100, ((displayToken.market_data.total_volume.usd / displayToken.market_data.market_cap.usd) * 100 * 10)).toFixed(0)
+                  : "—"}
+              </span>
+              <span className="text-sm text-muted-foreground mb-0.5">/ 100</span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Volatility Level</p>
+            <p className="text-2xl font-bold">
+              {(priceAnalytics?.volatility || 0) < 15 ? "Low" : (priceAnalytics?.volatility || 0) < 40 ? "Medium" : "High"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Price Trend</p>
+            <div className="flex items-center gap-2">
+              {priceChange24h >= 0 ? (
+                <TrendingUp className="h-5 w-5 text-success" />
+              ) : (
+                <TrendingDown className="h-5 w-5 text-destructive" />
+              )}
+              <span className={`text-2xl font-bold ${priceChange24h >= 0 ? "text-success" : "text-destructive"}`}>
+                {priceChange24h >= 0 ? "Bullish" : "Bearish"}
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Token Type</p>
+            <p className="text-xl font-bold truncate">{isCommunityToken ? "Community" : "Listed"}</p>
+          </div>
+        </div>
+
         {/* Price Analytics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

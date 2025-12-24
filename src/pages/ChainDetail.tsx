@@ -269,6 +269,35 @@ export default function ChainDetail() {
           />
         </div>
 
+        {/* Chain Performance Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Growth Score</p>
+            <div className="flex items-end gap-2">
+              <span className="text-2xl font-bold text-primary">
+                {tvlAnalytics ? Math.max(0, Math.min(100, 50 + (tvlAnalytics.change30d || 0))).toFixed(0) : "—"}
+              </span>
+              <span className="text-sm text-muted-foreground mb-0.5">/ 100</span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Ecosystem Size</p>
+            <p className="text-2xl font-bold">{topProtocols.length} protocols</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">DEX Activity</p>
+            <p className="text-2xl font-bold">{topDexs.length} DEXs</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Stability</p>
+            <p className="text-2xl font-bold">
+              {tvlAnalytics?.volatility !== undefined ? (
+                tvlAnalytics.volatility < 10 ? "Very Stable" : tvlAnalytics.volatility < 25 ? "Stable" : "Volatile"
+              ) : "—"}
+            </p>
+          </div>
+        </div>
+
         {/* TVL Analytics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

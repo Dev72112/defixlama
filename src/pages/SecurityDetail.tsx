@@ -207,6 +207,46 @@ export default function SecurityDetail() {
           />
         </div>
 
+        {/* Security Metrics Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className={cn(
+            "rounded-lg border p-4",
+            isAudited ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"
+          )}>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Security Score</p>
+            <div className="flex items-end gap-2">
+              <span className={cn(
+                "text-2xl font-bold",
+                isAudited ? "text-success" : "text-warning"
+              )}>
+                {isAudited ? "85" : "45"}
+              </span>
+              <span className="text-sm text-muted-foreground mb-0.5">/ 100</span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Risk Level</p>
+            <p className={cn(
+              "text-2xl font-bold",
+              isAudited ? "text-success" : "text-warning"
+            )}>
+              {isAudited ? "Low" : "Medium"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">TVL Stability</p>
+            <p className="text-2xl font-bold">
+              {tvlAnalytics?.volatility !== undefined ? (
+                tvlAnalytics.volatility < 15 ? "Stable" : tvlAnalytics.volatility < 40 ? "Moderate" : "Volatile"
+              ) : "—"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Oracle Count</p>
+            <p className="text-2xl font-bold">{proto.oracles?.length || 0}</p>
+          </div>
+        </div>
+
         {/* Security & Growth Analytics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className={cn(
