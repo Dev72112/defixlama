@@ -68,6 +68,28 @@ export function findCommunityToken(identifier: string) {
 
 // ========== DefiLlama API (PRIMARY SOURCE) ==========
 
+// Token logo mappings for reliable logos
+const TOKEN_LOGOS: Record<string, string> = {
+  okb: "https://assets.coingecko.com/coins/images/4463/large/okb_token.png",
+  weth: "https://assets.coingecko.com/coins/images/2518/large/weth.png",
+  "wrapped-bitcoin": "https://assets.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png",
+  tether: "https://assets.coingecko.com/coins/images/325/large/Tether.png",
+  "usd-coin": "https://assets.coingecko.com/coins/images/6319/large/usdc.png",
+  dai: "https://assets.coingecko.com/coins/images/9956/large/Badge_Dai.png",
+  chainlink: "https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png",
+};
+
+// Token names for proper display
+const TOKEN_NAMES: Record<string, string> = {
+  okb: "OKB",
+  weth: "Wrapped Ether",
+  "wrapped-bitcoin": "Wrapped Bitcoin",
+  tether: "Tether",
+  "usd-coin": "USD Coin",
+  dai: "Dai",
+  chainlink: "Chainlink",
+};
+
 // Fetch token prices from DefiLlama as PRIMARY source
 export async function fetchTokenPricesFromDefiLlama(): Promise<TokenPrice[]> {
   try {
@@ -89,12 +111,12 @@ export async function fetchTokenPricesFromDefiLlama(): Promise<TokenPrice[]> {
       tokens.push({
         id: cgId,
         symbol: symbol,
-        name: value.symbol || cgId,
+        name: TOKEN_NAMES[cgId] || value.symbol || cgId,
         current_price: value.price || 0,
         price_change_percentage_24h: 0, // DefiLlama doesn't provide this in basic endpoint
         total_volume: 0,
         market_cap: 0,
-        image: `https://icons.llamao.fi/icons/chains/rsz_${cgId}.jpg`,
+        image: TOKEN_LOGOS[cgId] || `https://assets.coingecko.com/coins/images/1/large/${cgId}.png`,
         sparkline_in_7d: undefined,
       });
     }
