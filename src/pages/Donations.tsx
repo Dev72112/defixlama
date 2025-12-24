@@ -1,14 +1,14 @@
-import React from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Download } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { DonationStats } from "@/components/dashboard/DonationStats";
 import { RecentDonors } from "@/components/dashboard/RecentDonors";
-import { useDonationStats } from "@/hooks/useDonations";
-
+import { DonationLeaderboard } from "@/components/dashboard/DonationLeaderboard";
+import { useDonationStats, useDonations } from "@/hooks/useDonations";
+import { exportToCSV } from "@/lib/export";
 const DONATION_ADDRESS = "0xde0bcf388d7b1604a2ba30c06ea2fe6e8f4d3662";
 
 const donations = [
@@ -20,7 +20,21 @@ const donations = [
 export default function Donations() {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const { data: stats } = useDonationStats();
+  const { data: allDonations = [] } = useDonations();
 
+  const handleExport = () => {
+    if (allDonations.length === 0) return;
+    exportToCSV(
+      allDonations.map(d => ({
+        Address: d.fullAddress,
+        Amount: d.amount,
+        Token: d.token,
+        Date: new Date(d.timestamp).toISOString(),
+        TxHash: d.txHash,
+      })),
+      "donations"
+    );
+  };
   const handleCopy = (address: string) => {
     try {
       navigator.clipboard.writeText(address);
@@ -51,6 +65,18 @@ export default function Donations() {
           <RecentDonors />
         </div>
 
+        {/* Leaderboard */}
+        <DonationLeaderboard />
+
+        {/* Export Button */}
+        {allDonations.length > 0 && (
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={handleExport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export Donations CSV
+            </Button>
+          </div>
+        )}
         {/* Donation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {donations.map((token) => (

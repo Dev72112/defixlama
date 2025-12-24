@@ -1,4 +1,4 @@
-// CoinGecko API for live token prices
+// Token price API with DefiLlama as primary source, CoinGecko as fallback
 
 const COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3";
 const DEFILLAMA_COINS_URL = "https://coins.llama.fi";
@@ -23,7 +23,6 @@ export interface TokenMarketData {
 
 // Token IDs for major tokens on XLayer - bidirectional mapping
 export const TOKEN_IDS: Record<string, string> = {
-  // Symbol -> CoinGecko ID
   OKB: "okb",
   WETH: "weth",
   WBTC: "wrapped-bitcoin",
@@ -47,29 +46,19 @@ export const TOKEN_IDS_REVERSE: Record<string, string> = {
 // Get CoinGecko ID from any identifier (symbol, id, or contract)
 export function resolveToCoinGeckoId(identifier: string): string | null {
   const lower = identifier.toLowerCase();
-  
-  // Check if it's already a CoinGecko ID
-  if (TOKEN_IDS_REVERSE[lower]) {
-    return lower;
-  }
-  
-  // Check if it's a symbol
+  if (TOKEN_IDS_REVERSE[lower]) return lower;
   const upper = identifier.toUpperCase();
-  if (TOKEN_IDS[upper]) {
-    return TOKEN_IDS[upper];
-  }
-  
+  if (TOKEN_IDS[upper]) return TOKEN_IDS[upper];
   return null;
 }
 
-// XLayer community tokens (not on CoinGecko, we'll try to fetch from DEX/DefiLlama)
+// XLayer community tokens (not on CoinGecko)
 export const XLAYER_COMMUNITY_TOKENS = [
   { symbol: "DOG", name: "DOG", contract: "0x903358faf7c6304afbd560e9e29b12ab1b8fddc5", logo: "https://ui-avatars.com/api/?name=DOG&background=f59e0b&color=fff&size=64" },
   { symbol: "NIUMA", name: "NIUMA", contract: "0x87669801a1fad6dad9db70d27ac752f452989667", logo: "https://ui-avatars.com/api/?name=NM&background=8b5cf6&color=fff&size=64" },
   { symbol: "XDOG", name: "XDOG", contract: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", logo: "https://ui-avatars.com/api/?name=XD&background=ec4899&color=fff&size=64" },
 ];
 
-// Find community token by any identifier
 export function findCommunityToken(identifier: string) {
   const lower = identifier.toLowerCase();
   return XLAYER_COMMUNITY_TOKENS.find(
@@ -77,12 +66,53 @@ export function findCommunityToken(identifier: string) {
   );
 }
 
-// Alternative price fetching through DexScreener API for community tokens
+// ========== DefiLlama API (PRIMARY SOURCE) ==========
+
+// Fetch token prices from DefiLlama as PRIMARY source
+export async function fetchTokenPricesFromDefiLlama(): Promise<TokenPrice[]> {
+  try {
+    // DefiLlama supports multiple chains - use coingecko: prefix for known tokens
+    const coinGeckoTokens = Object.values(TOKEN_IDS).map(id => `coingecko:${id}`).join(',');
+    
+    const response = await fetch(`${DEFILLAMA_COINS_URL}/prices/current/${coinGeckoTokens}`);
+    if (!response.ok) throw new Error("DefiLlama API failed");
+    
+    const data = await response.json();
+    const coins = data.coins || {};
+    
+    const tokens: TokenPrice[] = [];
+    
+    for (const [key, value] of Object.entries(coins) as any) {
+      const cgId = key.replace('coingecko:', '');
+      const symbol = TOKEN_IDS_REVERSE[cgId] || cgId.toUpperCase();
+      
+      tokens.push({
+        id: cgId,
+        symbol: symbol,
+        name: value.symbol || cgId,
+        current_price: value.price || 0,
+        price_change_percentage_24h: 0, // DefiLlama doesn't provide this in basic endpoint
+        total_volume: 0,
+        market_cap: 0,
+        image: `https://icons.llamao.fi/icons/chains/rsz_${cgId}.jpg`,
+        sparkline_in_7d: undefined,
+      });
+    }
+    
+    return tokens;
+  } catch (error) {
+    console.error("DefiLlama API error:", error);
+    return [];
+  }
+}
+
+// ========== DexScreener API ==========
+
 export async function fetchDexScreenerPrices(contracts: string[]) {
   try {
     if (!contracts || contracts.length === 0) return {};
-    // DexScreener API for XLayer tokens
     const results: Record<string, any> = {};
+    
     for (const contract of contracts) {
       try {
         const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${contract}`);
@@ -110,7 +140,8 @@ export async function fetchDexScreenerPrices(contracts: string[]) {
   }
 }
 
-// Fetch token prices from CoinGecko
+// ========== CoinGecko API (FALLBACK) ==========
+
 export async function fetchTokenPrices(): Promise<TokenPrice[]> {
   try {
     const ids = Object.values(TOKEN_IDS).join(",");
@@ -121,12 +152,11 @@ export async function fetchTokenPrices(): Promise<TokenPrice[]> {
     const data = await response.json();
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error("Error fetching token prices:", error);
+    console.error("CoinGecko API error:", error);
     return [];
   }
 }
 
-// Fetch single token details
 export async function fetchTokenDetails(id: string): Promise<any> {
   try {
     const response = await fetch(
@@ -140,7 +170,6 @@ export async function fetchTokenDetails(id: string): Promise<any> {
   }
 }
 
-// Fetch token price history for charts
 export async function fetchTokenPriceHistory(id: string, days: number = 7): Promise<TokenMarketData | null> {
   try {
     const response = await fetch(
@@ -171,7 +200,7 @@ export function mapTokenData(token: TokenPrice) {
   };
 }
 
-// Fetch community token prices/details from DefiLlama coins API (fallback when not on CoinGecko)
+// Fetch community token prices from DefiLlama coins API
 export async function fetchCommunityPricesByContracts(contracts: string[]) {
   try {
     if (!contracts || contracts.length === 0) return {};
@@ -179,7 +208,6 @@ export async function fetchCommunityPricesByContracts(contracts: string[]) {
     const response = await fetch(`${DEFILLAMA_COINS_URL}/prices/current/${tokens}`);
     if (!response.ok) throw new Error('Failed to fetch community token prices');
     const data = await response.json();
-    // data.coins is expected to be a map like { 'xlayer:0x...': { price: number, symbol: string, timestamp } }
     return data.coins || {};
   } catch (error) {
     console.error('Error fetching community prices:', error);
@@ -190,7 +218,6 @@ export async function fetchCommunityPricesByContracts(contracts: string[]) {
 export async function fetchCommunityTokenDetailsByContract(contract: string) {
   try {
     if (!contract) return null;
-    // Try the coins endpoint for a single token
     const endpoints = [
       `${DEFILLAMA_COINS_URL}/coins/xlayer:${encodeURIComponent(contract)}`,
       `${DEFILLAMA_COINS_URL}/coins/xlayer/${encodeURIComponent(contract)}`,
@@ -202,15 +229,15 @@ export async function fetchCommunityTokenDetailsByContract(contract: string) {
         if (!res.ok) continue;
         const data = await res.json();
         if (!data) continue;
-        // Normalize to a shape similar enough to CoinGecko for the UI to consume
-        const normalized: any = {
+        
+        return {
           id: data.address || contract,
           name: data.name || data.coin || data.address || contract,
           symbol: (data.symbol || data.ticker || '').toUpperCase(),
           image: { large: data.logo || data.icon || null, small: data.logo || data.icon || null },
           contract,
           market_data: {
-            current_price: { usd: data.price || data.market_price || (data.price && data.price.usd) || 0 },
+            current_price: { usd: data.price || data.market_price || 0 },
             price_change_percentage_24h: data.change24h || 0,
             total_volume: { usd: data.volume || data.total_volume || 0 },
             market_cap: { usd: data.marketCap || data.market_cap || 0 },
@@ -224,13 +251,10 @@ export async function fetchCommunityTokenDetailsByContract(contract: string) {
           },
           description: { en: data.description || data.about || '' },
         };
-
-        return normalized;
       } catch (err) {
-        // ignore and try next
+        // try next endpoint
       }
     }
-
     return null;
   } catch (error) {
     console.error('Error fetching community token details:', error);

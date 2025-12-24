@@ -1,7 +1,8 @@
-// Token data hooks for fetching live prices and details
+// Token data hooks with multi-source fallback (DefiLlama -> OKLink -> DexScreener -> CoinGecko)
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchTokenPrices,
+  fetchTokenPricesFromDefiLlama,
   fetchTokenDetails,
   fetchTokenPriceHistory,
   mapTokenData,
@@ -13,20 +14,63 @@ import {
   fetchCommunityTokenDetailsByContract,
   TOKEN_IDS,
   TOKEN_IDS_REVERSE,
-  resolveToCoinGeckoId,
-  findCommunityToken,
 } from "@/lib/api/coingecko";
 import oklink from "@/lib/api/oklink";
+import { toast } from "sonner";
 
-// Hook to fetch live token prices with 5s refresh
+// Track API failures for fallback logic
+let apiFailures = { defillama: 0, coingecko: 0, oklink: 0, dexscreener: 0 };
+const MAX_FAILURES = 3;
+
+function resetFailureCount(api: keyof typeof apiFailures) {
+  apiFailures[api] = 0;
+}
+
+function incrementFailure(api: keyof typeof apiFailures) {
+  apiFailures[api]++;
+  if (apiFailures[api] === MAX_FAILURES) {
+    console.warn(`${api} API has failed ${MAX_FAILURES} times, switching to fallback`);
+  }
+}
+
+// Hook to fetch live token prices with multi-source fallback
 export function useTokenPrices() {
   return useQuery({
     queryKey: ["token-prices"],
     queryFn: async () => {
-      const prices = await fetchTokenPrices();
+      let prices: TokenPrice[] = [];
+      let source = "none";
+      
+      // Try DefiLlama first (primary source)
+      if (apiFailures.defillama < MAX_FAILURES) {
+        try {
+          prices = await fetchTokenPricesFromDefiLlama();
+          if (prices.length > 0) {
+            source = "defillama";
+            resetFailureCount("defillama");
+          }
+        } catch (e) {
+          incrementFailure("defillama");
+        }
+      }
+      
+      // Try CoinGecko as fallback
+      if (prices.length === 0 && apiFailures.coingecko < MAX_FAILURES) {
+        try {
+          prices = await fetchTokenPrices();
+          if (prices.length > 0) {
+            source = "coingecko";
+            resetFailureCount("coingecko");
+          }
+        } catch (e) {
+          incrementFailure("coingecko");
+        }
+      }
+      
+      // Map to our format
       const mapped = prices.map(mapTokenData);
       
-      // Add community tokens with their logos
+      // Add community tokens
       const communityTokens = XLAYER_COMMUNITY_TOKENS.map((t) => ({
         symbol: t.symbol,
         name: t.name,
@@ -35,12 +79,12 @@ export function useTokenPrices() {
         volume24h: 0,
         mcap: 0,
         logo: t.logo,
-        sparkline: [],
+        sparkline: [] as number[],
         contract: t.contract,
         isCommunityToken: true,
       }));
 
-      // Try OKLink first for community token prices (most reliable for XLayer)
+      // Try OKLink for community token prices
       for (const ct of communityTokens) {
         try {
           const oklinkPrice = await oklink.fetchOklinkLivePrice(ct.contract);
@@ -64,8 +108,7 @@ export function useTokenPrices() {
               const key = `xlayer:${ct.contract}`;
               const coin = pricesData[key];
               if (coin) {
-                const price = coin.price ?? (coin.price_usd ?? coin?.price?.usd ?? 0);
-                ct.price = typeof price === 'number' ? price : Number(price) || 0;
+                ct.price = typeof coin.price === 'number' ? coin.price : Number(coin.price) || 0;
                 ct.change24h = coin.change24h ?? 0;
                 ct.volume24h = coin.volume ?? 0;
                 if (coin.logo) ct.logo = coin.logo;
@@ -77,12 +120,9 @@ export function useTokenPrices() {
         }
       }
 
-      // Try DexScreener as final fallback for tokens still missing prices
+      // Try DexScreener as final fallback
       try {
-        const missingContracts = communityTokens
-          .filter((ct) => ct.price === 0)
-          .map((ct) => ct.contract);
-        
+        const missingContracts = communityTokens.filter((ct) => ct.price === 0).map((ct) => ct.contract);
         if (missingContracts.length > 0) {
           const dexPrices = await fetchDexScreenerPrices(missingContracts);
           communityTokens.forEach((ct) => {
@@ -100,32 +140,21 @@ export function useTokenPrices() {
         // ignore
       }
 
-      // Ensure we have logos where possible by querying DefiLlama coins endpoint
-      try {
-        const missingLogoContracts = communityTokens.filter((ct) => !ct.logo || ct.logo.includes('ui-avatars')).map((ct) => ct.contract);
-        for (const contract of missingLogoContracts) {
-          try {
-            const details = await fetchCommunityTokenDetailsByContract(contract);
-            if (details && details.image && details.image.large) {
-              const ct = communityTokens.find((c) => c.contract === contract);
-              if (ct) ct.logo = details.image.large;
-            }
-          } catch (e) {
-            // ignore per-token failures
-          }
-        }
-      } catch (e) {
-        // ignore
+      // Log data source for debugging
+      if (source !== "none") {
+        console.log(`Token prices loaded from: ${source}`);
       }
 
       return [...mapped, ...communityTokens];
     },
     staleTime: 5 * 1000,
     refetchInterval: 5 * 1000,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 }
 
-// Hook to fetch single token details
+// Hook to fetch single token details with fallback
 export function useTokenDetails(id: string | null) {
   return useQuery({
     queryKey: ["token-details", id],
@@ -134,13 +163,13 @@ export function useTokenDetails(id: string | null) {
       
       const lower = id.toLowerCase();
       
-      // Check if id matches a community token symbol or contract
+      // Check if id matches a community token
       const communityMatch = XLAYER_COMMUNITY_TOKENS.find(
         (t) => t.symbol.toLowerCase() === lower || t.contract.toLowerCase() === lower
       );
       
       if (communityMatch) {
-        // Try OKLink first for XLayer native tokens
+        // Try OKLink first
         try {
           const oklinkData = await oklink.fetchOklinkContractInfo(communityMatch.contract);
           if (oklinkData) {
@@ -157,31 +186,20 @@ export function useTokenDetails(id: string | null) {
                 market_cap: { usd: oklinkData.marketCap || 0 },
                 total_supply: oklinkData.totalSupply ? parseFloat(oklinkData.totalSupply) : 0,
               },
-              description: { en: oklinkData.description || `${communityMatch.name} is a community token on the XLayer network.` },
+              description: { en: oklinkData.description || `${communityMatch.name} is a community token on XLayer.` },
               holders: oklinkData.holders,
               isCommunityToken: true,
             };
           }
-        } catch (e) {
-          // Continue to other sources
-        }
+        } catch (e) {}
 
-        // Try DefiLlama coins endpoint
+        // Try DefiLlama
         try {
           const dl = await fetchCommunityTokenDetailsByContract(communityMatch.contract);
-          if (dl) {
-            return {
-              ...dl,
-              id: communityMatch.contract,
-              contract: communityMatch.contract,
-              isCommunityToken: true,
-            };
-          }
-        } catch (e) {
-          // Continue
-        }
+          if (dl) return { ...dl, contract: communityMatch.contract, isCommunityToken: true };
+        } catch (e) {}
 
-        // Try DexScreener as fallback
+        // Try DexScreener
         try {
           const dexData = await fetchDexScreenerPrices([communityMatch.contract]);
           const tokenData = dexData[communityMatch.contract.toLowerCase()];
@@ -198,15 +216,13 @@ export function useTokenDetails(id: string | null) {
                 total_volume: { usd: tokenData.volume24h || 0 },
                 market_cap: { usd: 0 },
               },
-              description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
+              description: { en: `${communityMatch.name} is a community token on XLayer.` },
               isCommunityToken: true,
             };
           }
-        } catch (e) {
-          // Continue to final fallback
-        }
+        } catch (e) {}
 
-        // Final: return basic info
+        // Return basic info
         return {
           id: communityMatch.contract,
           name: communityMatch.name,
@@ -219,12 +235,12 @@ export function useTokenDetails(id: string | null) {
             total_volume: { usd: 0 },
             market_cap: { usd: 0 },
           },
-          description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
+          description: { en: `${communityMatch.name} is a community token on XLayer.` },
           isCommunityToken: true,
         };
       }
       
-      // Check if it's a standard CoinGecko token ID
+      // Check if it's a standard CoinGecko token
       const tokenIdEntry = Object.entries(TOKEN_IDS).find(
         ([symbol, cgId]) => cgId === lower || symbol.toLowerCase() === lower
       );
@@ -235,11 +251,11 @@ export function useTokenDetails(id: string | null) {
         if (cg) return cg;
       }
       
-      // Try CoinGecko directly with the id
+      // Try CoinGecko directly
       const cg = await fetchTokenDetails(id);
       if (cg) return cg;
 
-      // Try OKLink for on-chain contract info as a fallback
+      // Try OKLink for contract addresses
       const isAddress = /^0x[a-f0-9]{40}$/i.test(lower);
       if (isAddress) {
         try {
@@ -260,11 +276,8 @@ export function useTokenDetails(id: string | null) {
               description: { en: ok.description || "" },
             };
           }
-        } catch (e) {
-          // Ignore
-        }
+        } catch (e) {}
 
-        // Try DefiLlama for address
         const data = await fetchCommunityTokenDetailsByContract(lower);
         if (data) return data;
       }
@@ -274,6 +287,7 @@ export function useTokenDetails(id: string | null) {
     enabled: !!id,
     staleTime: 30 * 1000,
     refetchInterval: 30 * 1000,
+    retry: 2,
   });
 }
 
@@ -288,7 +302,7 @@ export function useTokenPriceHistory(id: string | null, days: number = 7) {
   });
 }
 
-// Fetch OKLink contract info for on-chain enrichment
+// Fetch OKLink contract info
 export function useOklinkContract(contract: string | null) {
   return useQuery({
     queryKey: ["oklink-contract", contract],
