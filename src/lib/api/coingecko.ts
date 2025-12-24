@@ -90,7 +90,7 @@ export const XLAYER_COMMUNITY_TOKENS = [
     symbol: "DOG", 
     name: "DOG", 
     contract: "0x903358faf7c6304afbd560e9e29b12ab1b8fddc5", 
-    coingeckoId: "dog-3",
+    coingeckoId: "dog-4",
     logo: "https://assets.coingecko.com/coins/images/69178/standard/1000071357.jpg" 
   },
 ];
