@@ -7,6 +7,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { DonationStats } from "@/components/dashboard/DonationStats";
 import { RecentDonors } from "@/components/dashboard/RecentDonors";
+import { useDonationStats } from "@/hooks/useDonations";
 
 const DONATION_ADDRESS = "0xde0bcf388d7b1604a2ba30c06ea2fe6e8f4d3662";
 
@@ -18,6 +19,7 @@ const donations = [
 
 export default function Donations() {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const { data: stats } = useDonationStats();
 
   const handleCopy = (address: string) => {
     try {
@@ -40,7 +42,12 @@ export default function Donations() {
 
         {/* Stats and Recent Donors */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <DonationStats totalDonations={175} donorCount={12} monthlyGoal={1000} growthRate={15} />
+          <DonationStats 
+            totalDonations={stats?.totalDonations || 0} 
+            donorCount={stats?.donorCount || 0} 
+            monthlyGoal={1000} 
+            growthRate={stats?.growthRate || 0} 
+          />
           <RecentDonors />
         </div>
 
