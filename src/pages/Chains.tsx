@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { ChainComparisonChart } from "@/components/dashboard/ChainComparisonChart";
+import { TVLDistributionChart } from "@/components/dashboard/TVLDistributionChart";
 
 export default function Chains() {
   const { data: chains, isLoading } = useChainsTVL();
@@ -127,6 +129,12 @@ export default function Chains() {
             </div>
           </div>
         )}
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ChainComparisonChart chains={filteredChains} loading={isLoading} highlightChain="xlayer" />
+          <TVLDistributionChart chains={filteredChains} loading={isLoading} />
+        </div>
 
         {/* Search */}
         <div className="relative max-w-md">
