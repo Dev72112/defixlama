@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import Donations from "./pages/Donations";
 import Docs from "./pages/Docs";
 import Portfolio from "./pages/Portfolio";
+import Alerts from "./pages/Alerts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/donations" element={<Donations />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/alerts" element={<Alerts />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
