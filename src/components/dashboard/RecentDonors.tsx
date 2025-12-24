@@ -1,8 +1,8 @@
 import { Gift, ExternalLink, Loader2 } from "lucide-react";
-import { useDonations } from "@/hooks/useDonations";
+import { useRecentDonations, getExplorerTxLink } from "@/hooks/useDonations";
 
 export function RecentDonors() {
-  const { data: donations = [], isLoading, isError } = useDonations();
+  const { data: donations = [], isLoading, isError } = useRecentDonations(10);
 
   const formatTime = (timestamp: number) => {
     const diff = Date.now() - timestamp;
@@ -53,10 +53,11 @@ export function RecentDonors() {
                     <p className="font-mono text-sm text-foreground">{donor.address}</p>
                     {donor.txHash && (
                       <a
-                        href={`https://www.oklink.com/xlayer/tx/${donor.txHash}`}
+                        href={getExplorerTxLink(donor.txHash)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <ExternalLink className="h-3 w-3 text-muted-foreground hover:text-primary" />
                       </a>
