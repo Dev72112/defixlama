@@ -1,27 +1,28 @@
+import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { Book, Code, Database, Users, HelpCircle, ExternalLink } from "lucide-react";
 
 export default function Docs() {
   const [copied, setCopied] = useState(false);
-  const exampleWebhook = `curl -X POST https://your-webhook.example.com/webhooks/protocols \
-  -H 'Content-Type: application/json' \
-  -H 'X-Signature: <hmac>' \
-  -d '{\n+    "event":"protocol_listed",\n+    "protocol":{ "name":"ExampleProtocol","chain":"X Layer","tvl":12345, "slug":"exampleprotocol" },\n+    "timestamp": 1620000000\n+  }'`;
+  const exampleWebhook = `curl -X POST https://your-webhook.example.com/webhooks/protocols \\
+  -H 'Content-Type: application/json' \\
+  -H 'X-Signature: <hmac>' \\
+  -d '{"event":"protocol_listed","protocol":{"name":"ExampleProtocol","chain":"X Layer","tvl":12345}}'`;
 
   const copyExample = async () => {
     try {
       await navigator.clipboard.writeText(exampleWebhook);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <Layout>
+      <div className="max-w-4xl space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold mb-1">Documentation</h1>
@@ -124,7 +125,7 @@ export default function Docs() {
           <h3 className="font-medium mt-3">Missing protocol data?</h3>
           <p>Open an issue with the protocol name and chain; we will verify and add enrichment where possible.</p>
         </div>
-      </Card>
-    </div>
+      </div>
+    </Layout>
   );
 }

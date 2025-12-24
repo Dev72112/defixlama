@@ -10,6 +10,7 @@ import {
   fetchDexScreenerPrices,
   fetchCommunityPricesByContracts,
   fetchCommunityTokenDetailsByContract,
+  TOKEN_IDS,
 } from "@/lib/api/coingecko";
 import oklink from "@/lib/api/oklink";
 
@@ -129,13 +130,39 @@ export function useTokenDetails(id: string | null) {
       
       const lower = id.toLowerCase();
       
-      // Check if id matches a community token symbol first
+      // Check if id matches a community token symbol or contract
       const communityMatch = XLAYER_COMMUNITY_TOKENS.find(
         (t) => t.symbol.toLowerCase() === lower || t.contract.toLowerCase() === lower
       );
       
       if (communityMatch) {
-        // Try DefiLlama coins endpoint for richer token details (logo, price, etc.)
+        // Try OKLink first for XLayer native tokens
+        try {
+          const oklinkData = await oklink.fetchOklinkContractInfo(communityMatch.contract);
+          if (oklinkData) {
+            return {
+              id: communityMatch.contract,
+              name: oklinkData.name || communityMatch.name,
+              symbol: oklinkData.symbol || communityMatch.symbol,
+              image: { large: oklinkData.logo || communityMatch.logo, small: oklinkData.logo || communityMatch.logo },
+              contract: communityMatch.contract,
+              market_data: {
+                current_price: { usd: oklinkData.price || 0 },
+                price_change_percentage_24h: oklinkData.change24h || 0,
+                total_volume: { usd: oklinkData.volume24h || 0 },
+                market_cap: { usd: oklinkData.marketCap || 0 },
+                total_supply: oklinkData.totalSupply ? parseFloat(oklinkData.totalSupply) : 0,
+              },
+              description: { en: oklinkData.description || `${communityMatch.name} is a community token on the XLayer network.` },
+              holders: oklinkData.holders,
+              isCommunityToken: true,
+            };
+          }
+        } catch (e) {
+          // Continue to other sources
+        }
+
+        // Try DefiLlama coins endpoint
         try {
           const dl = await fetchCommunityTokenDetailsByContract(communityMatch.contract);
           if (dl) {
@@ -147,68 +174,35 @@ export function useTokenDetails(id: string | null) {
             };
           }
         } catch (e) {
-          // ignore dl failure and continue to other fallbacks
+          // Continue
         }
 
-        // Try DefiLlama current prices (coins.llama) as a lightweight fallback
-        try {
-          const prices = await fetchCommunityPricesByContracts([communityMatch.contract]);
-          const key = `xlayer:${communityMatch.contract}`;
-          const coin = prices[key] || prices[communityMatch.contract.toLowerCase()];
-          if (coin) {
-            return {
-              id: communityMatch.contract,
-              name: communityMatch.name,
-              symbol: communityMatch.symbol,
-              image: { large: communityMatch.logo, small: communityMatch.logo },
-              contract: communityMatch.contract,
-              market_data: {
-                current_price: { usd: coin.price ?? coin.price_usd ?? 0 },
-                price_change_percentage_24h: coin.change24h ?? 0,
-                total_volume: { usd: coin.volume ?? 0 },
-                market_cap: { usd: 0 },
-              },
-              description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
-              isCommunityToken: true,
-            };
-          }
-        } catch (e) {
-          // ignore
-        }
-
-        // Try to get data from DexScreener as a further fallback
+        // Try DexScreener as fallback
         try {
           const dexData = await fetchDexScreenerPrices([communityMatch.contract]);
           const tokenData = dexData[communityMatch.contract.toLowerCase()];
           if (tokenData) {
             return {
               id: communityMatch.contract,
-              name: communityMatch.name,
-              symbol: communityMatch.symbol,
+              name: tokenData.name || communityMatch.name,
+              symbol: tokenData.symbol || communityMatch.symbol,
               image: { large: communityMatch.logo, small: communityMatch.logo },
               contract: communityMatch.contract,
               market_data: {
-                current_price: { usd: tokenData?.price || 0 },
-                price_change_percentage_24h: tokenData?.change24h || 0,
-                total_volume: { usd: tokenData?.volume24h || 0 },
+                current_price: { usd: tokenData.price || 0 },
+                price_change_percentage_24h: tokenData.change24h || 0,
+                total_volume: { usd: tokenData.volume24h || 0 },
                 market_cap: { usd: 0 },
-                ath: { usd: 0 },
-                high_24h: { usd: 0 },
-                low_24h: { usd: 0 },
-                atl: { usd: 0 },
-                circulating_supply: 0,
-                total_supply: 0,
-                max_supply: null,
               },
               description: { en: `${communityMatch.name} is a community token on the XLayer network.` },
               isCommunityToken: true,
             };
           }
         } catch (e) {
-          // continue to final fallback
+          // Continue to final fallback
         }
 
-        // Final: return basic info with logo placeholder and zeroed market data
+        // Final: return basic info
         return {
           id: communityMatch.contract,
           name: communityMatch.name,
@@ -226,23 +220,33 @@ export function useTokenDetails(id: string | null) {
         };
       }
       
-      // Try CoinGecko for standard tokens
+      // Check if it's a standard CoinGecko token ID
+      const tokenIdEntry = Object.entries(TOKEN_IDS).find(
+        ([symbol, cgId]) => cgId === lower || symbol.toLowerCase() === lower
+      );
+      
+      if (tokenIdEntry) {
+        const cgId = tokenIdEntry[1] as string;
+        const cg = await fetchTokenDetails(cgId);
+        if (cg) return cg;
+      }
+      
+      // Try CoinGecko directly with the id
       const cg = await fetchTokenDetails(id);
       if (cg) return cg;
 
-      // Try OKLink for on-chain contract info as a fallback after CoinGecko
-      try {
-        // OKLink expects a contract/address; only attempt when `id` looks like one
-        const lowerId = id.toLowerCase();
-        if (/^0x[a-f0-9]{40}$/.test(lowerId)) {
-          const ok = await oklink.fetchOklinkContractInfo(lowerId);
+      // Try OKLink for on-chain contract info as a fallback
+      const isAddress = /^0x[a-f0-9]{40}$/i.test(lower);
+      if (isAddress) {
+        try {
+          const ok = await oklink.fetchOklinkContractInfo(lower);
           if (ok) {
             return {
-              id: lowerId,
+              id: lower,
               name: ok.name || ok.contractName || id,
               symbol: ok.symbol || "",
               image: { large: ok.logo || "", small: ok.logo || "" },
-              contract: lowerId,
+              contract: lower,
               market_data: {
                 current_price: { usd: ok.price || 0 },
                 price_change_percentage_24h: ok.change24h || 0,
@@ -252,14 +256,11 @@ export function useTokenDetails(id: string | null) {
               description: { en: ok.description || "" },
             };
           }
+        } catch (e) {
+          // Ignore
         }
-      } catch (e) {
-        // ignore OKLink failures
-      }
 
-      // If looks like address
-      const isAddress = /^0x[a-f0-9]{40}$/i.test(lower);
-      if (isAddress) {
+        // Try DefiLlama for address
         const data = await fetchCommunityTokenDetailsByContract(lower);
         if (data) return data;
       }

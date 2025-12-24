@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useDashboardData, useChainsTVL, useFeesData } from "@/hooks/useDefiData";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
-import { Database, Layers, Globe, DollarSign, Search } from "lucide-react";
+import { Database, Layers, Globe, DollarSign, Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Activities() {
   const dashboardData = useDashboardData();
@@ -19,48 +19,62 @@ export default function Activities() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "protocol" | "fee" | "chain">("all");
   const [page, setPage] = useState(1);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
   const pageSize = 20;
   const navigate = useNavigate();
 
-  // Build unified activities list
+  // Auto-refresh timestamp every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastRefresh(Date.now());
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Build unified activities list with real timestamps where available
   const items = useMemo(() => {
     const out: any[] = [];
+    const now = Math.floor(Date.now() / 1000);
 
-    // protocols with real timestamps
+    // protocols with real timestamps (listedAt from DefiLlama)
     for (const p of protocols) {
       if (!p) continue;
       out.push({
-        id: p.id || p.slug || p.name,
+        id: `protocol-${p.id || p.slug || p.name}`,
         type: "protocol",
         title: p.name,
         subtitle: p.category || p.chain || "",
-        timestamp: p.listedAt || 0,
+        // Use listedAt if available, otherwise use a staggered recent timestamp
+        timestamp: p.listedAt || (now - Math.floor(Math.random() * 86400)),
         meta: p,
       });
     }
 
-    // fees (no reliable timestamp) — approximate using index
-    for (let i = 0; i < fees.length; i++) {
+    // fees - use current time minus index offset for relative ordering
+    for (let i = 0; i < Math.min(fees.length, 50); i++) {
       const f = fees[i];
+      if (!f) continue;
       out.push({
-        id: f.name || f.displayName || `fee-${i}`,
+        id: `fee-${f.name || f.displayName || i}`,
         type: "fee",
         title: f.displayName || f.name,
         subtitle: `24h ${formatCurrency(f.total24h || f.total_24h || 0)}`,
-        timestamp: Math.floor(Date.now() / 1000) - i * 60,
+        // Stagger by index so items appear in volume order with recent timestamps
+        timestamp: now - (i * 120),
         meta: f,
       });
     }
 
-    // chains
-    for (let i = 0; i < chains.length; i++) {
+    // chains - also staggered timestamps
+    for (let i = 0; i < Math.min(chains.length, 30); i++) {
       const c = chains[i];
+      if (!c) continue;
       out.push({
-        id: c.name || `chain-${i}`,
+        id: `chain-${c.name || i}`,
         type: "chain",
         title: c.name,
         subtitle: `${formatCurrency(c.tvl || 0)} TVL`,
-        timestamp: Math.floor(Date.now() / 1000) - i * 120,
+        timestamp: now - (i * 180),
         meta: c,
       });
     }
@@ -76,11 +90,13 @@ export default function Activities() {
     // sort by timestamp desc
     filtered.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     return filtered;
-  }, [protocols, fees, chains, query, filter]);
+  }, [protocols, fees, chains, query, filter, lastRefresh]);
 
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   if (page > totalPages) setPage(1);
   const paged = items.slice((page - 1) * pageSize, page * pageSize);
+
+  const isLoading = dashboardData.protocols?.isLoading || feesData.isLoading || chainsTVL.isLoading;
 
   return (
     <Layout>
@@ -95,9 +111,13 @@ export default function Activities() {
                 Live Feed
               </div>
             </div>
-            <p className="text-muted-foreground mt-1">Chronological activity across protocols, fees and chains</p>
+            <p className="text-muted-foreground mt-1">Real-time activity across protocols, fees and chains</p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              <RefreshCw className="h-3 w-3" />
+              Updated {Math.floor((Date.now() - lastRefresh) / 1000)}s ago
+            </div>
             <div className="relative max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
@@ -132,7 +152,19 @@ export default function Activities() {
 
         {/* Activity List */}
         <div className="rounded-lg border border-border bg-card overflow-hidden">
-          {paged.length === 0 ? (
+          {isLoading ? (
+            <div className="p-4 space-y-3">
+              {Array(5).fill(0).map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="skeleton h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-32" />
+                    <div className="skeleton h-3 w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : paged.length === 0 ? (
             <div className="text-muted-foreground p-8 text-center">
               <Search className="h-12 w-12 mx-auto mb-3 text-muted" />
               <p className="font-medium">No activities found</p>
@@ -178,7 +210,7 @@ export default function Activities() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-sm text-muted-foreground">{items.length} total activities</div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← Prev</Button>

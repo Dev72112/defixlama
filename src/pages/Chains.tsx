@@ -141,118 +141,122 @@ export default function Chains() {
 
         {/* Chains Table */}
         {isLoading ? (
-          <div className="rounded-lg border border-border bg-card overflow-x-auto">
-            <table className="data-table w-full min-w-[500px]">
-              <thead>
-                <tr className="bg-muted/30">
-                  <th className="w-12">#</th>
-                  <th>Chain</th>
-                  <th className="text-right">TVL</th>
-                  <th className="text-right">Market Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array(10).fill(0).map((_, i) => (
-                  <tr key={i}>
-                    <td><div className="skeleton h-4 w-6" /></td>
-                    <td><div className="skeleton h-4 w-32" /></td>
-                    <td><div className="skeleton h-4 w-24 ml-auto" /></td>
-                    <td><div className="skeleton h-4 w-16 ml-auto" /></td>
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="data-table w-full min-w-[400px]">
+                <thead>
+                  <tr className="bg-muted/30">
+                    <th className="w-12">#</th>
+                    <th>Chain</th>
+                    <th className="text-right">TVL</th>
+                    <th className="text-right hidden sm:table-cell">Market Share</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {Array(10).fill(0).map((_, i) => (
+                    <tr key={i}>
+                      <td><div className="skeleton h-4 w-6" /></td>
+                      <td><div className="skeleton h-4 w-32" /></td>
+                      <td><div className="skeleton h-4 w-24 ml-auto" /></td>
+                      <td className="hidden sm:table-cell"><div className="skeleton h-4 w-16 ml-auto" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
-          <div className="rounded-lg border border-border bg-card overflow-x-auto">
-            <table className="data-table w-full min-w-[500px]">
-              <thead>
-                <tr className="bg-muted/30">
-                  <th className="w-12 hidden sm:table-cell">#</th>
-                  <th>Chain</th>
-                  <th className="text-right">TVL</th>
-                  <th className="text-right hidden sm:table-cell">Market Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedChains.map((chain, index) => {
-                  const isXLayer = chain.name.toLowerCase() === "xlayer" || chain.name.toLowerCase() === "x layer";
-                  const share = totalTVL > 0 ? (chain.tvl / totalTVL) * 100 : 0;
-                  
-                  return (
-                    <tr
-                      key={chain.name}
-                      className={cn(
-                        "group cursor-pointer",
-                        isXLayer && "bg-primary/5 border-l-2 border-primary"
-                      )}
-                      onClick={() => navigate(`/chains/${chain.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/chains/${chain.name.toLowerCase().replace(/\s+/g, '-')}`); }}
-                    >
-                      <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
-                        { (page - 1) * pageSize + index + 1 }
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold",
-                              isXLayer
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-secondary text-secondary-foreground"
-                            )}
-                          >
-                            {chain.tokenSymbol || chain.name.slice(0, 2)}
-                          </div>
-                          <span
-                            className={cn(
-                              "font-medium",
-                              isXLayer ? "text-primary" : "text-foreground"
-                            )}
-                          >
-                            {chain.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                        {formatCurrency(chain.tvl)}
-                      </td>
-                      <td className="text-right hidden sm:table-cell">
-                        <div className="flex items-center justify-end gap-2">
-                          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="data-table w-full min-w-[320px]">
+                <thead>
+                  <tr className="bg-muted/30">
+                    <th className="w-12 hidden sm:table-cell">#</th>
+                    <th>Chain</th>
+                    <th className="text-right">TVL</th>
+                    <th className="text-right hidden md:table-cell">Market Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedChains.map((chain, index) => {
+                    const isXLayer = chain.name.toLowerCase() === "xlayer" || chain.name.toLowerCase() === "x layer";
+                    const share = totalTVL > 0 ? (chain.tvl / totalTVL) * 100 : 0;
+                    
+                    return (
+                      <tr
+                        key={chain.name}
+                        className={cn(
+                          "group cursor-pointer",
+                          isXLayer && "bg-primary/5 border-l-2 border-primary"
+                        )}
+                        onClick={() => navigate(`/chains/${chain.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/chains/${chain.name.toLowerCase().replace(/\s+/g, '-')}`); }}
+                      >
+                        <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
+                          { (page - 1) * pageSize + index + 1 }
+                        </td>
+                        <td className="max-w-[150px] sm:max-w-none">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             <div
-                              className="h-full bg-primary rounded-full"
-                              style={{ width: `${Math.min(share * 2, 100)}%` }}
-                            />
+                              className={cn(
+                                "h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0",
+                                isXLayer
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-secondary text-secondary-foreground"
+                              )}
+                            >
+                              {(chain.tokenSymbol || chain.name.slice(0, 2)).slice(0, 3)}
+                            </div>
+                            <span
+                              className={cn(
+                                "font-medium truncate",
+                                isXLayer ? "text-primary" : "text-foreground"
+                              )}
+                            >
+                              {chain.name}
+                            </span>
                           </div>
-                          <span className="font-mono text-sm text-muted-foreground w-16 text-right">
-                            {share.toFixed(2)}%
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="text-right font-mono font-medium text-foreground whitespace-nowrap text-sm sm:text-base">
+                          {formatCurrency(chain.tvl)}
+                        </td>
+                        <td className="text-right hidden md:table-cell">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="w-16 lg:w-24 h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full"
+                                style={{ width: `${Math.min(share * 2, 100)}%` }}
+                              />
+                            </div>
+                            <span className="font-mono text-sm text-muted-foreground w-14 lg:w-16 text-right">
+                              {share.toFixed(2)}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {/* Pagination controls */}
         {!isLoading && (
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
               Showing {Math.min((page - 1) * pageSize + 1, filteredChains.length)}-
               {Math.min(page * pageSize, filteredChains.length)} of {filteredChains.length} chains
             </p>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Per page</span>
+                <span className="text-sm text-muted-foreground hidden sm:inline">Per page</span>
                 <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
-                  <SelectTrigger className="w-[90px]">
+                  <SelectTrigger className="w-[70px] sm:w-[90px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -265,22 +269,23 @@ export default function Chains() {
               </div>
 
               <Pagination>
-                <PaginationContent>
+                <PaginationContent className="gap-1">
                   <PaginationItem>
-                    <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
+                    <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className="h-8 px-2 sm:px-3" />
                   </PaginationItem>
-                  {Array.from({ length: totalPages }).slice(0, 7).map((_, i) => {
+                  {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
                     const p = i + 1;
                     return (
-                      <PaginationItem key={p}>
-                        <PaginationLink isActive={p === page} onClick={() => setPage(p)}>
+                      <PaginationItem key={p} className="hidden sm:inline-flex">
+                        <PaginationLink isActive={p === page} onClick={() => setPage(p)} className="h-8 w-8">
                           {p}
                         </PaginationLink>
                       </PaginationItem>
                     );
                   })}
+                  <span className="text-sm text-muted-foreground px-2 sm:hidden">{page}/{totalPages}</span>
                   <PaginationItem>
-                    <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} />
+                    <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="h-8 px-2 sm:px-3" />
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>

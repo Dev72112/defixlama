@@ -140,80 +140,82 @@ function FeesContent() {
             <p className="text-muted-foreground">No fee data found</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border bg-card overflow-x-auto">
-            <table className="data-table w-full min-w-[500px]">
-              <thead>
-                <tr className="bg-muted/30">
-                  <th className="w-12 hidden sm:table-cell">#</th>
-                  <th>Protocol</th>
-                  <th className="text-right">24h Fees</th>
-                  <th className="text-right hidden sm:table-cell">7d Fees</th>
-                  <th className="text-right">24h Change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedFees.map((fee, index) => {
-                  if (!fee || typeof fee !== "object") return null;
-                  const slug = (fee.displayName || fee.name || index).toString().toLowerCase().replace(/\s+/g, '-');
-                  const total24h = typeof fee.total24h === "number" ? fee.total24h : 0;
-                  const total7d = typeof fee.total7d === "number" ? fee.total7d : 0;
-                  const change1d = typeof fee.change_1d === "number" ? fee.change_1d : 0;
-                  return (
-                    <tr
-                      key={fee.name || index}
-                      className="group cursor-pointer"
-                      onClick={() => navigate(`/fees/${slug}`)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/fees/${slug}`); }}
-                    >
-                      <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
-                        {index + 1}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-3">
-                          {fee.logo ? (
-                            <img
-                              src={fee.logo}
-                              alt={fee.displayName || fee.name}
-                              className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${fee.name}&background=1a1a2e&color=2dd4bf&size=32`;
-                              }}
-                            />
-                          ) : (
-                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                              {(fee.displayName || fee.name || "?").charAt(0)}
-                            </div>
-                          )}
-                          <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">
-                            {fee.displayName || fee.name}
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="data-table w-full min-w-[320px]">
+                <thead>
+                  <tr className="bg-muted/30">
+                    <th className="w-12 hidden sm:table-cell">#</th>
+                    <th>Protocol</th>
+                    <th className="text-right">24h Fees</th>
+                    <th className="text-right hidden md:table-cell">7d Fees</th>
+                    <th className="text-right">Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedFees.map((fee, index) => {
+                    if (!fee || typeof fee !== "object") return null;
+                    const slug = (fee.displayName || fee.name || index).toString().toLowerCase().replace(/\s+/g, '-');
+                    const total24h = typeof fee.total24h === "number" ? fee.total24h : 0;
+                    const total7d = typeof fee.total7d === "number" ? fee.total7d : 0;
+                    const change1d = typeof fee.change_1d === "number" ? fee.change_1d : 0;
+                    return (
+                      <tr
+                        key={fee.name || index}
+                        className="group cursor-pointer"
+                        onClick={() => navigate(`/fees/${slug}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/fees/${slug}`); }}
+                      >
+                        <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
+                          {index + 1}
+                        </td>
+                        <td className="max-w-[120px] sm:max-w-none">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            {fee.logo ? (
+                              <img
+                                src={fee.logo}
+                                alt={fee.displayName || fee.name}
+                                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-muted flex-shrink-0"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${fee.name}&background=1a1a2e&color=2dd4bf&size=32`;
+                                }}
+                              />
+                            ) : (
+                              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs sm:text-sm flex-shrink-0">
+                                {(fee.displayName || fee.name || "?").charAt(0)}
+                              </div>
+                            )}
+                            <span className="font-medium text-foreground truncate text-sm sm:text-base">
+                              {fee.displayName || fee.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="text-right font-mono font-medium text-foreground whitespace-nowrap text-sm sm:text-base">
+                          {formatCurrency(total24h)}
+                        </td>
+                        <td className="text-right font-mono text-muted-foreground hidden md:table-cell whitespace-nowrap">
+                          {formatCurrency(total7d)}
+                        </td>
+                        <td className="text-right whitespace-nowrap">
+                          <span
+                            className={cn(
+                              "font-mono text-xs sm:text-sm",
+                              change1d >= 0
+                                ? "text-success"
+                                : "text-destructive"
+                            )}
+                          >
+                            {`${change1d >= 0 ? "+" : ""}${Number(change1d || 0).toFixed(1)}%`}
                           </span>
-                        </div>
-                      </td>
-                      <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                        {formatCurrency(total24h)}
-                      </td>
-                      <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
-                        {formatCurrency(total7d)}
-                      </td>
-                      <td className="text-right whitespace-nowrap">
-                        <span
-                          className={cn(
-                            "font-mono text-sm",
-                            change1d >= 0
-                              ? "text-success"
-                              : "text-destructive"
-                          )}
-                        >
-                          {`${change1d >= 0 ? "+" : ""}${Number(change1d || 0).toFixed(2)}%`}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
