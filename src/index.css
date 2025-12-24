@@ -164,6 +164,20 @@
     @apply scroll-smooth overflow-x-hidden;
   }
 
+  /* Theme transition for smooth dark/light mode switching */
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: background-color 0.4s ease, 
+                border-color 0.4s ease, 
+                color 0.3s ease,
+                box-shadow 0.4s ease,
+                fill 0.3s ease,
+                stroke 0.3s ease !important;
+    transition-delay: 0s !important;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
     font-feature-settings: "rlig" 1, "calt" 1;

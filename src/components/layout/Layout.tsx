@@ -1,7 +1,10 @@
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { PullToRefresh } from "@/components/PullToRefresh";
+import { useQueryClient } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,6 +12,15 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+
+  const handleRefresh = useCallback(async () => {
+    // Invalidate all queries to refetch data
+    await queryClient.invalidateQueries();
+    // Small delay for visual feedback
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }, [queryClient]);
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -24,7 +36,7 @@ export function Layout({ children }: LayoutProps) {
           onClick={() => setSidebarOpen(false)}
         >
           <div
-            className="fixed left-0 top-0 h-full w-[280px] animate-slide-in-right"
+            className="fixed left-0 top-0 h-full w-[280px]"
             onClick={(e) => e.stopPropagation()}
           >
             <Sidebar mobile onClose={() => setSidebarOpen(false)} />
@@ -35,7 +47,13 @@ export function Layout({ children }: LayoutProps) {
       {/* Main content */}
       <div className="lg:pl-[220px] overflow-x-hidden">
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="p-4 lg:p-6 overflow-x-hidden max-w-full">{children}</main>
+        {isMobile ? (
+          <PullToRefresh onRefresh={handleRefresh}>
+            <main className="p-4 lg:p-6 overflow-x-hidden max-w-full">{children}</main>
+          </PullToRefresh>
+        ) : (
+          <main className="p-4 lg:p-6 overflow-x-hidden max-w-full">{children}</main>
+        )}
       </div>
     </div>
   );

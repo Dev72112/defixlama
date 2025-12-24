@@ -30,7 +30,14 @@ export function Header({ onMenuClick }: HeaderProps) {
   useEffect(() => {
     try {
       localStorage.setItem("xlayer-theme", theme);
+      // Add transitioning class for smooth animation
+      document.documentElement.classList.add('theme-transitioning');
       document.documentElement.setAttribute("data-theme", theme === "dark" ? "dark" : "bright");
+      // Remove transitioning class after animation completes
+      const timeout = setTimeout(() => {
+        document.documentElement.classList.remove('theme-transitioning');
+      }, 400);
+      return () => clearTimeout(timeout);
     } catch (e) {}
   }, [theme]);
 
