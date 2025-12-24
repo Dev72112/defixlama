@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useTokenDetails, useTokenPriceHistory, useOklinkContract } from "@/hooks/useTokenData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
-import { ArrowLeft, TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Clock, Percent, Zap, AlertCircle } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Activity, DollarSign, BarChart3, Clock, Percent, Zap, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -378,7 +378,12 @@ export default function TokenDetail() {
             </div>
           </div>
           <div className="h-[300px] md:h-[400px]">
-            {chartData.length > 0 ? (
+            {isLoadingPrice ? (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span>Loading chart data...</span>
+              </div>
+            ) : chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
@@ -421,7 +426,7 @@ export default function TokenDetail() {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                Loading chart data...
+                No chart data available
               </div>
             )}
           </div>
