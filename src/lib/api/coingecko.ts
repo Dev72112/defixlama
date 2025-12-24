@@ -93,6 +93,41 @@ export const XLAYER_COMMUNITY_TOKENS = [
     coingeckoId: "dog-4",
     logo: "https://assets.coingecko.com/coins/images/69178/standard/1000071357.jpg" 
   },
+  { 
+    symbol: "XFROG", 
+    name: "XFROG", 
+    contract: "0x", 
+    coingeckoId: "xfrog",
+    logo: "https://assets.coingecko.com/coins/images/69230/standard/2025-09-14-135643-985-1.png" 
+  },
+  { 
+    symbol: "OKAY", 
+    name: "Okay.fun", 
+    contract: "0x", 
+    coingeckoId: "okay-fun",
+    logo: "https://assets.coingecko.com/coins/images/68463/standard/okayfun.png" 
+  },
+  { 
+    symbol: "WOKB", 
+    name: "Wrapped OKB", 
+    contract: "0x", 
+    coingeckoId: "wrapped-okb",
+    logo: "https://assets.coingecko.com/coins/images/37278/standard/okb.png" 
+  },
+  { 
+    symbol: "XWAWA", 
+    name: "Xwawa", 
+    contract: "0x", 
+    coingeckoId: "xwawa",
+    logo: "https://assets.coingecko.com/coins/images/68280/standard/xwawa.png" 
+  },
+  { 
+    symbol: "STARS", 
+    name: "StarsMint", 
+    contract: "0x", 
+    coingeckoId: "starsmint",
+    logo: "https://assets.coingecko.com/coins/images/69371/standard/2025-09-20_11.57.02.jpg" 
+  },
 ];
 
 export function findCommunityToken(identifier: string) {
