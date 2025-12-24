@@ -10,6 +10,8 @@ import { MarketSentiment } from "@/components/dashboard/MarketSentiment";
 import { TopMovers } from "@/components/dashboard/TopMovers";
 import { DominanceChart } from "@/components/dashboard/DominanceChart";
 import { EcosystemHealth } from "@/components/dashboard/EcosystemHealth";
+import { HistoricalTVLChart } from "@/components/dashboard/HistoricalTVLChart";
+import { HistoricalComparisonChart } from "@/components/dashboard/HistoricalComparisonChart";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -221,6 +223,21 @@ function DashboardContent() {
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <TVLChart data={tvlHistory?.data ?? []} loading={tvlHistory?.isLoading ?? true} height={350} />
       </ErrorBoundary>
+
+      {/* Historical Charts with Date Range */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <HistoricalTVLChart 
+          data={tvlHistory?.data ?? []} 
+          loading={tvlHistory?.isLoading ?? true} 
+          title="XLayer TVL History"
+        />
+        <HistoricalComparisonChart 
+          tvlData={tvlHistory?.data ?? []} 
+          volumeData={dexVolumes?.data ?? []}
+          loading={tvlHistory?.isLoading ?? true} 
+          title="TVL vs Volume Trend"
+        />
+      </div>
 
       {/* Market Intelligence Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

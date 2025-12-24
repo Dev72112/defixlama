@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProtocolTable } from "@/components/dashboard/ProtocolTable";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useXLayerProtocols, useXLayerTVL } from "@/hooks/useDefiData";
+import { useXLayerProtocols, useXLayerTVL, useXLayerTVLHistory } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { Database, Layers, TrendingUp, Search, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { HistoricalTVLChart } from "@/components/dashboard/HistoricalTVLChart";
 
 export default function Protocols() {
   const { data: protocols, isLoading: protocolsLoading } = useXLayerProtocols();
   const { data: tvl, isLoading: tvlLoading } = useXLayerTVL();
+  const { data: tvlHistory, isLoading: tvlHistoryLoading } = useXLayerTVLHistory();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("tvl");
@@ -145,6 +147,13 @@ export default function Protocols() {
             loading={protocolsLoading}
           />
         </div>
+
+        {/* Historical TVL Chart */}
+        <HistoricalTVLChart 
+          data={tvlHistory || []} 
+          loading={tvlHistoryLoading} 
+          title="XLayer Protocol TVL History"
+        />
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
