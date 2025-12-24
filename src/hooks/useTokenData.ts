@@ -1,3 +1,4 @@
+// Token data hooks for fetching live prices and details
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchTokenPrices,
