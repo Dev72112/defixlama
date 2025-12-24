@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { DonationStats } from "@/components/dashboard/DonationStats";
+import { RecentDonors } from "@/components/dashboard/RecentDonors";
 
 const DONATION_ADDRESS = "0xde0bcf388d7b1604a2ba30c06ea2fe6e8f4d3662";
 
@@ -36,6 +38,13 @@ export default function Donations() {
           </p>
         </div>
 
+        {/* Stats and Recent Donors */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DonationStats totalDonations={175} donorCount={12} monthlyGoal={1000} growthRate={15} />
+          <RecentDonors />
+        </div>
+
+        {/* Donation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {donations.map((token) => (
             <Card
