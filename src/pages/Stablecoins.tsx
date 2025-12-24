@@ -1,12 +1,14 @@
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { PegTracker } from "@/components/dashboard/PegTracker";
 import { useStablecoins } from "@/hooks/useDefiData";
 import { formatCurrency, Stablecoin } from "@/lib/api/defillama";
-import { Coins, TrendingUp, Search, DollarSign, Activity } from "lucide-react";
+import { Coins, TrendingUp, Search, DollarSign, Activity, PieChart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function Stablecoins() {
   const { data: stablecoins, isLoading } = useStablecoins();
@@ -35,6 +37,27 @@ export default function Stablecoins() {
     return acc + circulating;
   }, 0);
   const stablecoinCount = filteredStablecoins.length;
+
+  // Dominance chart data
+  const dominanceData = useMemo(() => {
+    const COLORS = ["hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+    return filteredStablecoins.slice(0, 5).map((s, i) => {
+      const circulating = s.circulating ? Object.values(s.circulating).reduce((a, b) => a + b, 0) : 0;
+      return {
+        name: s.symbol,
+        value: circulating,
+        color: COLORS[i % COLORS.length],
+      };
+    });
+  }, [filteredStablecoins]);
+
+  // Calculate stability score
+  const stabilityScore = useMemo(() => {
+    const stables = filteredStablecoins.filter((s) => s.price !== undefined);
+    if (stables.length === 0) return 100;
+    const avgDeviation = stables.reduce((acc, s) => acc + Math.abs(1 - (s.price || 1)) * 100, 0) / stables.length;
+    return Math.max(0, 100 - avgDeviation * 10);
+  }, [filteredStablecoins]);
 
   return (
     <Layout>
@@ -74,11 +97,57 @@ export default function Stablecoins() {
             loading={isLoading}
           />
           <StatCard
-            title="Peg Stability"
-            value="99.8%"
+            title="Stability Score"
+            value={`${stabilityScore.toFixed(1)}%`}
             icon={TrendingUp}
             loading={isLoading}
           />
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Dominance Chart */}
+          <div className="rounded-lg border border-border bg-card p-4">
+            <h3 className="font-semibold text-foreground mb-4">Market Cap Dominance</h3>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPie>
+                  <Pie
+                    data={dominanceData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={70}
+                    dataKey="value"
+                    paddingAngle={2}
+                  >
+                    {dominanceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), "Market Cap"]}
+                  />
+                </RechartsPie>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-3 mt-3 justify-center">
+              {dominanceData.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-xs text-muted-foreground">{item.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Peg Tracker */}
+          <PegTracker stablecoins={filteredStablecoins} loading={isLoading} />
         </div>
 
         {/* Search */}
