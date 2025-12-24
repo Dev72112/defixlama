@@ -59,12 +59,13 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
     if (isMoreActive) setMoreOpen(true);
   }, [location.pathname]);
 
-  // Close mobile sidebar on route change
+  // Close mobile sidebar on route change (but not on initial mount)
+  const [initialPath] = useState(location.pathname);
   useEffect(() => {
-    if (mobile && onClose) {
+    if (mobile && onClose && location.pathname !== initialPath) {
       onClose();
     }
-  }, [location.pathname]);
+  }, [location.pathname, mobile, onClose, initialPath]);
 
   return (
     <aside className={cn(
