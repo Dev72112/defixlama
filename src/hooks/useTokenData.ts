@@ -12,6 +12,7 @@ import {
   fetchDexScreenerPrices,
   fetchCommunityPricesByContracts,
   fetchCommunityTokenDetailsByContract,
+  fetchCommunityTokenPriceHistory,
   TOKEN_IDS,
   TOKEN_IDS_REVERSE,
 } from "@/lib/api/coingecko";
@@ -295,7 +296,29 @@ export function useTokenDetails(id: string | null) {
 export function useTokenPriceHistory(id: string | null, days: number = 7) {
   return useQuery<TokenMarketData | null>({
     queryKey: ["token-history", id, days],
-    queryFn: () => (id ? fetchTokenPriceHistory(id, days) : null),
+    queryFn: async () => {
+      if (!id) return null;
+      
+      const lower = id.toLowerCase();
+      
+      // Check if it's a community token (by contract address)
+      const isCommunityToken = XLAYER_COMMUNITY_TOKENS.some(
+        (t) => t.contract.toLowerCase() === lower || t.symbol.toLowerCase() === lower
+      );
+      
+      if (isCommunityToken) {
+        const contract = XLAYER_COMMUNITY_TOKENS.find(
+          (t) => t.contract.toLowerCase() === lower || t.symbol.toLowerCase() === lower
+        )?.contract;
+        if (contract) {
+          const history = await fetchCommunityTokenPriceHistory(contract, days);
+          if (history) return history;
+        }
+      }
+      
+      // Standard CoinGecko token
+      return fetchTokenPriceHistory(id, days);
+    },
     enabled: !!id,
     staleTime: 60 * 1000,
     refetchInterval: 60 * 1000,

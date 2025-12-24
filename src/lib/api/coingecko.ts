@@ -1,7 +1,25 @@
-// Token price API with DefiLlama as primary source, CoinGecko as fallback
+// Token price API with DefiLlama as primary source, CoinGecko via edge function as fallback
 
 const COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3";
 const DEFILLAMA_COINS_URL = "https://coins.llama.fi";
+
+// CoinGecko proxy via edge function (uses API key)
+const COINGECKO_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/coingecko-proxy`;
+
+async function fetchFromCoinGeckoProxy(endpoint: string, params?: Record<string, string>) {
+  try {
+    const response = await fetch(COINGECKO_PROXY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint, params }),
+    });
+    if (!response.ok) throw new Error(`CoinGecko proxy error: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("CoinGecko proxy error:", error);
+    return null;
+  }
+}
 
 export interface TokenPrice {
   id: string;
@@ -181,6 +199,16 @@ export async function fetchTokenPrices(): Promise<TokenPrice[]> {
 
 export async function fetchTokenDetails(id: string): Promise<any> {
   try {
+    // Try edge function first (has API key)
+    const proxyData = await fetchFromCoinGeckoProxy(`/coins/${encodeURIComponent(id)}`, {
+      localization: "false",
+      tickers: "false",
+      community_data: "false",
+      developer_data: "false",
+    });
+    if (proxyData && !proxyData.error) return proxyData;
+    
+    // Fallback to direct API
     const response = await fetch(
       `${COINGECKO_BASE_URL}/coins/${encodeURIComponent(id)}?localization=false&tickers=false&community_data=false&developer_data=false`
     );
@@ -194,6 +222,14 @@ export async function fetchTokenDetails(id: string): Promise<any> {
 
 export async function fetchTokenPriceHistory(id: string, days: number = 7): Promise<TokenMarketData | null> {
   try {
+    // Try edge function first (has API key)
+    const proxyData = await fetchFromCoinGeckoProxy(`/coins/${encodeURIComponent(id)}/market_chart`, {
+      vs_currency: "usd",
+      days: String(days),
+    });
+    if (proxyData && proxyData.prices) return proxyData;
+    
+    // Fallback to direct API
     const response = await fetch(
       `${COINGECKO_BASE_URL}/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=${encodeURIComponent(String(days))}`
     );
@@ -276,6 +312,35 @@ export async function fetchCommunityTokenDetailsByContract(contract: string) {
     };
   } catch (error) {
     console.error('Error fetching community token details:', error);
+    return null;
+  }
+}
+
+// Fetch community token price history from DefiLlama chart endpoint
+export async function fetchCommunityTokenPriceHistory(contract: string, days: number = 7): Promise<TokenMarketData | null> {
+  try {
+    if (!contract) return null;
+    
+    const tokenKey = `xlayer:${contract}`;
+    const response = await fetch(`${DEFILLAMA_COINS_URL}/chart/${encodeURIComponent(tokenKey)}?span=${days}`);
+    
+    if (!response.ok) return null;
+    const data = await response.json();
+    
+    if (!data.coins || !data.coins[tokenKey] || !data.coins[tokenKey].prices) return null;
+    
+    const prices: [number, number][] = data.coins[tokenKey].prices.map((p: any) => [
+      p.timestamp * 1000, // Convert to milliseconds
+      p.price,
+    ]);
+    
+    return {
+      prices,
+      market_caps: [],
+      total_volumes: [],
+    };
+  } catch (error) {
+    console.error('Error fetching community token price history:', error);
     return null;
   }
 }
