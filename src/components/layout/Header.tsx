@@ -1,4 +1,5 @@
-import { Search, Moon, Sun, Menu } from "lucide-react";
+import { Search, Moon, Sun, Menu, RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
@@ -13,6 +14,8 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   const [theme, setTheme] = useState<string>(() => {
     try {
       const stored = localStorage.getItem("xlayer-theme");
@@ -77,6 +80,21 @@ export function Header({ onMenuClick }: HeaderProps) {
             <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
             Live
           </div>
+
+          {/* Desktop refresh button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex hover:bg-primary/10 hover:text-primary transition-all duration-200"
+            onClick={async () => {
+              setIsRefreshing(true);
+              await queryClient.invalidateQueries();
+              setTimeout(() => setIsRefreshing(false), 1000);
+            }}
+            title="Refresh data"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
 
           {/* Watchlist */}
           <WatchlistPanel />
