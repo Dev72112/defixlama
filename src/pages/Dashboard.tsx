@@ -2,9 +2,14 @@ import React, { Suspense, lazy, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Activity } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useDashboardData, useChainsTVL, useFeesData } from "@/hooks/useDefiData";
+import { useDashboardData, useChainsTVL, useFeesData, useStablecoins } from "@/hooks/useDefiData";
+import { useTokenPrices } from "@/hooks/useTokenData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TVLChart } from "@/components/dashboard/TVLChart";
+import { MarketSentiment } from "@/components/dashboard/MarketSentiment";
+import { TopMovers } from "@/components/dashboard/TopMovers";
+import { DominanceChart } from "@/components/dashboard/DominanceChart";
+import { EcosystemHealth } from "@/components/dashboard/EcosystemHealth";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -28,6 +33,8 @@ function DashboardContent() {
   const dashboardData = useDashboardData();
   const chainsTVL = useChainsTVL();
   const feesData = useFeesData();
+  const stablecoins = useStablecoins();
+  const { data: tokens } = useTokenPrices();
 
   const protocols = dashboardData.protocols;
   const tvl = dashboardData.tvl;
@@ -214,6 +221,38 @@ function DashboardContent() {
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <TVLChart data={tvlHistory?.data ?? []} loading={tvlHistory?.isLoading ?? true} height={350} />
       </ErrorBoundary>
+
+      {/* Market Intelligence Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MarketSentiment 
+          protocols={protocols?.data ?? []} 
+          tokens={tokens ?? []}
+          loading={protocols?.isLoading} 
+        />
+        <EcosystemHealth 
+          protocols={protocols?.data ?? []} 
+          tvl={totalTVL}
+          dexVolume={totalDexVolume}
+          loading={protocols?.isLoading} 
+        />
+        <div className="lg:col-span-2">
+          <DominanceChart 
+            protocols={protocols?.data ?? []} 
+            loading={protocols?.isLoading} 
+          />
+        </div>
+      </div>
+
+      {/* Top Movers */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground">Top Movers (24h)</h2>
+        <TopMovers 
+          protocols={protocols?.data ?? []} 
+          tokens={tokens ?? []}
+          loading={protocols?.isLoading} 
+          limit={5}
+        />
+      </div>
 
       {/* Quick Insights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

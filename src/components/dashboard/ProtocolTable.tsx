@@ -1,20 +1,53 @@
 import { Protocol, formatCurrency, formatPercentage, getChangeColor } from "@/lib/api/defillama";
 import { cn } from "@/lib/utils";
-import { ExternalLink, TrendingUp, TrendingDown } from "lucide-react";
+import { ExternalLink, TrendingUp, TrendingDown, Shield, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProtocolTableProps {
   protocols: Protocol[];
   loading?: boolean;
   showCategory?: boolean;
+  showSparkline?: boolean;
+  showAuditBadge?: boolean;
   limit?: number;
   className?: string;
+}
+
+// Simple sparkline component
+function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
+  if (!data || data.length < 2) return null;
+  
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * 40;
+    const y = 12 - ((v - min) / range) * 10;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <svg width="40" height="14" className="flex-shrink-0">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={positive ? "hsl(var(--success))" : "hsl(var(--destructive))"}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 export function ProtocolTable({
   protocols,
   loading = false,
   showCategory = true,
+  showSparkline = false,
+  showAuditBadge = false,
   limit,
   className,
 }: ProtocolTableProps) {
@@ -72,7 +105,9 @@ export function ProtocolTable({
             <th className="w-12 hidden sm:table-cell">#</th>
             <th>Name</th>
             {showCategory && <th className="hidden md:table-cell">Category</th>}
+            {showAuditBadge && <th className="hidden lg:table-cell text-center">Audit</th>}
             <th className="text-right">TVL</th>
+            {showSparkline && <th className="text-right hidden lg:table-cell">7d Trend</th>}
             <th className="text-right">24h</th>
             <th className="text-right hidden sm:table-cell">7d</th>
           </tr>
@@ -133,9 +168,46 @@ export function ProtocolTable({
                   </span>
                 </td>
               )}
+              {showAuditBadge && (
+                <td className="hidden lg:table-cell text-center">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        {protocol.audits && Number(protocol.audits) > 0 ? (
+                          <ShieldCheck className="h-4 w-4 text-success inline-block" />
+                        ) : (
+                          <Shield className="h-4 w-4 text-muted-foreground inline-block" />
+                        )}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {protocol.audits && Number(protocol.audits) > 0
+                          ? `${protocol.audits} audit(s) completed`
+                          : "No audit info available"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </td>
+              )}
               <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
                 {formatCurrency(protocol.tvl)}
               </td>
+              {showSparkline && (
+                <td className="text-right hidden lg:table-cell">
+                  <div className="flex justify-end">
+                    <Sparkline 
+                      data={[
+                        protocol.tvl * (1 - (protocol.change_7d || 0) / 100),
+                        protocol.tvl * (1 - (protocol.change_7d || 0) / 100 * 0.7),
+                        protocol.tvl * (1 - (protocol.change_7d || 0) / 100 * 0.5),
+                        protocol.tvl * (1 - (protocol.change_7d || 0) / 100 * 0.3),
+                        protocol.tvl * (1 - (protocol.change_7d || 0) / 100 * 0.1),
+                        protocol.tvl
+                      ]} 
+                      positive={(protocol.change_7d || 0) >= 0} 
+                    />
+                  </div>
+                </td>
+              )}
               <td className="text-right whitespace-nowrap">
                 <div
                   className={cn(
