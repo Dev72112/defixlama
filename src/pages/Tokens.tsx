@@ -4,6 +4,7 @@ import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/api/defillama";
 import { useTokenPrices } from "@/hooks/useTokenData";
@@ -14,6 +15,7 @@ import { WatchlistButton } from "@/components/WatchlistButton";
 import { exportToCSV } from "@/lib/export";
 
 export default function Tokens() {
+  const { t } = useTranslation();
   const { data: tokens, isLoading } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState("");
   const [showComparison, setShowComparison] = useState(false);
@@ -85,15 +87,15 @@ export default function Tokens() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Tokens</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t("tokens.title")}</h1>
             <p className="text-muted-foreground mt-1">
-              Live token prices on XLayer
+              {t("tokens.subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
               <Download className="h-4 w-4" />
-              Export
+              {t("tokens.export")}
             </Button>
             <Button
               variant="outline"
@@ -102,11 +104,11 @@ export default function Tokens() {
               className="gap-2"
             >
               <GitCompare className="h-4 w-4" />
-              Compare
+              {t("tokens.compare")}
             </Button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
               <Activity className="h-4 w-4 animate-pulse" />
-              Live
+              {t("common.live")}
             </div>
           </div>
         </div>
@@ -114,25 +116,25 @@ export default function Tokens() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Total Market Cap"
+            title={t("tokens.totalMarketCap")}
             value={formatCurrency(totalMcap)}
             icon={Coins}
             loading={isLoading}
           />
           <StatCard
-            title="24h Volume"
+            title={t("tokens.volume24h")}
             value={formatCurrency(totalVolume)}
             icon={Activity}
             loading={isLoading}
           />
           <StatCard
-            title="Tokens Tracked"
+            title={t("tokens.tokensTracked")}
             value={(tokens?.length || 0).toString()}
             icon={Wallet}
             loading={isLoading}
           />
           <StatCard
-            title="Avg. 24h Change"
+            title={t("tokens.avgChange24h")}
             value={`${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(2)}%`}
             change={avgChange}
             icon={TrendingUp}
@@ -144,7 +146,7 @@ export default function Tokens() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search tokens..."
+            placeholder={t("tokens.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -158,11 +160,11 @@ export default function Tokens() {
               <tr className="bg-muted/30">
                 <th className="w-10 hidden sm:table-cell"></th>
                 <th className="w-12 hidden sm:table-cell">#</th>
-                <th className="text-left">Token</th>
-                <th className="text-right">Price</th>
-                <th className="text-right">24h</th>
-                <th className="text-right hidden md:table-cell">Volume</th>
-                <th className="text-right hidden lg:table-cell">MCap</th>
+                <th className="text-left">{t("tokens.token")}</th>
+                <th className="text-right">{t("tokens.price")}</th>
+                <th className="text-right">{t("tokens.change24h")}</th>
+                <th className="text-right hidden md:table-cell">{t("tokens.volume")}</th>
+                <th className="text-right hidden lg:table-cell">{t("tokens.mcap")}</th>
                 <th className="w-12 hidden sm:table-cell"></th>
               </tr>
             </thead>
@@ -231,7 +233,7 @@ export default function Tokens() {
                             </span>
                             {isCommunity && (
                               <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary/20 text-primary font-medium">
-                                Community
+                                {t("tokens.community")}
                               </span>
                             )}
                           </div>
@@ -264,7 +266,7 @@ export default function Tokens() {
                           return `$${s}`;
                         })()
                       ) : (
-                        <span className="text-muted-foreground">Fetching...</span>
+                        <span className="text-muted-foreground">{t("tokens.fetching")}</span>
                       )}
                     </td>
                     <td className="text-right whitespace-nowrap">
@@ -300,7 +302,7 @@ export default function Tokens() {
         {/* Info */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-2">
           <p className="text-sm text-muted-foreground">
-            Token prices are fetched live from CoinGecko with 5-second refresh. Community tokens (DOG, NIUMA, XDOG) are native XLayer tokens.
+            {t("tokens.priceInfo")}
           </p>
           <div className="flex flex-wrap gap-4 pt-2">
             <a
