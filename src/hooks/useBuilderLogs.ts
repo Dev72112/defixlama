@@ -52,19 +52,10 @@ export function useFeedback() {
   return useQuery({
     queryKey: ['feedback'],
     queryFn: async () => {
-      // Use raw SQL to query the public view that excludes sensitive fields
-      const { data, error } = await supabase.rpc('get_public_feedback' as never);
+      // Use the secure RPC function that only returns non-sensitive fields
+      const { data, error } = await supabase.rpc('get_public_feedback');
       
-      if (error) {
-        // Fallback: try direct query with limited columns (for backwards compatibility)
-        const fallback = await supabase
-          .from('feedback')
-          .select('id, type, title, description, status, created_at, updated_at')
-          .order('created_at', { ascending: false });
-        
-        if (fallback.error) throw fallback.error;
-        return fallback.data as FeedbackPublic[];
-      }
+      if (error) throw error;
       return (data as unknown) as FeedbackPublic[];
     },
   });
