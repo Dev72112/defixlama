@@ -1,6 +1,6 @@
 {
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "Overview",
     "protocols": "Protocols",
     "chains": "Chains",
     "tokens": "Tokens",
@@ -13,7 +13,10 @@
     "alerts": "Alerts",
     "donations": "Donations",
     "activities": "Activities",
-    "docs": "Documentation"
+    "docs": "Documentation",
+    "more": "More",
+    "resources": "Resources",
+    "defillamaApi": "DefiLlama API"
   },
   "dashboard": {
     "title": "XLayer DeFi Overview",
@@ -42,6 +45,154 @@
     "activeAddresses": "Active Addresses",
     "avgBlockTime": "Avg Block Time"
   },
+  "protocols": {
+    "title": "Protocols",
+    "subtitle": "All DeFi protocols deployed on XLayer",
+    "tracked": "protocols tracked",
+    "totalTvl": "Total TVL",
+    "avgTvlPerProtocol": "Avg. TVL per Protocol",
+    "topGainer": "Top Gainer (24h)",
+    "tvlHistory": "XLayer Protocol TVL History",
+    "searchPlaceholder": "Search protocols...",
+    "allCategories": "All Categories",
+    "sortByTvl": "TVL (High to Low)",
+    "sortByChange1d": "24h Change",
+    "sortByChange7d": "7d Change",
+    "sortByName": "Name (A-Z)",
+    "exportCsv": "Export CSV",
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "prev": "Prev",
+    "next": "Next",
+    "page": "Page"
+  },
+  "tokens": {
+    "title": "Tokens",
+    "subtitle": "Live token prices on XLayer",
+    "totalMarketCap": "Total Market Cap",
+    "volume24h": "24h Volume",
+    "tokensTracked": "Tokens Tracked",
+    "avgChange24h": "Avg. 24h Change",
+    "searchPlaceholder": "Search tokens...",
+    "export": "Export",
+    "compare": "Compare",
+    "token": "Token",
+    "price": "Price",
+    "change24h": "24h",
+    "volume": "Volume",
+    "mcap": "MCap",
+    "community": "Community",
+    "fetching": "Fetching...",
+    "priceInfo": "Token prices are fetched live from CoinGecko with 5-second refresh. Community tokens (DOG, NIUMA, XDOG) are native XLayer tokens."
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "Track your XLayer holdings",
+    "totalValue": "Total Value",
+    "totalPnl": "Total P&L",
+    "addHolding": "Add Holding",
+    "holdings": "Holdings",
+    "noHoldings": "No holdings yet",
+    "addFirst": "Add your first token to start tracking your portfolio",
+    "addFirstToken": "Add Your First Token",
+    "addTokenHolding": "Add Token Holding",
+    "selectToken": "Select token",
+    "quantity": "Quantity",
+    "purchasePrice": "Purchase Price (optional)",
+    "purchasePriceHint": "Enter to track P&L",
+    "addToPortfolio": "Add to Portfolio",
+    "allocation": "Allocation",
+    "pnlPercent": "P&L %",
+    "dataInfo": "Portfolio data is stored locally in your browser. Prices update every 5 seconds from live market data."
+  },
+  "alerts": {
+    "title": "Price Alerts",
+    "subtitle": "Manage your price alerts",
+    "createAlert": "Create Alert",
+    "activeAlerts": "Active Alerts",
+    "triggeredAlerts": "Triggered Alerts",
+    "noAlerts": "No alerts set",
+    "noActiveAlerts": "No active alerts",
+    "noTriggeredAlerts": "No triggered alerts yet",
+    "targetPrice": "Target Price",
+    "condition": "Condition",
+    "above": "Above",
+    "below": "Below",
+    "created": "Created",
+    "triggered": "Triggered",
+    "setFirstAlert": "Set your first price alert to get notified when tokens reach your target price"
+  },
+  "dexs": {
+    "title": "DEX Analytics",
+    "subtitle": "Decentralized exchange volumes on XLayer",
+    "totalVolume24h": "Total Volume (24h)",
+    "dexCount": "DEX Count",
+    "avgVolume": "Avg. Volume",
+    "topDex": "Top DEX",
+    "searchPlaceholder": "Search DEXs...",
+    "dex": "DEX",
+    "volume24h": "24h Volume",
+    "volume7d": "7d Volume",
+    "change24h": "24h Change"
+  },
+  "yields": {
+    "title": "Yield Farming",
+    "subtitle": "Top yield opportunities on XLayer",
+    "avgApy": "Average APY",
+    "poolCount": "Pool Count",
+    "totalTvl": "Total TVL",
+    "topPool": "Top Pool",
+    "searchPlaceholder": "Search pools...",
+    "pool": "Pool",
+    "project": "Project",
+    "apy": "APY",
+    "tvl": "TVL"
+  },
+  "stablecoins": {
+    "title": "Stablecoins",
+    "subtitle": "Stablecoin analytics on XLayer",
+    "totalMcap": "Total Market Cap",
+    "stablecoinCount": "Stablecoin Count",
+    "avgPeg": "Avg. Peg",
+    "searchPlaceholder": "Search stablecoins..."
+  },
+  "chains": {
+    "title": "Chains",
+    "subtitle": "Multi-chain TVL comparison",
+    "totalTvl": "Total TVL",
+    "chainCount": "Chain Count",
+    "searchPlaceholder": "Search chains..."
+  },
+  "fees": {
+    "title": "Protocol Fees",
+    "subtitle": "24h fees and revenue across protocols",
+    "totalFees24h": "Total Fees (24h)",
+    "protocolCount": "Protocol Count",
+    "avgFees": "Avg. Fees",
+    "topEarner": "Top Earner",
+    "searchPlaceholder": "Search protocols..."
+  },
+  "security": {
+    "title": "Security",
+    "subtitle": "Protocol security and audits",
+    "audited": "Audited",
+    "unaudited": "Unaudited",
+    "totalTvlAudited": "Total TVL Audited"
+  },
+  "activities": {
+    "title": "Activities",
+    "subtitle": "Recent ecosystem activity",
+    "noActivities": "No recent activities"
+  },
+  "donations": {
+    "title": "Donations",
+    "subtitle": "Support the ecosystem"
+  },
+  "docs": {
+    "title": "Documentation",
+    "subtitle": "Learn about XLayer DeFi"
+  },
   "common": {
     "search": "Search",
     "loading": "Loading...",
@@ -69,29 +220,16 @@
     "confirm": "Confirm",
     "delete": "Delete",
     "close": "Close",
-    "language": "Language"
-  },
-  "alerts": {
-    "title": "Price Alerts",
-    "createAlert": "Create Alert",
-    "activeAlerts": "Active Alerts",
-    "triggeredAlerts": "Triggered Alerts",
-    "noAlerts": "No alerts set",
-    "targetPrice": "Target Price",
-    "condition": "Condition",
-    "above": "Above",
-    "below": "Below"
-  },
-  "portfolio": {
-    "title": "My Portfolio",
-    "totalValue": "Total Value",
-    "totalPnl": "Total P&L",
-    "addHolding": "Add Holding",
-    "holdings": "Holdings",
-    "noHoldings": "No holdings yet"
+    "language": "Language",
+    "poweredBy": "Powered by DefiLlama",
+    "name": "Name",
+    "symbol": "Symbol"
   },
   "header": {
     "searchPlaceholder": "Search protocols, tokens, chains...",
     "toggleTheme": "Toggle theme"
+  },
+  "footer": {
+    "poweredBy": "Powered by DefiLlama"
   }
 }

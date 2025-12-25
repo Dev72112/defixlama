@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -22,29 +23,28 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
-  children?: { label: string; href: string }[];
 }
 
 const navItems: NavItem[] = [
-  { label: "Overview", href: "/", icon: LayoutDashboard },
-  { label: "Protocols", href: "/protocols", icon: Database },
-  { label: "DEXs", href: "/dexs", icon: ArrowLeftRight },
-  { label: "Yields", href: "/yields", icon: TrendingUp, badge: "APY" },
-  { label: "Stablecoins", href: "/stablecoins", icon: Coins },
-  { label: "Tokens", href: "/tokens", icon: Wallet },
-  { label: "Portfolio", href: "/portfolio", icon: PieChart, badge: "NEW" },
-  { label: "Alerts", href: "/alerts", icon: Bell },
+  { labelKey: "nav.dashboard", href: "/", icon: LayoutDashboard },
+  { labelKey: "nav.protocols", href: "/protocols", icon: Database },
+  { labelKey: "nav.dexs", href: "/dexs", icon: ArrowLeftRight },
+  { labelKey: "nav.yields", href: "/yields", icon: TrendingUp, badge: "APY" },
+  { labelKey: "nav.stablecoins", href: "/stablecoins", icon: Coins },
+  { labelKey: "nav.tokens", href: "/tokens", icon: Wallet },
+  { labelKey: "nav.portfolio", href: "/portfolio", icon: PieChart, badge: "NEW" },
+  { labelKey: "nav.alerts", href: "/alerts", icon: Bell },
 ];
 
 const moreItems: NavItem[] = [
-  { label: "Chains", href: "/chains", icon: PieChart },
-  { label: "Fees", href: "/fees", icon: BarChart3 },
-  { label: "Activities", href: "/activities", icon: Activity },
-  { label: "Security", href: "/security", icon: Shield },
+  { labelKey: "nav.chains", href: "/chains", icon: PieChart },
+  { labelKey: "nav.fees", href: "/fees", icon: BarChart3 },
+  { labelKey: "nav.activities", href: "/activities", icon: Activity },
+  { labelKey: "nav.security", href: "/security", icon: Shield },
 ];
 
 interface SidebarProps {
@@ -53,6 +53,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ mobile = false, onClose }: SidebarProps) {
+  const { t } = useTranslation();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -112,7 +113,7 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
                 )}
               >
                 <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
                 {item.badge && (
                   <span className="ml-auto rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                     {item.badge}
@@ -128,7 +129,7 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
           >
             <PieChart className="h-4 w-4" />
-            <span>More</span>
+            <span>{t("nav.more")}</span>
             <ChevronDown
               className={cn(
                 "ml-auto h-4 w-4 transition-transform duration-200",
@@ -155,7 +156,7 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
                     )}
                   >
                     <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <span>{t(item.labelKey)}</span>
                   </Link>
                 );
               })}
@@ -166,7 +167,7 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
         {/* External Links */}
         <div className="mt-6 px-2">
           <p className="px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-            Resources
+            {t("nav.resources")}
           </p>
           
           <a
@@ -176,21 +177,21 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
           >
             <ExternalLink className="h-4 w-4" />
-            <span>DefiLlama API</span>
+            <span>{t("nav.defillamaApi")}</span>
           </a>
           <Link
             to="/docs"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
           >
             <ExternalLink className="h-4 w-4" />
-            <span>Docs</span>
+            <span>{t("nav.docs")}</span>
           </Link>
           <Link
             to="/donations"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
           >
             <Wallet className="h-4 w-4" />
-            <span>Donations</span>
+            <span>{t("nav.donations")}</span>
           </Link>
         </div>
       </nav>
@@ -199,10 +200,10 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex flex-col gap-1 text-xs text-muted-foreground">
           <div className="flex items-center justify-between">
-            <span>Powered by DefiLlama</span>
+            <span>{t("common.poweredBy")}</span>
             <div className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-              <span>Live</span>
+              <span>{t("common.live")}</span>
             </div>
           </div>
           <a 

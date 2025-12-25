@@ -13,7 +13,10 @@
     "alerts": "アラート",
     "donations": "寄付",
     "activities": "アクティビティ",
-    "docs": "ドキュメント"
+    "docs": "ドキュメント",
+    "more": "その他",
+    "resources": "リソース",
+    "defillamaApi": "DefiLlama API"
   },
   "dashboard": {
     "title": "XLayer DeFi 概要",
@@ -42,6 +45,154 @@
     "activeAddresses": "アクティブアドレス",
     "avgBlockTime": "平均ブロック時間"
   },
+  "protocols": {
+    "title": "プロトコル",
+    "subtitle": "XLayer上のすべてのDeFiプロトコル",
+    "tracked": "プロトコル追跡中",
+    "totalTvl": "総TVL",
+    "avgTvlPerProtocol": "プロトコル平均TVL",
+    "topGainer": "上昇率トップ (24時間)",
+    "tvlHistory": "XLayerプロトコルTVL履歴",
+    "searchPlaceholder": "プロトコル検索...",
+    "allCategories": "すべてのカテゴリ",
+    "sortByTvl": "TVL (降順)",
+    "sortByChange1d": "24時間変動",
+    "sortByChange7d": "7日変動",
+    "sortByName": "名前 (A-Z)",
+    "exportCsv": "CSVエクスポート",
+    "showing": "表示中",
+    "of": "/",
+    "results": "件",
+    "prev": "前へ",
+    "next": "次へ",
+    "page": "ページ"
+  },
+  "tokens": {
+    "title": "トークン",
+    "subtitle": "XLayerトークンのライブ価格",
+    "totalMarketCap": "総時価総額",
+    "volume24h": "24時間取引量",
+    "tokensTracked": "追跡トークン数",
+    "avgChange24h": "平均24時間変動",
+    "searchPlaceholder": "トークン検索...",
+    "export": "エクスポート",
+    "compare": "比較",
+    "token": "トークン",
+    "price": "価格",
+    "change24h": "24時間",
+    "volume": "取引量",
+    "mcap": "時価総額",
+    "community": "コミュニティ",
+    "fetching": "取得中...",
+    "priceInfo": "トークン価格はCoinGeckoから5秒ごとにライブ更新されます。コミュニティトークン(DOG, NIUMA, XDOG)はXLayerネイティブトークンです。"
+  },
+  "portfolio": {
+    "title": "ポートフォリオ",
+    "subtitle": "XLayer保有資産の追跡",
+    "totalValue": "総額",
+    "totalPnl": "損益合計",
+    "addHolding": "保有追加",
+    "holdings": "保有",
+    "noHoldings": "保有なし",
+    "addFirst": "最初のトークンを追加してポートフォリオの追跡を開始",
+    "addFirstToken": "最初のトークンを追加",
+    "addTokenHolding": "トークン保有を追加",
+    "selectToken": "トークン選択",
+    "quantity": "数量",
+    "purchasePrice": "購入価格 (任意)",
+    "purchasePriceHint": "損益追跡用に入力",
+    "addToPortfolio": "ポートフォリオに追加",
+    "allocation": "配分",
+    "pnlPercent": "損益%",
+    "dataInfo": "ポートフォリオデータはブラウザにローカル保存されます。価格は5秒ごとに更新されます。"
+  },
+  "alerts": {
+    "title": "価格アラート",
+    "subtitle": "価格アラートの管理",
+    "createAlert": "アラート作成",
+    "activeAlerts": "アクティブなアラート",
+    "triggeredAlerts": "トリガーされたアラート",
+    "noAlerts": "アラートなし",
+    "noActiveAlerts": "アクティブなアラートなし",
+    "noTriggeredAlerts": "トリガーされたアラートなし",
+    "targetPrice": "目標価格",
+    "condition": "条件",
+    "above": "以上",
+    "below": "以下",
+    "created": "作成日",
+    "triggered": "トリガー日",
+    "setFirstAlert": "最初の価格アラートを設定して目標価格に達したら通知を受け取る"
+  },
+  "dexs": {
+    "title": "DEX分析",
+    "subtitle": "XLayerの分散型取引所取引量",
+    "totalVolume24h": "総取引量 (24時間)",
+    "dexCount": "DEX数",
+    "avgVolume": "平均取引量",
+    "topDex": "トップDEX",
+    "searchPlaceholder": "DEX検索...",
+    "dex": "DEX",
+    "volume24h": "24時間取引量",
+    "volume7d": "7日取引量",
+    "change24h": "24時間変動"
+  },
+  "yields": {
+    "title": "イールドファーミング",
+    "subtitle": "XLayerの最高収益機会",
+    "avgApy": "平均APY",
+    "poolCount": "プール数",
+    "totalTvl": "総TVL",
+    "topPool": "トッププール",
+    "searchPlaceholder": "プール検索...",
+    "pool": "プール",
+    "project": "プロジェクト",
+    "apy": "APY",
+    "tvl": "TVL"
+  },
+  "stablecoins": {
+    "title": "ステーブルコイン",
+    "subtitle": "XLayerステーブルコイン分析",
+    "totalMcap": "総時価総額",
+    "stablecoinCount": "ステーブルコイン数",
+    "avgPeg": "平均ペグ",
+    "searchPlaceholder": "ステーブルコイン検索..."
+  },
+  "chains": {
+    "title": "チェーン",
+    "subtitle": "マルチチェーンTVL比較",
+    "totalTvl": "総TVL",
+    "chainCount": "チェーン数",
+    "searchPlaceholder": "チェーン検索..."
+  },
+  "fees": {
+    "title": "プロトコル手数料",
+    "subtitle": "プロトコル間の24時間手数料と収益",
+    "totalFees24h": "総手数料 (24時間)",
+    "protocolCount": "プロトコル数",
+    "avgFees": "平均手数料",
+    "topEarner": "トップ収益",
+    "searchPlaceholder": "プロトコル検索..."
+  },
+  "security": {
+    "title": "セキュリティ",
+    "subtitle": "プロトコルセキュリティと監査",
+    "audited": "監査済み",
+    "unaudited": "未監査",
+    "totalTvlAudited": "監査済み総TVL"
+  },
+  "activities": {
+    "title": "アクティビティ",
+    "subtitle": "最近のエコシステム活動",
+    "noActivities": "最近のアクティビティなし"
+  },
+  "donations": {
+    "title": "寄付",
+    "subtitle": "エコシステムをサポート"
+  },
+  "docs": {
+    "title": "ドキュメント",
+    "subtitle": "XLayer DeFiについて学ぶ"
+  },
   "common": {
     "search": "検索",
     "loading": "読み込み中...",
@@ -69,29 +220,16 @@
     "confirm": "確認",
     "delete": "削除",
     "close": "閉じる",
-    "language": "言語"
-  },
-  "alerts": {
-    "title": "価格アラート",
-    "createAlert": "アラート作成",
-    "activeAlerts": "アクティブなアラート",
-    "triggeredAlerts": "トリガーされたアラート",
-    "noAlerts": "アラートなし",
-    "targetPrice": "目標価格",
-    "condition": "条件",
-    "above": "以上",
-    "below": "以下"
-  },
-  "portfolio": {
-    "title": "マイポートフォリオ",
-    "totalValue": "総額",
-    "totalPnl": "損益合計",
-    "addHolding": "保有追加",
-    "holdings": "保有",
-    "noHoldings": "保有なし"
+    "language": "言語",
+    "poweredBy": "Powered by DefiLlama",
+    "name": "名前",
+    "symbol": "シンボル"
   },
   "header": {
     "searchPlaceholder": "プロトコル、トークン、チェーンを検索...",
     "toggleTheme": "テーマ切替"
+  },
+  "footer": {
+    "poweredBy": "Powered by DefiLlama"
   }
 }

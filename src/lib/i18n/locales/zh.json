@@ -13,7 +13,10 @@
     "alerts": "警报",
     "donations": "捐赠",
     "activities": "活动",
-    "docs": "文档"
+    "docs": "文档",
+    "more": "更多",
+    "resources": "资源",
+    "defillamaApi": "DefiLlama API"
   },
   "dashboard": {
     "title": "XLayer DeFi 概览",
@@ -42,6 +45,154 @@
     "activeAddresses": "活跃地址",
     "avgBlockTime": "平均出块时间"
   },
+  "protocols": {
+    "title": "协议",
+    "subtitle": "XLayer上的所有DeFi协议",
+    "tracked": "个协议跟踪中",
+    "totalTvl": "总锁仓量",
+    "avgTvlPerProtocol": "平均每协议TVL",
+    "topGainer": "涨幅最大 (24小时)",
+    "tvlHistory": "XLayer协议TVL历史",
+    "searchPlaceholder": "搜索协议...",
+    "allCategories": "所有类别",
+    "sortByTvl": "TVL (从高到低)",
+    "sortByChange1d": "24小时变化",
+    "sortByChange7d": "7天变化",
+    "sortByName": "名称 (A-Z)",
+    "exportCsv": "导出CSV",
+    "showing": "显示",
+    "of": "/",
+    "results": "条结果",
+    "prev": "上一页",
+    "next": "下一页",
+    "page": "页"
+  },
+  "tokens": {
+    "title": "代币",
+    "subtitle": "XLayer代币实时价格",
+    "totalMarketCap": "总市值",
+    "volume24h": "24小时交易量",
+    "tokensTracked": "跟踪代币数",
+    "avgChange24h": "平均24小时变化",
+    "searchPlaceholder": "搜索代币...",
+    "export": "导出",
+    "compare": "对比",
+    "token": "代币",
+    "price": "价格",
+    "change24h": "24小时",
+    "volume": "交易量",
+    "mcap": "市值",
+    "community": "社区",
+    "fetching": "获取中...",
+    "priceInfo": "代币价格从CoinGecko实时获取，每5秒刷新。社区代币(DOG, NIUMA, XDOG)是XLayer原生代币。"
+  },
+  "portfolio": {
+    "title": "投资组合",
+    "subtitle": "跟踪您的XLayer持仓",
+    "totalValue": "总价值",
+    "totalPnl": "总盈亏",
+    "addHolding": "添加持仓",
+    "holdings": "持仓",
+    "noHoldings": "暂无持仓",
+    "addFirst": "添加您的第一个代币开始跟踪您的投资组合",
+    "addFirstToken": "添加第一个代币",
+    "addTokenHolding": "添加代币持仓",
+    "selectToken": "选择代币",
+    "quantity": "数量",
+    "purchasePrice": "购买价格 (可选)",
+    "purchasePriceHint": "输入以跟踪盈亏",
+    "addToPortfolio": "添加到投资组合",
+    "allocation": "配置",
+    "pnlPercent": "盈亏%",
+    "dataInfo": "投资组合数据存储在本地浏览器中。价格每5秒从实时市场数据更新。"
+  },
+  "alerts": {
+    "title": "价格警报",
+    "subtitle": "管理您的价格警报",
+    "createAlert": "创建警报",
+    "activeAlerts": "活跃警报",
+    "triggeredAlerts": "已触发警报",
+    "noAlerts": "暂无警报",
+    "noActiveAlerts": "暂无活跃警报",
+    "noTriggeredAlerts": "暂无触发警报",
+    "targetPrice": "目标价格",
+    "condition": "条件",
+    "above": "高于",
+    "below": "低于",
+    "created": "创建于",
+    "triggered": "触发于",
+    "setFirstAlert": "设置您的第一个价格警报以在代币达到目标价格时获得通知"
+  },
+  "dexs": {
+    "title": "DEX分析",
+    "subtitle": "XLayer去中心化交易所交易量",
+    "totalVolume24h": "总交易量 (24小时)",
+    "dexCount": "DEX数量",
+    "avgVolume": "平均交易量",
+    "topDex": "头部DEX",
+    "searchPlaceholder": "搜索DEX...",
+    "dex": "DEX",
+    "volume24h": "24小时交易量",
+    "volume7d": "7天交易量",
+    "change24h": "24小时变化"
+  },
+  "yields": {
+    "title": "收益农场",
+    "subtitle": "XLayer最佳收益机会",
+    "avgApy": "平均APY",
+    "poolCount": "池数量",
+    "totalTvl": "总TVL",
+    "topPool": "热门池",
+    "searchPlaceholder": "搜索池...",
+    "pool": "池",
+    "project": "项目",
+    "apy": "APY",
+    "tvl": "TVL"
+  },
+  "stablecoins": {
+    "title": "稳定币",
+    "subtitle": "XLayer稳定币分析",
+    "totalMcap": "总市值",
+    "stablecoinCount": "稳定币数量",
+    "avgPeg": "平均锚定",
+    "searchPlaceholder": "搜索稳定币..."
+  },
+  "chains": {
+    "title": "链",
+    "subtitle": "多链TVL对比",
+    "totalTvl": "总TVL",
+    "chainCount": "链数量",
+    "searchPlaceholder": "搜索链..."
+  },
+  "fees": {
+    "title": "协议费用",
+    "subtitle": "各协议24小时费用和收入",
+    "totalFees24h": "总费用 (24小时)",
+    "protocolCount": "协议数量",
+    "avgFees": "平均费用",
+    "topEarner": "收入最高",
+    "searchPlaceholder": "搜索协议..."
+  },
+  "security": {
+    "title": "安全",
+    "subtitle": "协议安全和审计",
+    "audited": "已审计",
+    "unaudited": "未审计",
+    "totalTvlAudited": "已审计总TVL"
+  },
+  "activities": {
+    "title": "活动",
+    "subtitle": "最近生态系统活动",
+    "noActivities": "暂无最近活动"
+  },
+  "donations": {
+    "title": "捐赠",
+    "subtitle": "支持生态系统"
+  },
+  "docs": {
+    "title": "文档",
+    "subtitle": "了解XLayer DeFi"
+  },
   "common": {
     "search": "搜索",
     "loading": "加载中...",
@@ -69,29 +220,16 @@
     "confirm": "确认",
     "delete": "删除",
     "close": "关闭",
-    "language": "语言"
-  },
-  "alerts": {
-    "title": "价格警报",
-    "createAlert": "创建警报",
-    "activeAlerts": "活跃警报",
-    "triggeredAlerts": "已触发警报",
-    "noAlerts": "暂无警报",
-    "targetPrice": "目标价格",
-    "condition": "条件",
-    "above": "高于",
-    "below": "低于"
-  },
-  "portfolio": {
-    "title": "我的投资组合",
-    "totalValue": "总价值",
-    "totalPnl": "总盈亏",
-    "addHolding": "添加持仓",
-    "holdings": "持仓",
-    "noHoldings": "暂无持仓"
+    "language": "语言",
+    "poweredBy": "由DefiLlama提供支持",
+    "name": "名称",
+    "symbol": "符号"
   },
   "header": {
     "searchPlaceholder": "搜索协议、代币、链...",
     "toggleTheme": "切换主题"
+  },
+  "footer": {
+    "poweredBy": "由DefiLlama提供支持"
   }
 }
