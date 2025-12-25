@@ -15,6 +15,7 @@ import {
   Wallet,
   BarChart3,
   Shield,
+  ScrollText,
   Activity,
   Bell,
   X,
@@ -192,6 +193,13 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
           >
             <Wallet className="h-4 w-4" />
             <span>{t("nav.donations")}</span>
+          </Link>
+          <Link
+            to="/builder-logs"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
+          >
+            <ScrollText className="h-4 w-4" />
+            <span>{t("nav.builderLogs")}</span>
           </Link>
         </div>
       </nav>

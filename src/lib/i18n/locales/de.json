@@ -16,7 +16,53 @@
     "docs": "Dokumentation",
     "more": "Mehr",
     "resources": "Ressourcen",
-    "defillamaApi": "DefiLlama API"
+    "defillamaApi": "DefiLlama API",
+    "builderLogs": "Builder-Protokoll"
+  },
+  "builderLogs": {
+    "title": "Builder-Protokoll",
+    "description": "Plattform-Updates verfolgen und Feedback einreichen",
+    "tabs": {
+      "updates": "Update-Protokoll",
+      "feedback": "Community-Feedback",
+      "submit": "Feedback Einreichen"
+    },
+    "updateHistory": "Update-Verlauf",
+    "updateHistoryDesc": "Alle Plattform-Updates werden hier automatisch aufgezeichnet",
+    "majorUpdate": "Großes Update",
+    "communityFeedback": "Community-Feedback",
+    "communityFeedbackDesc": "Fehlerberichte, Funktionsanfragen und mehr aus der Community",
+    "filterStatus": "Nach Status filtern",
+    "allStatuses": "Alle Status",
+    "noFeedback": "Noch kein Feedback. Sei der Erste!",
+    "submitFeedback": "Feedback Einreichen",
+    "submitFeedbackDesc": "Fehler melden, Funktionen anfordern oder Verbesserungen vorschlagen",
+    "status": {
+      "pending": "Ausstehend",
+      "approved": "Genehmigt",
+      "denied": "Abgelehnt",
+      "inProgress": "In Bearbeitung",
+      "fixed": "Behoben",
+      "wontFix": "Wird nicht behoben",
+      "duplicate": "Duplikat"
+    },
+    "type": {
+      "bug": "Fehlerbericht",
+      "error": "Störungsbericht",
+      "featureRequest": "Funktionsanfrage",
+      "listing": "Listing-Anfrage",
+      "other": "Sonstiges"
+    },
+    "form": {
+      "type": "Typ",
+      "email": "Kontakt-E-Mail (Optional)",
+      "title": "Titel",
+      "titlePlaceholder": "Kurze Zusammenfassung Ihres Feedbacks",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Details zum Fehler, zur Funktion oder zur Anfrage...",
+      "submit": "Feedback Einreichen",
+      "submitting": "Wird gesendet..."
+    }
   },
   "dashboard": {
     "title": "XLayer DeFi Übersicht",

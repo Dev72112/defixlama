@@ -16,7 +16,53 @@
     "docs": "Documentation",
     "more": "More",
     "resources": "Resources",
-    "defillamaApi": "DefiLlama API"
+    "defillamaApi": "DefiLlama API",
+    "builderLogs": "Builder Logs"
+  },
+  "builderLogs": {
+    "title": "Builder Logs",
+    "description": "Track platform updates and submit feedback",
+    "tabs": {
+      "updates": "Update Logs",
+      "feedback": "Community Feedback",
+      "submit": "Submit Feedback"
+    },
+    "updateHistory": "Update History",
+    "updateHistoryDesc": "All platform updates are automatically tracked here",
+    "majorUpdate": "Major Update",
+    "communityFeedback": "Community Feedback",
+    "communityFeedbackDesc": "Bug reports, feature requests, and more from the community",
+    "filterStatus": "Filter by status",
+    "allStatuses": "All Statuses",
+    "noFeedback": "No feedback yet. Be the first to submit!",
+    "submitFeedback": "Submit Feedback",
+    "submitFeedbackDesc": "Report bugs, request features, or suggest improvements",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "denied": "Denied",
+      "inProgress": "In Progress",
+      "fixed": "Fixed",
+      "wontFix": "Won't Fix",
+      "duplicate": "Duplicate"
+    },
+    "type": {
+      "bug": "Bug Report",
+      "error": "Error Report",
+      "featureRequest": "Feature Request",
+      "listing": "Listing Request",
+      "other": "Other"
+    },
+    "form": {
+      "type": "Type",
+      "email": "Contact Email (Optional)",
+      "title": "Title",
+      "titlePlaceholder": "Brief summary of your feedback",
+      "description": "Description",
+      "descriptionPlaceholder": "Provide details about the bug, feature, or request...",
+      "submit": "Submit Feedback",
+      "submitting": "Submitting..."
+    }
   },
   "dashboard": {
     "title": "XLayer DeFi Overview",
