@@ -15,14 +15,13 @@ export interface UpdateLog {
   created_at: string;
 }
 
-export interface Feedback {
+// Public feedback (excludes sensitive fields like contact_email and admin_notes)
+export interface FeedbackPublic {
   id: string;
   type: FeedbackType;
   title: string;
   description: string;
-  contact_email: string | null;
   status: FeedbackStatus;
-  admin_notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,13 +52,20 @@ export function useFeedback() {
   return useQuery({
     queryKey: ['feedback'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('feedback')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use raw SQL to query the public view that excludes sensitive fields
+      const { data, error } = await supabase.rpc('get_public_feedback' as never);
       
-      if (error) throw error;
-      return data as Feedback[];
+      if (error) {
+        // Fallback: try direct query with limited columns (for backwards compatibility)
+        const fallback = await supabase
+          .from('feedback')
+          .select('id, type, title, description, status, created_at, updated_at')
+          .order('created_at', { ascending: false });
+        
+        if (fallback.error) throw fallback.error;
+        return fallback.data as FeedbackPublic[];
+      }
+      return (data as unknown) as FeedbackPublic[];
     },
   });
 }
