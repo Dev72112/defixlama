@@ -66,14 +66,15 @@ export function useSubmitFeedback() {
   
   return useMutation({
     mutationFn: async (input: FeedbackInput) => {
-      const { data, error } = await supabase
+      // IMPORTANT: don't call .select() here.
+      // The feedback table is not publicly selectable (to protect contact_email/admin_notes),
+      // and requesting RETURNING data can trigger an RLS error.
+      const { error } = await supabase
         .from('feedback')
-        .insert([input])
-        .select()
-        .single();
-      
+        .insert([input]);
+
       if (error) throw error;
-      return data;
+      return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feedback'] });
