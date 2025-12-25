@@ -23,7 +23,7 @@ export function Layout({ children }: LayoutProps) {
   }, [queryClient]);
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background w-full max-w-[100vw] overflow-x-hidden">
       {/* Sidebar - hidden on mobile */}
       <div className="hidden lg:block">
         <Sidebar />
@@ -45,14 +45,14 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="lg:pl-[220px] overflow-x-hidden">
+      <div className="lg:pl-[220px] w-full max-w-[100vw] overflow-x-hidden">
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         {isMobile ? (
           <PullToRefresh onRefresh={handleRefresh}>
-            <main className="p-4 lg:p-6 overflow-x-hidden max-w-full">{children}</main>
+            <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
           </PullToRefresh>
         ) : (
-          <main className="p-4 lg:p-6 overflow-x-hidden max-w-full">{children}</main>
+          <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
         )}
       </div>
     </div>
