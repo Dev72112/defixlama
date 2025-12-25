@@ -2,10 +2,12 @@ import { Search, Moon, Sun, Menu, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { KeyboardShortcutsDialog } from "@/components/KeyboardShortcutsDialog";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 interface HeaderProps {
@@ -13,6 +15,7 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const { t } = useTranslation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
@@ -65,8 +68,8 @@ export function Header({ onMenuClick }: HeaderProps) {
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-4 w-4 mr-2 group-hover:text-primary transition-colors" />
-            <span className="hidden sm:inline">Search protocols, tokens, chains...</span>
-            <span className="sm:hidden">Search...</span>
+            <span className="hidden sm:inline">{t("header.searchPlaceholder")}</span>
+            <span className="sm:hidden">{t("common.search")}...</span>
             <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground group-hover:border-primary/30 transition-colors">
               /
             </kbd>
@@ -78,7 +81,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           {/* Live indicator */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-xs font-medium badge-pulse">
             <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            Live
+            {t("common.live")}
           </div>
 
           {/* Desktop refresh button */}
@@ -91,7 +94,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               await queryClient.invalidateQueries();
               setTimeout(() => setIsRefreshing(false), 1000);
             }}
-            title="Refresh data"
+            title={t("common.refresh")}
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
@@ -107,13 +110,16 @@ export function Header({ onMenuClick }: HeaderProps) {
             <KeyboardShortcutsDialog />
           </div>
 
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Theme toggle */}
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Toggle theme"
-            onClick={() => setTheme((t) => (t === "dark" ? "bright" : "dark"))}
-            title="Toggle theme"
+            aria-label={t("header.toggleTheme")}
+            onClick={() => setTheme((th) => (th === "dark" ? "bright" : "dark"))}
+            title={t("header.toggleTheme")}
             className="hover:bg-primary/10 hover:text-primary transition-all duration-200"
           >
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}

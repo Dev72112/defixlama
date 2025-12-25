@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/layout/Layout";
 import { Activity } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -13,6 +14,9 @@ import { EcosystemHealth } from "@/components/dashboard/EcosystemHealth";
 import { HistoricalTVLChart } from "@/components/dashboard/HistoricalTVLChart";
 import { HistoricalComparisonChart } from "@/components/dashboard/HistoricalComparisonChart";
 import { PriceAlertsPanel } from "@/components/PriceAlertsPanel";
+import { NetworkStatsCard } from "@/components/dashboard/NetworkStatsCard";
+import { StablecoinStats } from "@/components/dashboard/StablecoinStats";
+import { FeesOverview } from "@/components/dashboard/FeesOverview";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -33,6 +37,7 @@ function ErrorFallback({ error }: { error: Error }) {
 }
 
 function DashboardContent() {
+  const { t } = useTranslation();
   const dashboardData = useDashboardData();
   const chainsTVL = useChainsTVL();
   const feesData = useFeesData();
@@ -181,19 +186,19 @@ function DashboardContent() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">XLayer DeFi Overview</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Real-time analytics for the XLayer ecosystem</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{t("dashboard.title")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">{t("dashboard.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium pulse-live badge-pulse">
           <Activity className="h-4 w-4 animate-pulse" />
-          Live Data
+          {t("dashboard.liveData")}
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
-          title="Total Value Locked"
+          title={t("dashboard.tvl")}
           value={formatCurrency(totalTVL)}
           change={tvlChange}
           icon={Layers}
@@ -201,23 +206,30 @@ function DashboardContent() {
           miniChart={miniChartData}
         />
         <StatCard
-          title="Protocols"
+          title={t("dashboard.protocols")}
           value={protocolCount.toString()}
           icon={Database}
           loading={protocols?.isLoading ?? true}
         />
         <StatCard
-          title="24h DEX Volume"
+          title={t("dashboard.dexVolume")}
           value={formatCurrency(totalDexVolume)}
           icon={ArrowLeftRight}
           loading={dexVolumes?.isLoading ?? true}
         />
         <StatCard
-          title="Avg. Yield APY"
+          title={t("dashboard.avgApy")}
           value={`${avgApy.toFixed(2)}%`}
           icon={TrendingUp}
           loading={yieldPools?.isLoading ?? true}
         />
+      </div>
+
+      {/* New Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <NetworkStatsCard loading={protocols?.isLoading} />
+        <StablecoinStats stablecoins={stablecoins?.data ?? []} loading={stablecoins?.isLoading} />
+        <FeesOverview feesData={feesData?.data ?? []} loading={feesData?.isLoading} />
       </div>
 
       {/* TVL Chart */}
@@ -263,8 +275,8 @@ function DashboardContent() {
 
       {/* Top Movers */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">Top Movers (24h)</h2>
-        <TopMovers 
+        <h2 className="text-lg font-semibold text-foreground">{t("dashboard.topMovers")}</h2>
+        <TopMovers
           protocols={protocols?.data ?? []} 
           tokens={tokens ?? []}
           loading={protocols?.isLoading} 
@@ -274,15 +286,15 @@ function DashboardContent() {
 
       {/* Quick Insights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="Estimated Market Cap" value={formatCurrency(marketCap)} icon={Database} loading={protocols?.isLoading ?? true} />
-        <StatCard title="New Protocols (7d)" value={String(newProtocolsCount)} icon={Layers} loading={protocols?.isLoading ?? true} />
-        <StatCard title="Top Categories" value={categoryCount.length.toString()} icon={TrendingUp} loading={protocols?.isLoading ?? true} />
+        <StatCard title={t("dashboard.marketCap")} value={formatCurrency(marketCap)} icon={Database} loading={protocols?.isLoading ?? true} />
+        <StatCard title={t("dashboard.newProtocols")} value={String(newProtocolsCount)} icon={Layers} loading={protocols?.isLoading ?? true} />
+        <StatCard title={t("dashboard.topCategories")} value={categoryCount.length.toString()} icon={TrendingUp} loading={protocols?.isLoading ?? true} />
       </div>
 
       {/* Insights: Categories + Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
-          <h3 className="text-lg font-semibold text-foreground mb-3">Protocol Categories</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-3">{t("dashboard.protocolCategories")}</h3>
           <div className="flex flex-col gap-2">
             {categoryCount.map(([cat, count]: any) => (
               <div key={cat} className="flex items-center justify-between">
@@ -297,14 +309,14 @@ function DashboardContent() {
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-foreground">Recent Activity</h3>
+              <h3 className="text-lg font-semibold text-foreground">{t("dashboard.recentActivity")}</h3>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-                Live
+                {t("common.live")}
               </div>
             </div>
             <Link to="/activities">
-              <Button variant="ghost" size="sm" className="text-primary">View All →</Button>
+              <Button variant="ghost" size="sm" className="text-primary">{t("dashboard.viewAll")} →</Button>
             </Link>
           </div>
           {isActivityLoading ? (
