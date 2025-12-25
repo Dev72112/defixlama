@@ -6,6 +6,7 @@ import { BarChart3, TrendingUp, Search, DollarSign, Activity, Download } from "l
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   Pagination,
@@ -38,6 +39,7 @@ export default function Fees() {
 }
 
 function FeesContent() {
+  const { t } = useTranslation();
   const { data: fees, isLoading } = useFeesData();
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -78,42 +80,42 @@ function FeesContent() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Fees</h1>
-            <p className="text-muted-foreground mt-1">Protocol fee volumes across chains</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('fees.title')}</h1>
+            <p className="text-muted-foreground mt-1">{t('fees.subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
               <Download className="h-4 w-4" />
-              Export CSV
+              {t('common.exportCsv')}
             </Button>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Activity className="h-4 w-4 text-primary animate-pulse" />
-              {protocolsCount} protocols
+              {protocolsCount} {t('fees.protocols')}
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="24h Fees"
+            title={t('fees.fees24h')}
             value={formatCurrency(total24h)}
             icon={DollarSign}
             loading={isLoading}
           />
           <StatCard
-            title="Protocols"
+            title={t('fees.protocols')}
             value={protocolsCount.toString()}
             icon={Activity}
             loading={isLoading}
           />
           <StatCard
-            title="Avg Fee/Protocol"
+            title={t('fees.avgFeeProtocol')}
             value={formatCurrency(protocolsCount > 0 ? total24h / protocolsCount : 0)}
             icon={TrendingUp}
             loading={isLoading}
           />
           <StatCard
-            title="7d Fees"
+            title={t('fees.fees7d')}
             value={formatCurrency(fees?.reduce((acc, f) => acc + (f.total7d || 0), 0) || 0)}
             icon={BarChart3}
             loading={isLoading}
@@ -127,13 +129,13 @@ function FeesContent() {
         </div>
 
         {/* Historical Fees Chart */}
-        <HistoricalFeesChart data={filteredFees} loading={isLoading} title="Fee Revenue by Protocol" />
+        <HistoricalFeesChart data={filteredFees} loading={isLoading} title={t('fees.feeRevenueByProtocol')} />
 
         {/* Search */}
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search protocols..."
+            placeholder={t('fees.searchProtocols')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -147,10 +149,10 @@ function FeesContent() {
               <thead>
                 <tr className="bg-muted/30">
                   <th className="w-12 hidden sm:table-cell">#</th>
-                  <th>Protocol</th>
-                  <th className="text-right">24h Fees</th>
-                  <th className="text-right hidden sm:table-cell">7d Fees</th>
-                  <th className="text-right">24h Change</th>
+                  <th>{t('fees.protocol')}</th>
+                  <th className="text-right">{t('fees.fees24h')}</th>
+                  <th className="text-right hidden sm:table-cell">{t('fees.fees7d')}</th>
+                  <th className="text-right">{t('fees.change24h')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,7 +171,7 @@ function FeesContent() {
         ) : filteredFees.length === 0 ? (
           <div className="rounded-lg border border-border bg-card p-8 text-center">
             <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No fee data found</p>
+            <p className="text-muted-foreground">{t('fees.noFeeDataFound')}</p>
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -178,10 +180,10 @@ function FeesContent() {
                 <thead>
                   <tr className="bg-muted/30">
                     <th className="w-12 hidden sm:table-cell">#</th>
-                    <th>Protocol</th>
-                    <th className="text-right">24h Fees</th>
-                    <th className="text-right hidden md:table-cell">7d Fees</th>
-                    <th className="text-right">Change</th>
+                    <th>{t('fees.protocol')}</th>
+                    <th className="text-right">{t('fees.fees24h')}</th>
+                    <th className="text-right hidden md:table-cell">{t('fees.fees7d')}</th>
+                    <th className="text-right">{t('fees.change')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -255,13 +257,13 @@ function FeesContent() {
         {!isLoading && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {Math.min((page - 1) * pageSize + 1, filteredFees.length)}-
-              {Math.min(page * pageSize, filteredFees.length)} of {filteredFees.length} results
+              {t('common.showing')} {Math.min((page - 1) * pageSize + 1, filteredFees.length)}-
+              {Math.min(page * pageSize, filteredFees.length)} {t('common.of')} {filteredFees.length} {t('common.results')}
             </p>
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Per page</span>
+                <span className="text-sm text-muted-foreground">{t('common.perPage')}</span>
                 <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
                   <SelectTrigger className="w-[90px]">
                     <SelectValue />

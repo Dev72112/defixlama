@@ -5,6 +5,7 @@ import { formatCurrency, ChainData } from "@/lib/api/defillama";
 import { Layers, TrendingUp, Search, PieChart, Globe, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pagination,
   PaginationContent,
@@ -26,6 +27,7 @@ import { ChainComparisonChart } from "@/components/dashboard/ChainComparisonChar
 import { TVLDistributionChart } from "@/components/dashboard/TVLDistributionChart";
 
 export default function Chains() {
+  const { t } = useTranslation();
   const { data: chains, isLoading } = useChainsTVL();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -66,39 +68,39 @@ export default function Chains() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">All Chains</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('chains.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              TVL comparison across all blockchain networks
+              {t('chains.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Activity className="h-4 w-4 text-primary animate-pulse" />
-            {chainCount} chains tracked
+            {chainCount} {t('chains.chainsTracked')}
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Total DeFi TVL"
+            title={t('chains.totalDefiTvl')}
             value={formatCurrency(totalTVL)}
             icon={Globe}
             loading={isLoading}
           />
           <StatCard
-            title="Total Chains"
+            title={t('chains.totalChains')}
             value={chainCount.toString()}
             icon={PieChart}
             loading={isLoading}
           />
           <StatCard
-            title="XLayer TVL"
+            title={t('chains.xlayerTvl')}
             value={formatCurrency(xlayer?.tvl || 0)}
             icon={Layers}
             loading={isLoading}
           />
           <StatCard
-            title="XLayer Rank"
+            title={t('chains.xlayerRank')}
             value={xlayerRank > 0 ? `#${xlayerRank}` : "-"}
             icon={TrendingUp}
             loading={isLoading}
@@ -116,7 +118,7 @@ export default function Chains() {
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">XLayer</h3>
                   <p className="text-muted-foreground">
-                    Rank #{xlayerRank} • {xlayerShare.toFixed(4)}% of total DeFi TVL
+                    {t('chains.rank')} #{xlayerRank} • {xlayerShare.toFixed(4)}% {t('chains.ofTotalDefiTvl')}
                   </p>
                 </div>
               </div>
@@ -124,7 +126,7 @@ export default function Chains() {
                 <p className="text-2xl font-bold text-primary">
                   {formatCurrency(xlayer.tvl)}
                 </p>
-                <p className="text-sm text-muted-foreground">Total Value Locked</p>
+                <p className="text-sm text-muted-foreground">{t('chains.totalValueLocked')}</p>
               </div>
             </div>
           </div>
@@ -140,7 +142,7 @@ export default function Chains() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search chains..."
+            placeholder={t('chains.searchChains')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -155,9 +157,9 @@ export default function Chains() {
                 <thead>
                   <tr className="bg-muted/30">
                     <th className="w-12">#</th>
-                    <th>Chain</th>
-                    <th className="text-right">TVL</th>
-                    <th className="text-right hidden sm:table-cell">Market Share</th>
+                    <th>{t('chains.chain')}</th>
+                    <th className="text-right">{t('chains.tvl')}</th>
+                    <th className="text-right hidden sm:table-cell">{t('chains.marketShare')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -180,9 +182,9 @@ export default function Chains() {
                 <thead>
                   <tr className="bg-muted/30">
                     <th className="w-12 hidden sm:table-cell">#</th>
-                    <th>Chain</th>
-                    <th className="text-right">TVL</th>
-                    <th className="text-right hidden md:table-cell">Market Share</th>
+                    <th>{t('chains.chain')}</th>
+                    <th className="text-right">{t('chains.tvl')}</th>
+                    <th className="text-right hidden md:table-cell">{t('chains.marketShare')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -256,13 +258,13 @@ export default function Chains() {
         {!isLoading && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              Showing {Math.min((page - 1) * pageSize + 1, filteredChains.length)}-
-              {Math.min(page * pageSize, filteredChains.length)} of {filteredChains.length} chains
+              {t('common.showing')} {Math.min((page - 1) * pageSize + 1, filteredChains.length)}-
+              {Math.min(page * pageSize, filteredChains.length)} {t('common.of')} {filteredChains.length} {t('chains.chains')}
             </p>
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground hidden sm:inline">Per page</span>
+                <span className="text-sm text-muted-foreground hidden sm:inline">{t('common.perPage')}</span>
                 <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
                   <SelectTrigger className="w-[70px] sm:w-[90px]">
                     <SelectValue />
