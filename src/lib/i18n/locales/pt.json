@@ -16,7 +16,53 @@
     "docs": "Documentação",
     "more": "Mais",
     "resources": "Recursos",
-    "defillamaApi": "API DefiLlama"
+    "defillamaApi": "API DefiLlama",
+    "builderLogs": "Registro de Atualizações"
+  },
+  "builderLogs": {
+    "title": "Registro de Atualizações",
+    "description": "Acompanhe as atualizações e envie feedback",
+    "tabs": {
+      "updates": "Registro de Atualizações",
+      "feedback": "Feedback da Comunidade",
+      "submit": "Enviar Feedback"
+    },
+    "updateHistory": "Histórico de Atualizações",
+    "updateHistoryDesc": "Todas as atualizações da plataforma são registradas automaticamente aqui",
+    "majorUpdate": "Atualização Principal",
+    "communityFeedback": "Feedback da Comunidade",
+    "communityFeedbackDesc": "Relatórios de bugs, solicitações de recursos e mais da comunidade",
+    "filterStatus": "Filtrar por status",
+    "allStatuses": "Todos os Status",
+    "noFeedback": "Nenhum feedback ainda. Seja o primeiro a enviar!",
+    "submitFeedback": "Enviar Feedback",
+    "submitFeedbackDesc": "Relate bugs, solicite recursos ou sugira melhorias",
+    "status": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "denied": "Negado",
+      "inProgress": "Em Progresso",
+      "fixed": "Corrigido",
+      "wontFix": "Não Será Corrigido",
+      "duplicate": "Duplicado"
+    },
+    "type": {
+      "bug": "Relatório de Bug",
+      "error": "Relatório de Erro",
+      "featureRequest": "Solicitação de Recurso",
+      "listing": "Solicitação de Listagem",
+      "other": "Outro"
+    },
+    "form": {
+      "type": "Tipo",
+      "email": "Email de Contato (Opcional)",
+      "title": "Título",
+      "titlePlaceholder": "Resumo breve do seu feedback",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Forneça detalhes sobre o bug, recurso ou solicitação...",
+      "submit": "Enviar Feedback",
+      "submitting": "Enviando..."
+    }
   },
   "dashboard": {
     "title": "Visão Geral XLayer DeFi",

@@ -16,7 +16,53 @@
     "docs": "文档",
     "more": "更多",
     "resources": "资源",
-    "defillamaApi": "DefiLlama API"
+    "defillamaApi": "DefiLlama API",
+    "builderLogs": "构建日志"
+  },
+  "builderLogs": {
+    "title": "构建日志",
+    "description": "跟踪平台更新和提交反馈",
+    "tabs": {
+      "updates": "更新日志",
+      "feedback": "社区反馈",
+      "submit": "提交反馈"
+    },
+    "updateHistory": "更新历史",
+    "updateHistoryDesc": "所有平台更新都会自动记录在这里",
+    "majorUpdate": "重大更新",
+    "communityFeedback": "社区反馈",
+    "communityFeedbackDesc": "来自社区的错误报告、功能请求等",
+    "filterStatus": "按状态筛选",
+    "allStatuses": "所有状态",
+    "noFeedback": "暂无反馈。成为第一个提交的人！",
+    "submitFeedback": "提交反馈",
+    "submitFeedbackDesc": "报告错误、请求功能或提出改进建议",
+    "status": {
+      "pending": "待处理",
+      "approved": "已批准",
+      "denied": "已拒绝",
+      "inProgress": "进行中",
+      "fixed": "已修复",
+      "wontFix": "不会修复",
+      "duplicate": "重复"
+    },
+    "type": {
+      "bug": "错误报告",
+      "error": "故障报告",
+      "featureRequest": "功能请求",
+      "listing": "上架请求",
+      "other": "其他"
+    },
+    "form": {
+      "type": "类型",
+      "email": "联系邮箱（可选）",
+      "title": "标题",
+      "titlePlaceholder": "简要描述您的反馈",
+      "description": "描述",
+      "descriptionPlaceholder": "提供有关错误、功能或请求的详细信息...",
+      "submit": "提交反馈",
+      "submitting": "提交中..."
+    }
   },
   "dashboard": {
     "title": "XLayer DeFi 概览",

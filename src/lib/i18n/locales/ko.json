@@ -16,7 +16,53 @@
     "docs": "문서",
     "more": "더보기",
     "resources": "리소스",
-    "defillamaApi": "DefiLlama API"
+    "defillamaApi": "DefiLlama API",
+    "builderLogs": "빌더 로그"
+  },
+  "builderLogs": {
+    "title": "빌더 로그",
+    "description": "플랫폼 업데이트 추적 및 피드백 제출",
+    "tabs": {
+      "updates": "업데이트 로그",
+      "feedback": "커뮤니티 피드백",
+      "submit": "피드백 제출"
+    },
+    "updateHistory": "업데이트 기록",
+    "updateHistoryDesc": "모든 플랫폼 업데이트가 여기에 자동으로 기록됩니다",
+    "majorUpdate": "주요 업데이트",
+    "communityFeedback": "커뮤니티 피드백",
+    "communityFeedbackDesc": "커뮤니티의 버그 보고, 기능 요청 등",
+    "filterStatus": "상태별 필터",
+    "allStatuses": "모든 상태",
+    "noFeedback": "아직 피드백이 없습니다. 첫 번째로 제출하세요!",
+    "submitFeedback": "피드백 제출",
+    "submitFeedbackDesc": "버그 보고, 기능 요청 또는 개선 제안",
+    "status": {
+      "pending": "대기 중",
+      "approved": "승인됨",
+      "denied": "거부됨",
+      "inProgress": "진행 중",
+      "fixed": "수정됨",
+      "wontFix": "수정 안함",
+      "duplicate": "중복"
+    },
+    "type": {
+      "bug": "버그 보고",
+      "error": "오류 보고",
+      "featureRequest": "기능 요청",
+      "listing": "상장 요청",
+      "other": "기타"
+    },
+    "form": {
+      "type": "유형",
+      "email": "연락처 이메일 (선택사항)",
+      "title": "제목",
+      "titlePlaceholder": "피드백 요약",
+      "description": "설명",
+      "descriptionPlaceholder": "버그, 기능 또는 요청에 대한 세부 정보 입력...",
+      "submit": "피드백 제출",
+      "submitting": "제출 중..."
+    }
   },
   "dashboard": {
     "title": "XLayer DeFi 개요",

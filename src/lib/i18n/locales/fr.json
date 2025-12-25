@@ -16,7 +16,53 @@
     "docs": "Documentation",
     "more": "Plus",
     "resources": "Ressources",
-    "defillamaApi": "API DefiLlama"
+    "defillamaApi": "API DefiLlama",
+    "builderLogs": "Journal des Mises à Jour"
+  },
+  "builderLogs": {
+    "title": "Journal des Mises à Jour",
+    "description": "Suivre les mises à jour et soumettre des commentaires",
+    "tabs": {
+      "updates": "Journal des Mises à Jour",
+      "feedback": "Commentaires de la Communauté",
+      "submit": "Soumettre un Commentaire"
+    },
+    "updateHistory": "Historique des Mises à Jour",
+    "updateHistoryDesc": "Toutes les mises à jour de la plateforme sont automatiquement enregistrées ici",
+    "majorUpdate": "Mise à Jour Majeure",
+    "communityFeedback": "Commentaires de la Communauté",
+    "communityFeedbackDesc": "Rapports de bugs, demandes de fonctionnalités et plus de la communauté",
+    "filterStatus": "Filtrer par statut",
+    "allStatuses": "Tous les Statuts",
+    "noFeedback": "Pas encore de commentaires. Soyez le premier à soumettre!",
+    "submitFeedback": "Soumettre un Commentaire",
+    "submitFeedbackDesc": "Signaler des bugs, demander des fonctionnalités ou suggérer des améliorations",
+    "status": {
+      "pending": "En Attente",
+      "approved": "Approuvé",
+      "denied": "Refusé",
+      "inProgress": "En Cours",
+      "fixed": "Corrigé",
+      "wontFix": "Non Corrigé",
+      "duplicate": "Dupliqué"
+    },
+    "type": {
+      "bug": "Rapport de Bug",
+      "error": "Rapport d'Erreur",
+      "featureRequest": "Demande de Fonctionnalité",
+      "listing": "Demande de Listing",
+      "other": "Autre"
+    },
+    "form": {
+      "type": "Type",
+      "email": "Email de Contact (Optionnel)",
+      "title": "Titre",
+      "titlePlaceholder": "Résumé bref de votre commentaire",
+      "description": "Description",
+      "descriptionPlaceholder": "Fournissez des détails sur le bug, la fonctionnalité ou la demande...",
+      "submit": "Soumettre le Commentaire",
+      "submitting": "Envoi en cours..."
+    }
   },
   "dashboard": {
     "title": "Vue d'ensemble XLayer DeFi",

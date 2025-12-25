@@ -14,7 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      feedback: {
+        Row: {
+          admin_notes: string | null
+          contact_email: string | null
+          created_at: string
+          description: string
+          id: string
+          status: Database["public"]["Enums"]["feedback_status"]
+          title: string
+          type: Database["public"]["Enums"]["feedback_type"]
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          contact_email?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          status?: Database["public"]["Enums"]["feedback_status"]
+          title: string
+          type: Database["public"]["Enums"]["feedback_type"]
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          contact_email?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          status?: Database["public"]["Enums"]["feedback_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["feedback_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      update_logs: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          is_major: boolean | null
+          title: string
+          version: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          is_major?: boolean | null
+          title: string
+          version?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_major?: boolean | null
+          title?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +88,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      feedback_status:
+        | "pending"
+        | "approved"
+        | "denied"
+        | "in_progress"
+        | "fixed"
+        | "wont_fix"
+        | "duplicate"
+      feedback_type: "bug" | "error" | "feature_request" | "listing" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +223,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      feedback_status: [
+        "pending",
+        "approved",
+        "denied",
+        "in_progress",
+        "fixed",
+        "wont_fix",
+        "duplicate",
+      ],
+      feedback_type: ["bug", "error", "feature_request", "listing", "other"],
+    },
   },
 } as const

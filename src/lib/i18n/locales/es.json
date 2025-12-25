@@ -16,7 +16,53 @@
     "docs": "Documentación",
     "more": "Más",
     "resources": "Recursos",
-    "defillamaApi": "API DefiLlama"
+    "defillamaApi": "API DefiLlama",
+    "builderLogs": "Registro de Cambios"
+  },
+  "builderLogs": {
+    "title": "Registro de Cambios",
+    "description": "Seguimiento de actualizaciones y envío de comentarios",
+    "tabs": {
+      "updates": "Registro de Actualizaciones",
+      "feedback": "Comentarios de la Comunidad",
+      "submit": "Enviar Comentarios"
+    },
+    "updateHistory": "Historial de Actualizaciones",
+    "updateHistoryDesc": "Todas las actualizaciones de la plataforma se registran aquí automáticamente",
+    "majorUpdate": "Actualización Mayor",
+    "communityFeedback": "Comentarios de la Comunidad",
+    "communityFeedbackDesc": "Reportes de errores, solicitudes de funciones y más de la comunidad",
+    "filterStatus": "Filtrar por estado",
+    "allStatuses": "Todos los Estados",
+    "noFeedback": "Sin comentarios aún. ¡Sé el primero en enviar!",
+    "submitFeedback": "Enviar Comentarios",
+    "submitFeedbackDesc": "Reporta errores, solicita funciones o sugiere mejoras",
+    "status": {
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "denied": "Denegado",
+      "inProgress": "En Progreso",
+      "fixed": "Corregido",
+      "wontFix": "No se Corregirá",
+      "duplicate": "Duplicado"
+    },
+    "type": {
+      "bug": "Reporte de Error",
+      "error": "Reporte de Fallo",
+      "featureRequest": "Solicitud de Función",
+      "listing": "Solicitud de Listado",
+      "other": "Otro"
+    },
+    "form": {
+      "type": "Tipo",
+      "email": "Email de Contacto (Opcional)",
+      "title": "Título",
+      "titlePlaceholder": "Resumen breve de tu comentario",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Proporciona detalles sobre el error, función o solicitud...",
+      "submit": "Enviar Comentarios",
+      "submitting": "Enviando..."
+    }
   },
   "dashboard": {
     "title": "Vista General de XLayer DeFi",
