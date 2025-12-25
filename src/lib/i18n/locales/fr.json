@@ -13,7 +13,10 @@
     "alerts": "Alertes",
     "donations": "Dons",
     "activities": "Activités",
-    "docs": "Documentation"
+    "docs": "Documentation",
+    "more": "Plus",
+    "resources": "Ressources",
+    "defillamaApi": "API DefiLlama"
   },
   "dashboard": {
     "title": "Vue d'ensemble XLayer DeFi",
@@ -42,6 +45,154 @@
     "activeAddresses": "Adresses Actives",
     "avgBlockTime": "Temps de Bloc Moyen"
   },
+  "protocols": {
+    "title": "Protocoles",
+    "subtitle": "Tous les protocoles DeFi sur XLayer",
+    "tracked": "protocoles suivis",
+    "totalTvl": "TVL Total",
+    "avgTvlPerProtocol": "TVL Moyen par Protocole",
+    "topGainer": "Plus Forte Hausse (24h)",
+    "tvlHistory": "Historique TVL Protocoles XLayer",
+    "searchPlaceholder": "Rechercher protocoles...",
+    "allCategories": "Toutes les Catégories",
+    "sortByTvl": "TVL (Décroissant)",
+    "sortByChange1d": "Variation 24h",
+    "sortByChange7d": "Variation 7j",
+    "sortByName": "Nom (A-Z)",
+    "exportCsv": "Exporter CSV",
+    "showing": "Affichage",
+    "of": "sur",
+    "results": "résultats",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "page": "Page"
+  },
+  "tokens": {
+    "title": "Jetons",
+    "subtitle": "Prix des jetons XLayer en direct",
+    "totalMarketCap": "Cap. Marché Totale",
+    "volume24h": "Volume 24h",
+    "tokensTracked": "Jetons Suivis",
+    "avgChange24h": "Variation Moyenne 24h",
+    "searchPlaceholder": "Rechercher jetons...",
+    "export": "Exporter",
+    "compare": "Comparer",
+    "token": "Jeton",
+    "price": "Prix",
+    "change24h": "24h",
+    "volume": "Volume",
+    "mcap": "MCap",
+    "community": "Communauté",
+    "fetching": "Chargement...",
+    "priceInfo": "Les prix sont mis à jour en direct depuis CoinGecko toutes les 5 secondes. Les jetons communautaires (DOG, NIUMA, XDOG) sont natifs de XLayer."
+  },
+  "portfolio": {
+    "title": "Portefeuille",
+    "subtitle": "Suivez vos avoirs XLayer",
+    "totalValue": "Valeur Totale",
+    "totalPnl": "P&L Total",
+    "addHolding": "Ajouter une Position",
+    "holdings": "Positions",
+    "noHoldings": "Aucune position",
+    "addFirst": "Ajoutez votre premier jeton pour commencer à suivre votre portefeuille",
+    "addFirstToken": "Ajouter Votre Premier Jeton",
+    "addTokenHolding": "Ajouter Position de Jeton",
+    "selectToken": "Sélectionner jeton",
+    "quantity": "Quantité",
+    "purchasePrice": "Prix d'Achat (optionnel)",
+    "purchasePriceHint": "Entrez pour suivre P&L",
+    "addToPortfolio": "Ajouter au Portefeuille",
+    "allocation": "Allocation",
+    "pnlPercent": "% P&L",
+    "dataInfo": "Les données du portefeuille sont stockées localement. Les prix sont mis à jour toutes les 5 secondes."
+  },
+  "alerts": {
+    "title": "Alertes de Prix",
+    "subtitle": "Gérez vos alertes de prix",
+    "createAlert": "Créer une Alerte",
+    "activeAlerts": "Alertes Actives",
+    "triggeredAlerts": "Alertes Déclenchées",
+    "noAlerts": "Aucune alerte",
+    "noActiveAlerts": "Aucune alerte active",
+    "noTriggeredAlerts": "Aucune alerte déclenchée",
+    "targetPrice": "Prix Cible",
+    "condition": "Condition",
+    "above": "Au-dessus de",
+    "below": "En-dessous de",
+    "created": "Créé",
+    "triggered": "Déclenché",
+    "setFirstAlert": "Configurez votre première alerte de prix pour être notifié"
+  },
+  "dexs": {
+    "title": "Analyses DEX",
+    "subtitle": "Volumes des échanges décentralisés sur XLayer",
+    "totalVolume24h": "Volume Total (24h)",
+    "dexCount": "Nombre de DEX",
+    "avgVolume": "Volume Moyen",
+    "topDex": "Top DEX",
+    "searchPlaceholder": "Rechercher DEX...",
+    "dex": "DEX",
+    "volume24h": "Volume 24h",
+    "volume7d": "Volume 7j",
+    "change24h": "Variation 24h"
+  },
+  "yields": {
+    "title": "Yield Farming",
+    "subtitle": "Meilleures opportunités de rendement sur XLayer",
+    "avgApy": "APY Moyen",
+    "poolCount": "Nombre de Pools",
+    "totalTvl": "TVL Total",
+    "topPool": "Pool Principal",
+    "searchPlaceholder": "Rechercher pools...",
+    "pool": "Pool",
+    "project": "Projet",
+    "apy": "APY",
+    "tvl": "TVL"
+  },
+  "stablecoins": {
+    "title": "Stablecoins",
+    "subtitle": "Analyses des stablecoins sur XLayer",
+    "totalMcap": "Cap. Marché Totale",
+    "stablecoinCount": "Nombre de Stablecoins",
+    "avgPeg": "Parité Moyenne",
+    "searchPlaceholder": "Rechercher stablecoins..."
+  },
+  "chains": {
+    "title": "Chaînes",
+    "subtitle": "Comparaison TVL multi-chaînes",
+    "totalTvl": "TVL Total",
+    "chainCount": "Nombre de Chaînes",
+    "searchPlaceholder": "Rechercher chaînes..."
+  },
+  "fees": {
+    "title": "Frais de Protocole",
+    "subtitle": "Frais et revenus 24h des protocoles",
+    "totalFees24h": "Frais Totaux (24h)",
+    "protocolCount": "Nombre de Protocoles",
+    "avgFees": "Frais Moyens",
+    "topEarner": "Meilleur Revenu",
+    "searchPlaceholder": "Rechercher protocoles..."
+  },
+  "security": {
+    "title": "Sécurité",
+    "subtitle": "Sécurité et audits des protocoles",
+    "audited": "Audité",
+    "unaudited": "Non Audité",
+    "totalTvlAudited": "TVL Total Audité"
+  },
+  "activities": {
+    "title": "Activités",
+    "subtitle": "Activité récente de l'écosystème",
+    "noActivities": "Aucune activité récente"
+  },
+  "donations": {
+    "title": "Dons",
+    "subtitle": "Soutenez l'écosystème"
+  },
+  "docs": {
+    "title": "Documentation",
+    "subtitle": "Découvrez XLayer DeFi"
+  },
   "common": {
     "search": "Rechercher",
     "loading": "Chargement...",
@@ -69,29 +220,16 @@
     "confirm": "Confirmer",
     "delete": "Supprimer",
     "close": "Fermer",
-    "language": "Langue"
-  },
-  "alerts": {
-    "title": "Alertes de Prix",
-    "createAlert": "Créer une Alerte",
-    "activeAlerts": "Alertes Actives",
-    "triggeredAlerts": "Alertes Déclenchées",
-    "noAlerts": "Aucune alerte configurée",
-    "targetPrice": "Prix Cible",
-    "condition": "Condition",
-    "above": "Au-dessus de",
-    "below": "En-dessous de"
-  },
-  "portfolio": {
-    "title": "Mon Portefeuille",
-    "totalValue": "Valeur Totale",
-    "totalPnl": "P&L Total",
-    "addHolding": "Ajouter une Position",
-    "holdings": "Positions",
-    "noHoldings": "Aucune position"
+    "language": "Langue",
+    "poweredBy": "Propulsé par DefiLlama",
+    "name": "Nom",
+    "symbol": "Symbole"
   },
   "header": {
     "searchPlaceholder": "Rechercher protocoles, jetons, chaînes...",
     "toggleTheme": "Changer de thème"
+  },
+  "footer": {
+    "poweredBy": "Propulsé par DefiLlama"
   }
 }

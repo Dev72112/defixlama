@@ -13,7 +13,10 @@
     "alerts": "알림",
     "donations": "기부",
     "activities": "활동",
-    "docs": "문서"
+    "docs": "문서",
+    "more": "더보기",
+    "resources": "리소스",
+    "defillamaApi": "DefiLlama API"
   },
   "dashboard": {
     "title": "XLayer DeFi 개요",
@@ -42,6 +45,154 @@
     "activeAddresses": "활성 주소",
     "avgBlockTime": "평균 블록 시간"
   },
+  "protocols": {
+    "title": "프로토콜",
+    "subtitle": "XLayer의 모든 DeFi 프로토콜",
+    "tracked": "개 프로토콜 추적 중",
+    "totalTvl": "총 TVL",
+    "avgTvlPerProtocol": "프로토콜당 평균 TVL",
+    "topGainer": "상승률 1위 (24시간)",
+    "tvlHistory": "XLayer 프로토콜 TVL 기록",
+    "searchPlaceholder": "프로토콜 검색...",
+    "allCategories": "모든 카테고리",
+    "sortByTvl": "TVL (높은 순)",
+    "sortByChange1d": "24시간 변동",
+    "sortByChange7d": "7일 변동",
+    "sortByName": "이름 (A-Z)",
+    "exportCsv": "CSV 내보내기",
+    "showing": "표시 중",
+    "of": "/",
+    "results": "결과",
+    "prev": "이전",
+    "next": "다음",
+    "page": "페이지"
+  },
+  "tokens": {
+    "title": "토큰",
+    "subtitle": "XLayer 토큰 실시간 가격",
+    "totalMarketCap": "총 시가총액",
+    "volume24h": "24시간 거래량",
+    "tokensTracked": "추적 토큰 수",
+    "avgChange24h": "평균 24시간 변동",
+    "searchPlaceholder": "토큰 검색...",
+    "export": "내보내기",
+    "compare": "비교",
+    "token": "토큰",
+    "price": "가격",
+    "change24h": "24시간",
+    "volume": "거래량",
+    "mcap": "시가총액",
+    "community": "커뮤니티",
+    "fetching": "가져오는 중...",
+    "priceInfo": "토큰 가격은 CoinGecko에서 5초마다 실시간 업데이트됩니다. 커뮤니티 토큰(DOG, NIUMA, XDOG)은 XLayer 네이티브 토큰입니다."
+  },
+  "portfolio": {
+    "title": "포트폴리오",
+    "subtitle": "XLayer 보유 자산 추적",
+    "totalValue": "총 가치",
+    "totalPnl": "총 손익",
+    "addHolding": "보유 추가",
+    "holdings": "보유",
+    "noHoldings": "보유 없음",
+    "addFirst": "첫 번째 토큰을 추가하여 포트폴리오 추적 시작",
+    "addFirstToken": "첫 토큰 추가",
+    "addTokenHolding": "토큰 보유 추가",
+    "selectToken": "토큰 선택",
+    "quantity": "수량",
+    "purchasePrice": "구매 가격 (선택)",
+    "purchasePriceHint": "손익 추적을 위해 입력",
+    "addToPortfolio": "포트폴리오에 추가",
+    "allocation": "배분",
+    "pnlPercent": "손익%",
+    "dataInfo": "포트폴리오 데이터는 브라우저에 로컬 저장됩니다. 가격은 5초마다 업데이트됩니다."
+  },
+  "alerts": {
+    "title": "가격 알림",
+    "subtitle": "가격 알림 관리",
+    "createAlert": "알림 생성",
+    "activeAlerts": "활성 알림",
+    "triggeredAlerts": "발동된 알림",
+    "noAlerts": "알림 없음",
+    "noActiveAlerts": "활성 알림 없음",
+    "noTriggeredAlerts": "발동된 알림 없음",
+    "targetPrice": "목표 가격",
+    "condition": "조건",
+    "above": "이상",
+    "below": "이하",
+    "created": "생성일",
+    "triggered": "발동일",
+    "setFirstAlert": "첫 번째 가격 알림을 설정하여 목표 가격 도달 시 알림 받기"
+  },
+  "dexs": {
+    "title": "DEX 분석",
+    "subtitle": "XLayer 탈중앙화 거래소 거래량",
+    "totalVolume24h": "총 거래량 (24시간)",
+    "dexCount": "DEX 수",
+    "avgVolume": "평균 거래량",
+    "topDex": "상위 DEX",
+    "searchPlaceholder": "DEX 검색...",
+    "dex": "DEX",
+    "volume24h": "24시간 거래량",
+    "volume7d": "7일 거래량",
+    "change24h": "24시간 변동"
+  },
+  "yields": {
+    "title": "이자 농사",
+    "subtitle": "XLayer 최고 수익 기회",
+    "avgApy": "평균 APY",
+    "poolCount": "풀 수",
+    "totalTvl": "총 TVL",
+    "topPool": "상위 풀",
+    "searchPlaceholder": "풀 검색...",
+    "pool": "풀",
+    "project": "프로젝트",
+    "apy": "APY",
+    "tvl": "TVL"
+  },
+  "stablecoins": {
+    "title": "스테이블코인",
+    "subtitle": "XLayer 스테이블코인 분석",
+    "totalMcap": "총 시가총액",
+    "stablecoinCount": "스테이블코인 수",
+    "avgPeg": "평균 페그",
+    "searchPlaceholder": "스테이블코인 검색..."
+  },
+  "chains": {
+    "title": "체인",
+    "subtitle": "멀티체인 TVL 비교",
+    "totalTvl": "총 TVL",
+    "chainCount": "체인 수",
+    "searchPlaceholder": "체인 검색..."
+  },
+  "fees": {
+    "title": "프로토콜 수수료",
+    "subtitle": "프로토콜별 24시간 수수료 및 수익",
+    "totalFees24h": "총 수수료 (24시간)",
+    "protocolCount": "프로토콜 수",
+    "avgFees": "평균 수수료",
+    "topEarner": "최고 수익",
+    "searchPlaceholder": "프로토콜 검색..."
+  },
+  "security": {
+    "title": "보안",
+    "subtitle": "프로토콜 보안 및 감사",
+    "audited": "감사됨",
+    "unaudited": "미감사",
+    "totalTvlAudited": "감사된 총 TVL"
+  },
+  "activities": {
+    "title": "활동",
+    "subtitle": "최근 생태계 활동",
+    "noActivities": "최근 활동 없음"
+  },
+  "donations": {
+    "title": "기부",
+    "subtitle": "생태계 지원"
+  },
+  "docs": {
+    "title": "문서",
+    "subtitle": "XLayer DeFi 알아보기"
+  },
   "common": {
     "search": "검색",
     "loading": "로딩 중...",
@@ -69,29 +220,16 @@
     "confirm": "확인",
     "delete": "삭제",
     "close": "닫기",
-    "language": "언어"
-  },
-  "alerts": {
-    "title": "가격 알림",
-    "createAlert": "알림 생성",
-    "activeAlerts": "활성 알림",
-    "triggeredAlerts": "발동된 알림",
-    "noAlerts": "알림 없음",
-    "targetPrice": "목표 가격",
-    "condition": "조건",
-    "above": "이상",
-    "below": "이하"
-  },
-  "portfolio": {
-    "title": "내 포트폴리오",
-    "totalValue": "총 가치",
-    "totalPnl": "총 손익",
-    "addHolding": "보유 추가",
-    "holdings": "보유",
-    "noHoldings": "보유 없음"
+    "language": "언어",
+    "poweredBy": "Powered by DefiLlama",
+    "name": "이름",
+    "symbol": "심볼"
   },
   "header": {
     "searchPlaceholder": "프로토콜, 토큰, 체인 검색...",
     "toggleTheme": "테마 전환"
+  },
+  "footer": {
+    "poweredBy": "Powered by DefiLlama"
   }
 }
