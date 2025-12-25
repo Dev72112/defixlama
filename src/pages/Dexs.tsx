@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeftRight, TrendingUp, Activity, Search, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 
 export default function Dexs() {
+  const { t } = useTranslation();
   const { data: dexes, isLoading } = useXLayerDexVolumes();
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,39 +68,39 @@ export default function Dexs() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">DEX Volume</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("dexs.title")}</h1>
             <p className="text-muted-foreground mt-1">
-              Decentralized exchange trading volume on XLayer
+              {t("dexs.subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Activity className="h-4 w-4 text-primary animate-pulse" />
-            {dexCount} DEXs active
+            {dexCount} DEXs
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="24h Volume"
+            title={t("dexs.volume24h")}
             value={formatCurrency(total24hVolume)}
             icon={ArrowLeftRight}
             loading={isLoading}
           />
           <StatCard
-            title="7d Volume"
+            title={t("dexs.volume7d")}
             value={formatCurrency(total7dVolume)}
             icon={BarChart3}
             loading={isLoading}
           />
           <StatCard
-            title="Active DEXs"
+            title={t("dexs.dexCount")}
             value={dexCount.toString()}
             icon={Activity}
             loading={isLoading}
           />
           <StatCard
-            title="Avg. 24h Change"
+            title={t("dexs.change24h")}
             value={`${Number(avgChange || 0) >= 0 ? "+" : ""}${Number(avgChange || 0).toFixed(2)}%`}
             change={avgChange}
             icon={TrendingUp}
@@ -116,7 +118,7 @@ export default function Dexs() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search DEXs..."
+              placeholder={t("dexs.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -127,10 +129,10 @@ export default function Dexs() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="volume24h">24h Volume</SelectItem>
-              <SelectItem value="volume7d">7d Volume</SelectItem>
-              <SelectItem value="change">24h Change</SelectItem>
-              <SelectItem value="name">Name (A-Z)</SelectItem>
+              <SelectItem value="volume24h">{t("dexs.volume24h")}</SelectItem>
+              <SelectItem value="volume7d">{t("dexs.volume7d")}</SelectItem>
+              <SelectItem value="change">{t("dexs.change24h")}</SelectItem>
+              <SelectItem value="name">{t("protocols.sortByName")}</SelectItem>
             </SelectContent>
           </Select>
           <div className="ml-auto flex items-center gap-2">
@@ -145,13 +147,12 @@ export default function Dexs() {
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={() => {
-              // CSV export for DEXs
               const rows = [["name","displayName","24h","7d","chains"] , ...filteredDexes.map(d => [d.name || '', d.displayName || '', d.total24h || 0, d.total7d || 0, (d.chains||[]).join(';')])];
               const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
               const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a'); a.href = url; a.download = `dexs_${Date.now()}.csv`; a.click(); URL.revokeObjectURL(url);
-            }}>Export CSV</Button>
+            }}>{t("protocols.exportCsv")}</Button>
           </div>
         </div>
 
@@ -165,11 +166,11 @@ export default function Dexs() {
             <>
               <DexTable dexes={paged} loading={isLoading} />
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">Showing {paged.length} of {filteredDexes.length} DEXs</div>
+                <div className="text-sm text-muted-foreground">{t("protocols.showing")} {paged.length} {t("protocols.of")} {filteredDexes.length} DEXs</div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" onClick={() => setPage((p)=>Math.max(1,p-1))} disabled={page===1}>Prev</Button>
-                  <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
-                  <Button variant="ghost" onClick={() => setPage((p)=>Math.min(totalPages,p+1))} disabled={page===totalPages}>Next</Button>
+                  <Button variant="ghost" onClick={() => setPage((p)=>Math.max(1,p-1))} disabled={page===1}>{t("protocols.prev")}</Button>
+                  <div className="text-sm text-muted-foreground">{t("protocols.page")} {page} / {totalPages}</div>
+                  <Button variant="ghost" onClick={() => setPage((p)=>Math.min(totalPages,p+1))} disabled={page===totalPages}>{t("protocols.next")}</Button>
                 </div>
               </div>
             </>

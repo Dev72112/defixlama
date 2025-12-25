@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { formatCurrency } from "@/lib/api/defillama";
+import { useTranslation } from "react-i18next";
 import { 
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, 
   PieChart, DollarSign, Percent, Activity 
@@ -37,6 +38,7 @@ import {
 const COLORS = ["hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
 export default function Portfolio() {
+  const { t } = useTranslation();
   const { 
     holdings, 
     addHolding, 
@@ -84,26 +86,26 @@ export default function Portfolio() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Portfolio</h1>
-            <p className="text-muted-foreground mt-1">Track your XLayer holdings</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("portfolio.title")}</h1>
+            <p className="text-muted-foreground mt-1">{t("portfolio.subtitle")}</p>
           </div>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Add Holding
+                {t("portfolio.addHolding")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add Token Holding</DialogTitle>
+                <DialogTitle>{t("portfolio.addTokenHolding")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Token</label>
+                  <label className="text-sm font-medium">{t("common.token")}</label>
                   <Select value={selectedToken} onValueChange={setSelectedToken}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select token" />
+                      <SelectValue placeholder={t("portfolio.selectToken")} />
                     </SelectTrigger>
                     <SelectContent>
                       {tokenPrices.map((token) => (
@@ -120,7 +122,7 @@ export default function Portfolio() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Quantity</label>
+                  <label className="text-sm font-medium">{t("portfolio.quantity")}</label>
                   <Input
                     type="number"
                     placeholder="0.00"
@@ -129,17 +131,17 @@ export default function Portfolio() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Purchase Price (optional)</label>
+                  <label className="text-sm font-medium">{t("portfolio.purchasePrice")}</label>
                   <Input
                     type="number"
                     placeholder="0.00"
                     value={purchasePrice}
                     onChange={(e) => setPurchasePrice(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">Enter to track P&L</p>
+                  <p className="text-xs text-muted-foreground">{t("portfolio.purchasePriceHint")}</p>
                 </div>
                 <Button onClick={handleAdd} className="w-full" disabled={!selectedToken || !quantity}>
-                  Add to Portfolio
+                  {t("portfolio.addToPortfolio")}
                 </Button>
               </div>
             </DialogContent>
@@ -149,23 +151,23 @@ export default function Portfolio() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Total Value"
+            title={t("portfolio.totalValue")}
             value={formatCurrency(totalValue)}
             icon={Wallet}
           />
           <StatCard
-            title="Total P&L"
+            title={t("portfolio.totalPnl")}
             value={`${totalPnl >= 0 ? "+" : ""}${formatCurrency(totalPnl)}`}
             change={totalPnlPercent}
             icon={totalPnl >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
-            title="Holdings"
+            title={t("portfolio.holdings")}
             value={holdings.length.toString()}
             icon={Activity}
           />
           <StatCard
-            title="P&L %"
+            title={t("portfolio.pnlPercent")}
             value={`${totalPnlPercent >= 0 ? "+" : ""}${totalPnlPercent.toFixed(2)}%`}
             change={totalPnlPercent}
             icon={Percent}
@@ -176,11 +178,11 @@ export default function Portfolio() {
         {holdings.length === 0 ? (
           <Card className="p-12 text-center">
             <Wallet className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No holdings yet</h2>
-            <p className="text-muted-foreground mb-4">Add your first token to start tracking your portfolio</p>
+            <h2 className="text-xl font-semibold mb-2">{t("portfolio.noHoldings")}</h2>
+            <p className="text-muted-foreground mb-4">{t("portfolio.addFirst")}</p>
             <Button onClick={() => setIsAddOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              Add Your First Token
+              {t("portfolio.addFirstToken")}
             </Button>
           </Card>
         ) : (
@@ -189,7 +191,7 @@ export default function Portfolio() {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <PieChart className="h-5 w-5 text-primary" />
-                Allocation
+                {t("portfolio.allocation")}
               </h3>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -225,17 +227,17 @@ export default function Portfolio() {
             <Card className="p-6 lg:col-span-2">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-primary" />
-                Holdings
+                {t("portfolio.holdings")}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                      <th className="pb-3">Token</th>
-                      <th className="pb-3 text-right">Quantity</th>
-                      <th className="pb-3 text-right">Price</th>
-                      <th className="pb-3 text-right">Value</th>
-                      <th className="pb-3 text-right">P&L</th>
+                      <th className="pb-3">{t("common.token")}</th>
+                      <th className="pb-3 text-right">{t("portfolio.quantity")}</th>
+                      <th className="pb-3 text-right">{t("common.price")}</th>
+                      <th className="pb-3 text-right">{t("portfolio.totalValue")}</th>
+                      <th className="pb-3 text-right">{t("portfolio.totalPnl")}</th>
                       <th className="pb-3 w-10"></th>
                     </tr>
                   </thead>
@@ -304,7 +306,7 @@ export default function Portfolio() {
         {/* Info */}
         <Card className="p-4 bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            Portfolio data is stored locally in your browser. Prices update every 5 seconds from live market data.
+            {t("portfolio.dataInfo")}
           </p>
         </Card>
       </div>

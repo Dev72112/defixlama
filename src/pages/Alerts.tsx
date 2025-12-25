@@ -6,9 +6,11 @@ import { Bell, BellOff, Trash2, TrendingUp, TrendingDown, Plus } from "lucide-re
 import { usePriceAlerts } from "@/hooks/usePriceAlerts";
 import { PriceAlertDialog } from "@/components/PriceAlertDialog";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 
 export default function Alerts() {
+  const { t } = useTranslation();
   const { alerts, activeAlerts, triggeredAlerts, removeAlert, requestNotificationPermission } = usePriceAlerts();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -28,9 +30,9 @@ export default function Alerts() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Price Alerts</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t("alerts.title")}</h1>
             <p className="text-muted-foreground">
-              Get notified when tokens hit your target prices
+              {t("alerts.subtitle")}
             </p>
           </div>
           <div className="flex gap-2">
@@ -42,7 +44,7 @@ export default function Alerts() {
             )}
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              New Alert
+              {t("alerts.createAlert")}
             </Button>
           </div>
         </div>
@@ -51,7 +53,7 @@ export default function Alerts() {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Alerts</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("alerts.title")}</CardTitle>
               <Bell className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -60,7 +62,7 @@ export default function Alerts() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("alerts.activeAlerts")}</CardTitle>
               <Bell className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -69,7 +71,7 @@ export default function Alerts() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Triggered</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("alerts.triggeredAlerts")}</CardTitle>
               <BellOff className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -83,15 +85,15 @@ export default function Alerts() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary" />
-              Active Alerts
+              {t("alerts.activeAlerts")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {activeAlerts.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Bell className="mx-auto h-12 w-12 mb-4 opacity-20" />
-                <p>No active alerts</p>
-                <p className="text-sm">Create your first price alert to get started</p>
+                <p>{t("alerts.noActiveAlerts")}</p>
+                <p className="text-sm">{t("alerts.setFirstAlert")}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -141,7 +143,7 @@ export default function Alerts() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BellOff className="h-5 w-5 text-muted-foreground" />
-                Triggered Alerts
+                {t("alerts.triggeredAlerts")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -166,11 +168,11 @@ export default function Alerts() {
                             {alert.condition} ${alert.targetPrice.toLocaleString()}
                           </Badge>
                           <Badge variant="secondary" className="bg-success/20 text-success">
-                            Triggered
+                            {t("alerts.triggered")}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {alert.name} • {formatDistanceToNow(alert.createdAt, { addSuffix: true })}
+                          {alert.name} • {t("alerts.created")} {formatDistanceToNow(alert.createdAt, { addSuffix: true })}
                         </p>
                       </div>
                     </div>

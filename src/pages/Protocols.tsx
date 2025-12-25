@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { Database, Layers, TrendingUp, Search, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -17,6 +18,7 @@ import {
 import { HistoricalTVLChart } from "@/components/dashboard/HistoricalTVLChart";
 
 export default function Protocols() {
+  const { t } = useTranslation();
   const { data: protocols, isLoading: protocolsLoading } = useXLayerProtocols();
   const { data: tvl, isLoading: tvlLoading } = useXLayerTVL();
   const { data: tvlHistory, isLoading: tvlHistoryLoading } = useXLayerTVLHistory();
@@ -109,39 +111,39 @@ export default function Protocols() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Protocols</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("protocols.title")}</h1>
             <p className="text-muted-foreground mt-1">
-              All DeFi protocols deployed on XLayer
+              {t("protocols.subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Activity className="h-4 w-4 text-primary animate-pulse" />
-            {protocolCount} protocols tracked
+            {protocolCount} {t("protocols.tracked")}
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Total TVL"
+            title={t("protocols.totalTvl")}
             value={formatCurrency(totalTVL)}
             icon={Layers}
             loading={tvlLoading}
           />
           <StatCard
-            title="Protocols"
+            title={t("dashboard.protocols")}
             value={protocolCount.toString()}
             icon={Database}
             loading={protocolsLoading}
           />
           <StatCard
-            title="Avg. TVL per Protocol"
+            title={t("protocols.avgTvlPerProtocol")}
             value={formatCurrency(avgTVL)}
             icon={TrendingUp}
             loading={protocolsLoading || tvlLoading}
           />
           <StatCard
-            title="Top Gainer (24h)"
+            title={t("protocols.topGainer")}
             value={topGainer?.name || "-"}
             change={topGainer?.change_1d}
             loading={protocolsLoading}
@@ -152,7 +154,7 @@ export default function Protocols() {
         <HistoricalTVLChart 
           data={tvlHistory || []} 
           loading={tvlHistoryLoading} 
-          title="XLayer Protocol TVL History"
+          title={t("protocols.tvlHistory")}
         />
 
         {/* Filters */}
@@ -160,7 +162,7 @@ export default function Protocols() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search protocols..."
+              placeholder={t("protocols.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -168,10 +170,10 @@ export default function Protocols() {
           </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder={t("common.category")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="all">{t("protocols.allCategories")}</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat} value={cat}>
                   {cat}
@@ -184,10 +186,10 @@ export default function Protocols() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="tvl">TVL (High to Low)</SelectItem>
-              <SelectItem value="change_1d">24h Change</SelectItem>
-              <SelectItem value="change_7d">7d Change</SelectItem>
-              <SelectItem value="name">Name (A-Z)</SelectItem>
+              <SelectItem value="tvl">{t("protocols.sortByTvl")}</SelectItem>
+              <SelectItem value="change_1d">{t("protocols.sortByChange1d")}</SelectItem>
+              <SelectItem value="change_7d">{t("protocols.sortByChange7d")}</SelectItem>
+              <SelectItem value="name">{t("protocols.sortByName")}</SelectItem>
             </SelectContent>
           </Select>
           <div className="ml-auto flex items-center gap-2">
@@ -201,7 +203,7 @@ export default function Protocols() {
                 <SelectItem value="50">50</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={exportCSV}>Export CSV</Button>
+            <Button variant="outline" onClick={exportCSV}>{t("protocols.exportCsv")}</Button>
           </div>
         </div>
 
@@ -214,11 +216,11 @@ export default function Protocols() {
 
         {/* Pagination controls */}
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">Showing {pagedProtocols.length} of {filteredProtocols.length} results</div>
+          <div className="text-sm text-muted-foreground">{t("protocols.showing")} {pagedProtocols.length} {t("protocols.of")} {filteredProtocols.length} {t("protocols.results")}</div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>
-            <div className="text-sm text-muted-foreground">Page {page} / {totalPages}</div>
-            <Button variant="ghost" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+            <Button variant="ghost" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>{t("protocols.prev")}</Button>
+            <div className="text-sm text-muted-foreground">{t("protocols.page")} {page} / {totalPages}</div>
+            <Button variant="ghost" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>{t("protocols.next")}</Button>
           </div>
         </div>
 
