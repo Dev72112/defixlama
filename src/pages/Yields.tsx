@@ -7,6 +7,7 @@ import { TrendingUp, Droplets, Search, Activity, Percent, Download } from "lucid
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -19,6 +20,7 @@ import { TopYieldPools } from "@/components/dashboard/TopYieldPools";
 import { exportToCSV } from "@/lib/export";
 
 export default function Yields() {
+  const { t } = useTranslation();
   const { data: pools, isLoading } = useXLayerYieldPools();
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,19 +94,19 @@ export default function Yields() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Yield Pools</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('yields.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Discover yield farming opportunities on XLayer
+              {t('yields.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
               <Download className="h-4 w-4" />
-              Export CSV
+              {t('common.exportCsv')}
             </Button>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Activity className="h-4 w-4 text-primary animate-pulse" />
-              Max APY: {Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%
+              {t('yields.maxApy')}: {Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%
             </div>
           </div>
         </div>
@@ -112,25 +114,25 @@ export default function Yields() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Total TVL"
+            title={t('yields.totalTvl')}
             value={formatCurrency(totalTVL)}
             icon={Droplets}
             loading={isLoading}
           />
           <StatCard
-            title="Active Pools"
+            title={t('yields.activePools')}
             value={poolCount.toString()}
             icon={Activity}
             loading={isLoading}
           />
           <StatCard
-            title="Average APY"
+            title={t('yields.avgApy')}
             value={`${Number(isNaN(avgApy) ? 0 : avgApy).toFixed(2)}%`}
             icon={TrendingUp}
             loading={isLoading}
           />
           <StatCard
-            title="Max APY"
+            title={t('yields.maxApy')}
             value={`${Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%`}
             icon={Percent}
             loading={isLoading}
@@ -148,7 +150,7 @@ export default function Yields() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search pools..."
+              placeholder={t('yields.searchPools')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -156,10 +158,10 @@ export default function Yields() {
           </div>
           <Select value={projectFilter} onValueChange={setProjectFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Project" />
+              <SelectValue placeholder={t('yields.project')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
+              <SelectItem value="all">{t('yields.allProjects')}</SelectItem>
               {projects.map((proj) => (
                 <SelectItem key={proj} value={proj} className="capitalize">
                   {proj}
@@ -169,12 +171,12 @@ export default function Yields() {
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder={t('common.sortBy')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="apy">APY (High to Low)</SelectItem>
-              <SelectItem value="tvl">TVL (High to Low)</SelectItem>
-              <SelectItem value="symbol">Symbol (A-Z)</SelectItem>
+              <SelectItem value="apy">{t('yields.apyHighToLow')}</SelectItem>
+              <SelectItem value="tvl">{t('yields.tvlHighToLow')}</SelectItem>
+              <SelectItem value="symbol">{t('yields.symbolAZ')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -185,7 +187,7 @@ export default function Yields() {
         {/* Results count */}
         {!isLoading && (
           <p className="text-sm text-muted-foreground">
-            Showing {filteredPools.length} of {poolCount} pools
+            {t('common.showing')} {filteredPools.length} {t('common.of')} {poolCount} {t('yields.pools')}
           </p>
         )}
       </div>

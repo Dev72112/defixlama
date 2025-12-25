@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, Download } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { DonationStats } from "@/components/dashboard/DonationStats";
 import { RecentDonors } from "@/components/dashboard/RecentDonors";
@@ -18,6 +19,7 @@ const donations = [
 ];
 
 export default function Donations() {
+  const { t } = useTranslation();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const { data: stats } = useDonationStats();
   const { data: allDonations = [] } = useDonations();
@@ -47,10 +49,9 @@ export default function Donations() {
     <Layout>
       <div className="space-y-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Support the Project</h1>
+          <h1 className="text-3xl font-bold">{t('donations.title')}</h1>
           <p className="text-muted-foreground">
-            Help us build and maintain defiXlama by contributing. All donations support ongoing
-            development on XLayer.
+            {t('donations.subtitle')}
           </p>
         </div>
 
@@ -73,7 +74,7 @@ export default function Donations() {
           <div className="flex justify-end">
             <Button variant="outline" onClick={handleExport} className="gap-2">
               <Download className="h-4 w-4" />
-              Export Donations CSV
+              {t('donations.exportDonationsCsv')}
             </Button>
           </div>
         )}
@@ -100,7 +101,7 @@ export default function Donations() {
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Wallet Address</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('donations.walletAddress')}</p>
                   <div className="relative">
                     <code className="block p-3 rounded-md bg-secondary text-xs font-mono break-all text-foreground">{token.address}</code>
                     <Button
@@ -108,7 +109,7 @@ export default function Donations() {
                       size="sm"
                       className="absolute right-2 top-1/2 -translate-y-1/2"
                       onClick={() => handleCopy(token.address)}
-                      title="Copy address"
+                      title={t('donations.copyAddress')}
                     >
                       {copiedAddress === token.address ? (
                         <Check className="h-4 w-4 text-success" />
@@ -119,7 +120,7 @@ export default function Donations() {
                   </div>
                 </div>
 
-                <p className="text-xs text-muted-foreground">Donations on XLayer network. Please ensure you're sending from/to XLayer compatible wallets.</p>
+                <p className="text-xs text-muted-foreground">{t('donations.xlayerNetworkNote')}</p>
               </div>
             </Card>
           ))}
@@ -127,45 +128,45 @@ export default function Donations() {
 
         <Card className="p-8 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Why donate?</h2>
+            <h2 className="text-xl font-semibold">{t('donations.whyDonate')}</h2>
             <ul className="space-y-3 text-sm text-foreground">
-              <li className="flex gap-3"><span className="text-primary font-bold">→</span><span>Funds go directly to development and maintenance of defiXlama analytics platform</span></li>
-              <li className="flex gap-3"><span className="text-primary font-bold">→</span><span>Help us maintain 24/7 data infrastructure and real-time feeds</span></li>
-              <li className="flex gap-3"><span className="text-primary font-bold">→</span><span>Support the XLayer ecosystem by enabling comprehensive DeFi analytics</span></li>
-              <li className="flex gap-3"><span className="text-primary font-bold">→</span><span>Every contribution makes XLayer's financial landscape more transparent</span></li>
+              <li className="flex gap-3"><span className="text-primary font-bold">→</span><span>{t('donations.reason1')}</span></li>
+              <li className="flex gap-3"><span className="text-primary font-bold">→</span><span>{t('donations.reason2')}</span></li>
+              <li className="flex gap-3"><span className="text-primary font-bold">→</span><span>{t('donations.reason3')}</span></li>
+              <li className="flex gap-3"><span className="text-primary font-bold">→</span><span>{t('donations.reason4')}</span></li>
             </ul>
           </div>
         </Card>
 
         <Card className="p-8">
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Frequently Asked Questions</h2>
+            <h2 className="text-xl font-semibold">{t('donations.faq')}</h2>
             <div className="space-y-4">
               <div className="space-y-2">
-                <h3 className="font-medium">Do I need to use a specific wallet?</h3>
-                <p className="text-sm text-muted-foreground">Any XLayer-compatible wallet works (MetaMask, OKX Wallet, etc.). Make sure you're on the XLayer network and sending the correct token type.</p>
+                <h3 className="font-medium">{t('donations.faq1Question')}</h3>
+                <p className="text-sm text-muted-foreground">{t('donations.faq1Answer')}</p>
               </div>
 
               <div className="space-y-2">
-                <h3 className="font-medium">Is there a minimum donation amount?</h3>
-                <p className="text-sm text-muted-foreground">No minimum! Any amount helps. Even small contributions are greatly appreciated.</p>
+                <h3 className="font-medium">{t('donations.faq2Question')}</h3>
+                <p className="text-sm text-muted-foreground">{t('donations.faq2Answer')}</p>
               </div>
 
               <div className="space-y-2">
-                <h3 className="font-medium">Can I donate other tokens?</h3>
-                <p className="text-sm text-muted-foreground">Right now we accept OKB, USDT, and USDG. For other tokens, please reach out to us on GitHub or Discord.</p>
+                <h3 className="font-medium">{t('donations.faq3Question')}</h3>
+                <p className="text-sm text-muted-foreground">{t('donations.faq3Answer')}</p>
               </div>
 
               <div className="space-y-2">
-                <h3 className="font-medium">Will my donation be acknowledged?</h3>
-                <p className="text-sm text-muted-foreground">Major donors will be featured in our community section. All donations are highly appreciated regardless.</p>
+                <h3 className="font-medium">{t('donations.faq4Question')}</h3>
+                <p className="text-sm text-muted-foreground">{t('donations.faq4Answer')}</p>
               </div>
             </div>
           </div>
         </Card>
 
         <div className="text-center space-y-3">
-          <p className="text-sm text-muted-foreground">Questions about donations? Reach out to the team on GitHub or join our community Discord.</p>
+          <p className="text-sm text-muted-foreground">{t('donations.questionsAboutDonations')}</p>
                   <div className="flex gap-3 justify-center">
                       <a href="https://github.com/shadowmystical3-ai/defixlama" target="_blank" rel="noopener noreferrer" className="inline-block">
                         <Button variant="outline">GitHub</Button>

@@ -6,11 +6,13 @@ import { formatCurrency, Stablecoin } from "@/lib/api/defillama";
 import { Coins, TrendingUp, Search, DollarSign, Activity, PieChart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function Stablecoins() {
+  const { t } = useTranslation();
   const { data: stablecoins, isLoading } = useStablecoins();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -65,39 +67,39 @@ export default function Stablecoins() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Stablecoins</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('stablecoins.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Stablecoin metrics and circulation on XLayer
+              {t('stablecoins.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Activity className="h-4 w-4 text-primary animate-pulse" />
-            {stablecoinCount} stablecoins
+            {stablecoinCount} {t('stablecoins.stablecoins')}
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Total Stablecoin Market Cap"
+            title={t('stablecoins.totalMarketCap')}
             value={formatCurrency(totalMarketCap)}
             icon={DollarSign}
             loading={isLoading}
           />
           <StatCard
-            title="Stablecoins Available"
+            title={t('stablecoins.stablecoinsAvailable')}
             value={stablecoinCount.toString()}
             icon={Coins}
             loading={isLoading}
           />
           <StatCard
-            title="Most Used"
+            title={t('stablecoins.mostUsed')}
             value="USDT"
             icon={Activity}
             loading={isLoading}
           />
           <StatCard
-            title="Stability Score"
+            title={t('stablecoins.stabilityScore')}
             value={`${stabilityScore.toFixed(1)}%`}
             icon={TrendingUp}
             loading={isLoading}
@@ -108,7 +110,7 @@ export default function Stablecoins() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Dominance Chart */}
           <div className="rounded-lg border border-border bg-card p-4">
-            <h3 className="font-semibold text-foreground mb-4">Market Cap Dominance</h3>
+            <h3 className="font-semibold text-foreground mb-4">{t('stablecoins.marketCapDominance')}</h3>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPie>
@@ -131,7 +133,7 @@ export default function Stablecoins() {
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
                     }}
-                    formatter={(value: number) => [formatCurrency(value), "Market Cap"]}
+                    formatter={(value: number) => [formatCurrency(value), t('stablecoins.marketCap')]}
                   />
                 </RechartsPie>
               </ResponsiveContainer>
@@ -154,7 +156,7 @@ export default function Stablecoins() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search stablecoins..."
+            placeholder={t('stablecoins.searchStablecoins')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -175,7 +177,7 @@ export default function Stablecoins() {
         ) : filteredStablecoins.length === 0 ? (
           <div className="rounded-lg border border-border bg-card p-8 text-center">
             <Coins className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No stablecoins found</p>
+            <p className="text-muted-foreground">{t('stablecoins.noStablecoinsFound')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -190,6 +192,7 @@ export default function Stablecoins() {
 }
 
 function StablecoinCard({ stablecoin }: { stablecoin: Stablecoin }) {
+  const { t } = useTranslation();
   const circulating = stablecoin.circulating 
     ? Object.values(stablecoin.circulating).reduce((a, b) => a + b, 0) 
     : 0;
@@ -217,32 +220,32 @@ function StablecoinCard({ stablecoin }: { stablecoin: Stablecoin }) {
               : "bg-warning/10 text-warning"
           )}
         >
-          {isPegged ? "Pegged" : "Depegged"}
+          {isPegged ? t('stablecoins.pegged') : t('stablecoins.depegged')}
         </div>
       </div>
       
       <div className="space-y-3">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Market Cap</span>
+          <span className="text-sm text-muted-foreground">{t('stablecoins.marketCap')}</span>
           <span className="font-mono font-medium text-foreground">
             {formatCurrency(circulating)}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Price</span>
+          <span className="text-sm text-muted-foreground">{t('stablecoins.price')}</span>
           <span className="font-mono font-medium text-foreground">
             ${stablecoin.price?.toFixed(4) || "1.0000"}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Peg Type</span>
+          <span className="text-sm text-muted-foreground">{t('stablecoins.pegType')}</span>
           <span className="text-sm text-foreground capitalize">
             {stablecoin.pegType || "USD"}
           </span>
         </div>
         {stablecoin.chains && (
           <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Chains</span>
+            <span className="text-sm text-muted-foreground">{t('stablecoins.chains')}</span>
             <span className="text-sm text-foreground">
               {stablecoin.chains.length}
             </span>

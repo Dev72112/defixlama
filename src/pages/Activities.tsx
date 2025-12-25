@@ -5,11 +5,13 @@ import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, Layers, Globe, DollarSign, Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { ActivityBreakdown } from "@/components/dashboard/ActivityBreakdown";
 
 export default function Activities() {
+  const { t } = useTranslation();
   const dashboardData = useDashboardData();
   const chainsTVL = useChainsTVL();
   const feesData = useFeesData();
@@ -107,29 +109,29 @@ export default function Activities() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground text-gradient-primary">Activities</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground text-gradient-primary">{t('activities.title')}</h1>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-                Live Feed
+                {t('activities.liveFeed')}
               </div>
             </div>
-            <p className="text-muted-foreground mt-1">Real-time activity across protocols, fees and chains</p>
+            <p className="text-muted-foreground mt-1">{t('activities.subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <RefreshCw className="h-3 w-3" />
-              Updated {Math.floor((Date.now() - lastRefresh) / 1000)}s ago
+              {t('activities.updated')} {Math.floor((Date.now() - lastRefresh) / 1000)}s {t('activities.ago')}
             </div>
             <div className="relative max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search activities..."
+                placeholder={t('activities.searchActivities')}
                 className="pl-9"
               />
             </div>
-            <Button variant="outline" onClick={() => { setFilter("all"); setQuery(""); }}>Reset</Button>
+            <Button variant="outline" onClick={() => { setFilter("all"); setQuery(""); }}>{t('activities.reset')}</Button>
           </div>
         </div>
 
@@ -142,19 +144,19 @@ export default function Activities() {
         {/* Filter Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant={filter === 'all' ? 'default' : 'ghost'} onClick={() => setFilter('all')} size="sm">
-            All ({items.length})
+            {t('activities.all')} ({items.length})
           </Button>
           <Button variant={filter === 'protocol' ? 'default' : 'ghost'} onClick={() => setFilter('protocol')} size="sm">
             <Layers className="h-4 w-4 mr-1" />
-            Protocols
+            {t('activities.protocols')}
           </Button>
           <Button variant={filter === 'fee' ? 'default' : 'ghost'} onClick={() => setFilter('fee')} size="sm">
             <DollarSign className="h-4 w-4 mr-1" />
-            Fees
+            {t('activities.fees')}
           </Button>
           <Button variant={filter === 'chain' ? 'default' : 'ghost'} onClick={() => setFilter('chain')} size="sm">
             <Globe className="h-4 w-4 mr-1" />
-            Chains
+            {t('activities.chains')}
           </Button>
         </div>
 
@@ -175,8 +177,8 @@ export default function Activities() {
           ) : paged.length === 0 ? (
             <div className="text-muted-foreground p-8 text-center">
               <Search className="h-12 w-12 mx-auto mb-3 text-muted" />
-              <p className="font-medium">No activities found</p>
-              <p className="text-sm mt-1">Try adjusting your search or filters</p>
+              <p className="font-medium">{t('activities.noActivitiesFound')}</p>
+              <p className="text-sm mt-1">{t('activities.tryAdjusting')}</p>
             </div>
           ) : (
             <ul className="divide-y divide-border">
@@ -201,13 +203,13 @@ export default function Activities() {
                     </div>
                     <div>
                       {a.type === 'protocol' && (
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/protocols/${(a.meta?.slug || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View →</Button>
+                        <Button size="sm" variant="ghost" onClick={() => navigate(`/protocols/${(a.meta?.slug || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>{t('activities.view')} →</Button>
                       )}
                       {a.type === 'fee' && (
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/fees/${(a.meta?.displayName || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View →</Button>
+                        <Button size="sm" variant="ghost" onClick={() => navigate(`/fees/${(a.meta?.displayName || a.meta?.name || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>{t('activities.view')} →</Button>
                       )}
                       {a.type === 'chain' && (
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/chains/${(a.meta?.name || a.id || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>View →</Button>
+                        <Button size="sm" variant="ghost" onClick={() => navigate(`/chains/${(a.meta?.name || a.id || '').toString().toLowerCase().replace(/\s+/g,'-')}`)}>{t('activities.view')} →</Button>
                       )}
                     </div>
                   </li>
@@ -219,11 +221,11 @@ export default function Activities() {
 
         {/* Pagination */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-muted-foreground">{items.length} total activities</div>
+          <div className="text-sm text-muted-foreground">{items.length} {t('activities.totalActivities')}</div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← Prev</Button>
-            <div className="text-sm text-muted-foreground px-3">Page {page} of {totalPages}</div>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next →</Button>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← {t('activities.prev')}</Button>
+            <div className="text-sm text-muted-foreground px-3">{t('activities.page')} {page} {t('common.of')} {totalPages}</div>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>{t('activities.next')} →</Button>
           </div>
         </div>
       </div>

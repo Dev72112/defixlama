@@ -4,12 +4,14 @@ import { Shield, CheckCircle, AlertTriangle, ExternalLink, Search } from "lucide
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Protocol, formatCurrency } from "@/lib/api/defillama";
 import { SecurityOverviewChart } from "@/components/dashboard/SecurityOverviewChart";
 import { TVLByAuditChart } from "@/components/dashboard/TVLByAuditChart";
 
 export default function Security() {
+  const { t } = useTranslation();
   const { data: protocols, isLoading } = useXLayerProtocols();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -35,14 +37,14 @@ export default function Security() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Security</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('security.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Audit status and security information for XLayer protocols
+              {t('security.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Shield className="h-4 w-4 text-primary" />
-            {auditRate.toFixed(0)}% audit rate
+            {auditRate.toFixed(0)}% {t('security.auditRate')}
           </div>
         </div>
 
@@ -53,7 +55,7 @@ export default function Security() {
               <div className="rounded-lg bg-success/10 p-2 text-success">
                 <CheckCircle className="h-5 w-5" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Audited</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('security.audited')}</span>
             </div>
             <p className="text-2xl font-bold text-foreground">{auditedCount}</p>
           </div>
@@ -62,7 +64,7 @@ export default function Security() {
               <div className="rounded-lg bg-warning/10 p-2 text-warning">
                 <AlertTriangle className="h-5 w-5" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Unaudited</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('security.unaudited')}</span>
             </div>
             <p className="text-2xl font-bold text-foreground">{unauditedCount}</p>
           </div>
@@ -71,7 +73,7 @@ export default function Security() {
               <div className="rounded-lg bg-primary/10 p-2 text-primary">
                 <Shield className="h-5 w-5" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Audit Rate</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('security.auditRate')}</span>
             </div>
             <p className="text-2xl font-bold text-foreground">{auditRate.toFixed(1)}%</p>
           </div>
@@ -80,7 +82,7 @@ export default function Security() {
               <div className="rounded-lg bg-secondary p-2 text-secondary-foreground">
                 <Shield className="h-5 w-5" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Total Protocols</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('security.totalProtocols')}</span>
             </div>
             <p className="text-2xl font-bold text-foreground">{protocols?.length || 0}</p>
           </div>
@@ -97,11 +99,9 @@ export default function Security() {
           <div className="flex gap-3">
             <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-medium text-foreground">Security Disclaimer</h3>
+              <h3 className="font-medium text-foreground">{t('security.securityDisclaimer')}</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                An audit does not guarantee the security of a protocol. Always do your own research
-                (DYOR) before interacting with any DeFi protocol. This information is provided
-                as-is and should not be considered financial advice.
+                {t('security.disclaimerText')}
               </p>
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function Security() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search protocols..."
+            placeholder={t('security.searchProtocols')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -132,7 +132,7 @@ export default function Security() {
         ) : filteredProtocols.length === 0 ? (
           <div className="rounded-lg border border-border bg-card p-8 text-center">
             <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No protocols found</p>
+            <p className="text-muted-foreground">{t('security.noProtocolsFound')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,6 +152,7 @@ export default function Security() {
 }
 
 function ProtocolSecurityCard({ protocol }: { protocol: Protocol }) {
+  const { t } = useTranslation();
   const isAudited = protocol.audits && protocol.audits !== "0";
 
   return (
@@ -188,12 +189,12 @@ function ProtocolSecurityCard({ protocol }: { protocol: Protocol }) {
           {isAudited ? (
             <>
               <CheckCircle className="h-3.5 w-3.5" />
-              Audited
+              {t('security.audited')}
             </>
           ) : (
             <>
               <AlertTriangle className="h-3.5 w-3.5" />
-              Unaudited
+              {t('security.unaudited')}
             </>
           )}
         </div>
@@ -201,7 +202,7 @@ function ProtocolSecurityCard({ protocol }: { protocol: Protocol }) {
 
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">TVL</span>
+          <span className="text-sm text-muted-foreground">{t('security.tvl')}</span>
           <span className="font-mono font-medium text-foreground">
             {formatCurrency(protocol.tvl)}
           </span>
@@ -221,7 +222,7 @@ function ProtocolSecurityCard({ protocol }: { protocol: Protocol }) {
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs text-primary hover:underline"
             >
-              Website <ExternalLink className="h-3 w-3" />
+              {t('security.website')} <ExternalLink className="h-3 w-3" />
             </a>
           )}
           {protocol.twitter && (
