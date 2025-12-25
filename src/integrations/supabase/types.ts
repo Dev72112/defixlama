@@ -114,7 +114,18 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_public_feedback: {
+        Args: never
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          status: Database["public"]["Enums"]["feedback_status"]
+          title: string
+          type: Database["public"]["Enums"]["feedback_type"]
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       feedback_status:
