@@ -63,6 +63,7 @@ export function LivePriceTicker() {
     return () => clearTimeout(timeout);
   }, [prices]);
 
+  // Gracefully hide when not connected - no error state shown
   if (!isConnected || Object.keys(prices).length === 0) {
     return null;
   }
