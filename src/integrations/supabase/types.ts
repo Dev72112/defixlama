@@ -82,7 +82,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      feedback_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          status: Database["public"]["Enums"]["feedback_status"] | null
+          title: string | null
+          type: Database["public"]["Enums"]["feedback_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          status?: Database["public"]["Enums"]["feedback_status"] | null
+          title?: string | null
+          type?: Database["public"]["Enums"]["feedback_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          status?: Database["public"]["Enums"]["feedback_status"] | null
+          title?: string | null
+          type?: Database["public"]["Enums"]["feedback_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_public_feedback: {
