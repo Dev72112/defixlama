@@ -9,6 +9,23 @@ type UpdateLogInsert = Database['public']['Tables']['update_logs']['Insert'];
 type Feedback = Database['public']['Tables']['feedback']['Row'];
 type FeedbackStatus = Database['public']['Enums']['feedback_status'];
 
+// Token listing type (manual since types haven't regenerated yet)
+interface TokenListing {
+  id: string;
+  name: string;
+  symbol: string;
+  contract_address: string | null;
+  chain: string;
+  logo_url: string | null;
+  website_url: string | null;
+  coingecko_id: string | null;
+  description: string | null;
+  is_active: boolean;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // Validation schemas
 const updateLogSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -18,7 +35,21 @@ const updateLogSchema = z.object({
   is_major: z.boolean().optional(),
 });
 
+const tokenListingSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  symbol: z.string().min(1, 'Symbol is required').max(20),
+  contract_address: z.string().max(100).nullable().optional(),
+  chain: z.string().min(1, 'Chain is required').max(50),
+  logo_url: z.string().url().nullable().optional().or(z.literal('')),
+  website_url: z.string().url().nullable().optional().or(z.literal('')),
+  coingecko_id: z.string().max(100).nullable().optional(),
+  description: z.string().max(1000).nullable().optional(),
+  is_active: z.boolean().optional(),
+  is_featured: z.boolean().optional(),
+});
+
 export type UpdateLogInput = z.infer<typeof updateLogSchema>;
+export type TokenListingInput = z.infer<typeof tokenListingSchema>;
 
 // Fetch all update logs for admin
 export function useAdminUpdateLogs() {
@@ -204,6 +235,124 @@ export function useDeleteFeedback() {
     },
     onError: (error) => {
       toast.error(`Failed to delete feedback: ${error.message}`);
+    },
+  });
+}
+
+// ============= TOKEN LISTINGS =============
+
+// Fetch all token listings for admin
+export function useAdminTokenListings() {
+  return useQuery({
+    queryKey: ['admin-token-listings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('token_listings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as TokenListing[];
+    },
+  });
+}
+
+// Create token listing
+export function useCreateTokenListing() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: TokenListingInput) => {
+      const validated = tokenListingSchema.parse(input);
+      
+      const { data, error } = await supabase
+        .from('token_listings')
+        .insert({
+          name: validated.name,
+          symbol: validated.symbol.toUpperCase(),
+          contract_address: validated.contract_address || null,
+          chain: validated.chain,
+          logo_url: validated.logo_url || null,
+          website_url: validated.website_url || null,
+          coingecko_id: validated.coingecko_id || null,
+          description: validated.description || null,
+          is_active: validated.is_active ?? true,
+          is_featured: validated.is_featured ?? false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-token-listings'] });
+      toast.success('Token listing created');
+    },
+    onError: (error) => {
+      toast.error(`Failed to create listing: ${error.message}`);
+    },
+  });
+}
+
+// Update token listing
+export function useUpdateTokenListing() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...input }: TokenListingInput & { id: string }) => {
+      const validated = tokenListingSchema.parse(input);
+      
+      const { data, error } = await supabase
+        .from('token_listings')
+        .update({
+          name: validated.name,
+          symbol: validated.symbol.toUpperCase(),
+          contract_address: validated.contract_address || null,
+          chain: validated.chain,
+          logo_url: validated.logo_url || null,
+          website_url: validated.website_url || null,
+          coingecko_id: validated.coingecko_id || null,
+          description: validated.description || null,
+          is_active: validated.is_active ?? true,
+          is_featured: validated.is_featured ?? false,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-token-listings'] });
+      toast.success('Token listing updated');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update listing: ${error.message}`);
+    },
+  });
+}
+
+// Delete token listing
+export function useDeleteTokenListing() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('token_listings')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-token-listings'] });
+      toast.success('Token listing deleted');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete listing: ${error.message}`);
     },
   });
 }

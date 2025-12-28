@@ -77,6 +77,54 @@ export type Database = {
         }
         Relationships: []
       }
+      token_listings: {
+        Row: {
+          chain: string
+          coingecko_id: string | null
+          contract_address: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          logo_url: string | null
+          name: string
+          symbol: string
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          chain?: string
+          coingecko_id?: string | null
+          contract_address?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          logo_url?: string | null
+          name: string
+          symbol: string
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          chain?: string
+          coingecko_id?: string | null
+          contract_address?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          logo_url?: string | null
+          name?: string
+          symbol?: string
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       update_logs: {
         Row: {
           category: string
