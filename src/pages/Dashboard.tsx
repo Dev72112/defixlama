@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/layout/Layout";
 import { Activity } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
-import { useDashboardData, useChainsTVL, useFeesData, useStablecoins } from "@/hooks/useDefiData";
+import { useDashboardData, useChainsTVL, useFeesData, useStablecoins, useTop10Chains } from "@/hooks/useDefiData";
 import { useTokenPrices } from "@/hooks/useTokenData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TVLChart } from "@/components/dashboard/TVLChart";
@@ -17,6 +17,7 @@ import { PriceAlertsPanel } from "@/components/PriceAlertsPanel";
 import { NetworkStatsCard } from "@/components/dashboard/NetworkStatsCard";
 import { StablecoinStats } from "@/components/dashboard/StablecoinStats";
 import { FeesOverview } from "@/components/dashboard/FeesOverview";
+import { TopChainsCard } from "@/components/dashboard/TopChainsCard";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -40,6 +41,7 @@ function DashboardContent() {
   const { t } = useTranslation();
   const dashboardData = useDashboardData();
   const chainsTVL = useChainsTVL();
+  const top10Chains = useTop10Chains();
   const feesData = useFeesData();
   const stablecoins = useStablecoins();
   const { data: tokens } = useTokenPrices();
@@ -226,7 +228,7 @@ function DashboardContent() {
       </div>
 
       {/* New Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <NetworkStatsCard 
           loading={protocols?.isLoading} 
           protocols={protocols?.data ?? []} 
@@ -234,6 +236,7 @@ function DashboardContent() {
         />
         <StablecoinStats stablecoins={stablecoins?.data ?? []} loading={stablecoins?.isLoading} />
         <FeesOverview feesData={feesData?.data ?? []} loading={feesData?.isLoading} />
+        <TopChainsCard chains={top10Chains?.data ?? []} loading={top10Chains?.isLoading} />
       </div>
 
       {/* TVL Chart */}

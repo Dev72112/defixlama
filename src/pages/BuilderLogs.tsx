@@ -91,7 +91,6 @@ export default function BuilderLogs() {
     type: 'bug' as FeedbackType,
     title: '',
     description: '',
-    contact_email: '',
   });
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -103,10 +102,9 @@ export default function BuilderLogs() {
       type: feedbackForm.type,
       title: feedbackForm.title.trim(),
       description: feedbackForm.description.trim(),
-      contact_email: feedbackForm.contact_email.trim() || undefined,
     }, {
       onSuccess: () => {
-        setFeedbackForm({ type: 'bug', title: '', description: '', contact_email: '' });
+        setFeedbackForm({ type: 'bug', title: '', description: '' });
       }
     });
   };
@@ -126,14 +124,14 @@ export default function BuilderLogs() {
         </div>
 
         <Tabs defaultValue="updates" className="space-y-6">
-          <TabsList className="bg-card border border-border">
-            <TabsTrigger value="updates" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="bg-card border border-border w-full flex-wrap sm:flex-nowrap overflow-x-auto">
+            <TabsTrigger value="updates" className="flex-1 sm:flex-none min-w-fit text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               {t('builderLogs.tabs.updates', 'Update Logs')}
             </TabsTrigger>
-            <TabsTrigger value="feedback" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="feedback" className="flex-1 sm:flex-none min-w-fit text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               {t('builderLogs.tabs.feedback', 'Community Feedback')}
             </TabsTrigger>
-            <TabsTrigger value="submit" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="submit" className="flex-1 sm:flex-none min-w-fit text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               {t('builderLogs.tabs.submit', 'Submit Feedback')}
             </TabsTrigger>
           </TabsList>
@@ -355,17 +353,6 @@ export default function BuilderLogs() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">{t('builderLogs.form.email', 'Contact Email (Optional)')}</label>
-                      <Input
-                        type="email"
-                        placeholder="your@email.com"
-                        value={feedbackForm.contact_email}
-                        onChange={(e) => setFeedbackForm(prev => ({ ...prev, contact_email: e.target.value }))}
-                        className="bg-background border-border"
-                      />
                     </div>
                   </div>
                   

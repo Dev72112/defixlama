@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Activity, Zap, Clock, Users } from "lucide-react";
 import { useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface NetworkStatsCardProps {
   loading?: boolean;
@@ -36,12 +37,12 @@ export function NetworkStatsCard({ loading, protocols = [], dexVolumes = [] }: N
   if (loading) {
     return (
       <div className="rounded-lg border border-border bg-card p-4">
-        <div className="skeleton h-5 w-32 mb-4" />
+        <Skeleton className="h-5 w-32 mb-4" delay={0} />
         <div className="grid grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={i}>
-              <div className="skeleton h-4 w-20 mb-2" />
-              <div className="skeleton h-6 w-16" />
+              <Skeleton className="h-4 w-20 mb-2" delay={i + 1} />
+              <Skeleton className="h-6 w-16" delay={i + 1} />
             </div>
           ))}
         </div>

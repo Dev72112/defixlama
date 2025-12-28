@@ -74,6 +74,21 @@ export function useChainsTVL() {
   });
 }
 
+// Hook to fetch top 10 chains by TVL
+export function useTop10Chains() {
+  return useQuery<ChainData[]>({
+    queryKey: ["top-10-chains"],
+    queryFn: async () => {
+      const data = await fetchChainsTVL();
+      if (!Array.isArray(data)) return [];
+      // Sort by TVL descending and return top 10
+      return data.sort((a, b) => (b.tvl || 0) - (a.tvl || 0)).slice(0, 10);
+    },
+    staleTime: LIVE_REFRESH,
+    refetchInterval: LIVE_REFRESH,
+  });
+}
+
 // Hook to fetch XLayer TVL history
 export function useXLayerTVLHistory() {
   return useQuery<ChainTVL[]>({

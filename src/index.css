@@ -1,5 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
+/* Skeleton animation keyframes */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Skeleton shimmer effect */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite, skeleton-pulse 2s ease-in-out infinite;
+}
+
+/* Staggered delay classes for skeletons */
+.skeleton-delay-0 { animation-delay: 0ms; }
+.skeleton-delay-1 { animation-delay: 50ms; }
+.skeleton-delay-2 { animation-delay: 100ms; }
+.skeleton-delay-3 { animation-delay: 150ms; }
+.skeleton-delay-4 { animation-delay: 200ms; }
+.skeleton-delay-5 { animation-delay: 250ms; }
+.skeleton-delay-6 { animation-delay: 300ms; }
+.skeleton-delay-7 { animation-delay: 350ms; }
+.skeleton-delay-8 { animation-delay: 400ms; }
+.skeleton-delay-9 { animation-delay: 450ms; }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
