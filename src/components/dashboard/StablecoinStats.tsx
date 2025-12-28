@@ -33,15 +33,22 @@ export function StablecoinStats({ stablecoins, loading }: StablecoinStatsProps) 
     );
   }
 
+  // Filter for XLayer-relevant stablecoins (same logic as Stablecoins page)
+  const relevantStablecoins = stablecoins?.filter((s: any) => {
+    return s.chains?.some(
+      (c: string) => c.toLowerCase() === "xlayer" || c.toLowerCase() === "x layer"
+    ) || ["USDT", "USDC", "DAI", "FRAX", "LUSD", "TUSD", "USDS", "USDe"].includes(s.symbol);
+  }) || [];
+
   // Calculate total market cap using same method as Stablecoins page
-  const totalMcap = stablecoins?.reduce((acc, s) => {
+  const totalMcap = relevantStablecoins.reduce((acc: number, s: any) => {
     // Use peggedUSD if available, otherwise sum all circulating values
     const circulating = s?.circulating?.peggedUSD 
       || (s?.circulating ? Object.values(s.circulating).reduce((a: number, b: any) => a + (Number(b) || 0), 0) : 0);
     return acc + circulating;
-  }, 0) || 0;
+  }, 0);
   
-  const topStablecoins = stablecoins?.slice(0, 5) || [];
+  const topStablecoins = relevantStablecoins.slice(0, 5);
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
