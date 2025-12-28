@@ -19,9 +19,11 @@ import {
   Activity,
   Bell,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavItem {
   labelKey: string;
@@ -56,6 +58,7 @@ interface SidebarProps {
 export function Sidebar({ mobile = false, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const location = useLocation();
+  const { isAdmin } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Auto-expand more section if current route is in it
@@ -201,6 +204,20 @@ export function Sidebar({ mobile = false, onClose }: SidebarProps) {
             <ScrollText className="h-4 w-4" />
             <span>{t("nav.builderLogs")}</span>
           </Link>
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                location.pathname === "/admin"
+                  ? "bg-primary/10 text-primary"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span>Admin Panel</span>
+            </Link>
+          )}
         </div>
       </nav>
 
