@@ -24,6 +24,22 @@ import {
   Star,
   Globe,
   Link as LinkIcon,
+  Settings,
+  BarChart3,
+  Users,
+  DatabaseIcon,
+  Activity,
+  TrendingUp,
+  Eye,
+  EyeOff,
+  Search,
+  Filter,
+  Download,
+  Upload,
+  RefreshCw,
+  Copy,
+  ExternalLink,
+  Layers,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
@@ -88,7 +104,33 @@ type FeedbackType = Database['public']['Enums']['feedback_type'];
 
 const categoryOptions = ['feature', 'bugfix', 'improvement', 'security', 'performance', 'general'];
 
-const chainOptions = ['ethereum', 'bsc', 'polygon', 'arbitrum', 'optimism', 'avalanche', 'fantom', 'solana', 'base', 'other'];
+const chainOptions = [
+  { value: 'ethereum', label: 'Ethereum', icon: '⟠' },
+  { value: 'bsc', label: 'BNB Chain', icon: '🔶' },
+  { value: 'polygon', label: 'Polygon', icon: '🟣' },
+  { value: 'arbitrum', label: 'Arbitrum', icon: '🔵' },
+  { value: 'optimism', label: 'Optimism', icon: '🔴' },
+  { value: 'avalanche', label: 'Avalanche', icon: '🔺' },
+  { value: 'fantom', label: 'Fantom', icon: '👻' },
+  { value: 'solana', label: 'Solana', icon: '◎' },
+  { value: 'base', label: 'Base', icon: '🔵' },
+  { value: 'xlayer', label: 'X Layer', icon: '✖️' },
+  { value: 'zksync', label: 'zkSync Era', icon: '⚡' },
+  { value: 'linea', label: 'Linea', icon: '🌀' },
+  { value: 'scroll', label: 'Scroll', icon: '📜' },
+  { value: 'mantle', label: 'Mantle', icon: '🏔️' },
+  { value: 'manta', label: 'Manta Pacific', icon: '🦈' },
+  { value: 'blast', label: 'Blast', icon: '💥' },
+  { value: 'mode', label: 'Mode', icon: '🟢' },
+  { value: 'sei', label: 'Sei', icon: '🌊' },
+  { value: 'sui', label: 'Sui', icon: '💧' },
+  { value: 'aptos', label: 'Aptos', icon: '🅰️' },
+  { value: 'ton', label: 'TON', icon: '💎' },
+  { value: 'tron', label: 'TRON', icon: '🔷' },
+  { value: 'near', label: 'NEAR', icon: '🌐' },
+  { value: 'cosmos', label: 'Cosmos', icon: '⚛️' },
+  { value: 'other', label: 'Other', icon: '🔗' },
+];
 
 const feedbackTypeIcons: Record<FeedbackType, React.ReactNode> = {
   bug: <Bug className="h-4 w-4" />,
@@ -154,8 +196,16 @@ export default function Admin() {
           </div>
         </div>
 
-        <Tabs defaultValue="update-logs" className="space-y-6">
-          <TabsList className="bg-card border border-border">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="bg-card border border-border flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="overview" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="tokens" className="gap-2">
+              <Coins className="h-4 w-4" />
+              Token Listings
+            </TabsTrigger>
             <TabsTrigger value="update-logs" className="gap-2">
               <FileText className="h-4 w-4" />
               Update Logs
@@ -164,11 +214,19 @@ export default function Admin() {
               <MessageSquare className="h-4 w-4" />
               Feedback
             </TabsTrigger>
-            <TabsTrigger value="tokens" className="gap-2">
-              <Coins className="h-4 w-4" />
-              Token Listings
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" />
+              Site Settings
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview">
+            <OverviewTab />
+          </TabsContent>
+
+          <TabsContent value="tokens">
+            <TokenListingsTab />
+          </TabsContent>
 
           <TabsContent value="update-logs">
             <UpdateLogsTab />
@@ -178,8 +236,8 @@ export default function Admin() {
             <FeedbackTab />
           </TabsContent>
 
-          <TabsContent value="tokens">
-            <TokenListingsTab />
+          <TabsContent value="settings">
+            <SiteSettingsTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -749,7 +807,9 @@ function TokenListingsTab() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize">{listing.chain}</Badge>
+                  <Badge variant="outline" className="capitalize">
+                    {chainOptions.find(c => c.value === listing.chain)?.icon} {chainOptions.find(c => c.value === listing.chain)?.label || listing.chain}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge className={listing.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}>
@@ -854,7 +914,12 @@ function TokenListingForm({ form, setForm }: { form: TokenListingInput; setForm:
             </SelectTrigger>
             <SelectContent>
               {chainOptions.map((chain) => (
-                <SelectItem key={chain} value={chain} className="capitalize">{chain}</SelectItem>
+                <SelectItem key={chain.value} value={chain.value}>
+                  <span className="flex items-center gap-2">
+                    <span>{chain.icon}</span>
+                    <span>{chain.label}</span>
+                  </span>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -923,6 +988,312 @@ function TokenListingForm({ form, setForm }: { form: TokenListingInput; setForm:
           <Label>Featured</Label>
         </div>
       </div>
+    </div>
+  );
+}
+
+function OverviewTab() {
+  const { data: logs } = useAdminUpdateLogs();
+  const { data: feedback } = useAdminFeedback();
+  const { data: listings } = useAdminTokenListings();
+
+  const stats = [
+    {
+      title: 'Total Tokens',
+      value: listings?.length || 0,
+      icon: Coins,
+      description: `${listings?.filter(l => l.is_active)?.length || 0} active`,
+      color: 'text-blue-400',
+    },
+    {
+      title: 'Featured Tokens',
+      value: listings?.filter(l => l.is_featured)?.length || 0,
+      icon: Star,
+      description: 'Highlighted on platform',
+      color: 'text-yellow-400',
+    },
+    {
+      title: 'Update Logs',
+      value: logs?.length || 0,
+      icon: FileText,
+      description: `${logs?.filter(l => l.is_major)?.length || 0} major updates`,
+      color: 'text-green-400',
+    },
+    {
+      title: 'Feedback Items',
+      value: feedback?.length || 0,
+      icon: MessageSquare,
+      description: `${feedback?.filter(f => f.status === 'pending')?.length || 0} pending`,
+      color: 'text-purple-400',
+    },
+  ];
+
+  const pendingFeedback = feedback?.filter(f => f.status === 'pending') || [];
+  const recentLogs = logs?.slice(0, 3) || [];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.title}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.title}</p>
+                  <p className="text-3xl font-bold">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                </div>
+                <div className={`p-3 rounded-lg bg-muted ${stat.color}`}>
+                  <stat.icon className="h-6 w-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              Pending Feedback
+            </CardTitle>
+            <CardDescription>Items requiring attention</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {pendingFeedback.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No pending feedback</p>
+            ) : (
+              <div className="space-y-3">
+                {pendingFeedback.slice(0, 5).map((item) => (
+                  <div key={item.id} className="flex items-start justify-between border-b border-border pb-2 last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{item.type.replace('_', ' ')}</p>
+                    </div>
+                    <Badge className="bg-yellow-500/20 text-yellow-400 text-xs">Pending</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-muted-foreground" />
+              Recent Updates
+            </CardTitle>
+            <CardDescription>Latest platform changes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentLogs.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No update logs yet</p>
+            ) : (
+              <div className="space-y-3">
+                {recentLogs.map((log) => (
+                  <div key={log.id} className="flex items-start justify-between border-b border-border pb-2 last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">{log.title}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{log.category}</p>
+                    </div>
+                    {log.is_major && (
+                      <Sparkles className="h-4 w-4 text-yellow-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-muted-foreground" />
+            Chain Distribution
+          </CardTitle>
+          <CardDescription>Token listings by blockchain</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {chainOptions.map((chain) => {
+              const count = listings?.filter(l => l.chain === chain.value)?.length || 0;
+              if (count === 0) return null;
+              return (
+                <div key={chain.value} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{chain.icon}</span>
+                    <span className="text-sm font-medium">{chain.label}</span>
+                  </div>
+                  <Badge variant="secondary">{count}</Badge>
+                </div>
+              );
+            })}
+          </div>
+          {listings?.length === 0 && (
+            <p className="text-muted-foreground text-sm text-center py-4">No tokens listed yet</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function SiteSettingsTab() {
+  const [siteName, setSiteName] = useState('DeFi Dashboard');
+  const [siteDescription, setSiteDescription] = useState('Your comprehensive DeFi analytics platform');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
+  const [publicRegistration, setPublicRegistration] = useState(true);
+  const [defaultTheme, setDefaultTheme] = useState('system');
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5 text-muted-foreground" />
+            General Settings
+          </CardTitle>
+          <CardDescription>Basic platform configuration</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Site Name</Label>
+            <Input
+              value={siteName}
+              onChange={(e) => setSiteName(e.target.value)}
+              placeholder="Your platform name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Site Description</Label>
+            <Textarea
+              value={siteDescription}
+              onChange={(e) => setSiteDescription(e.target.value)}
+              placeholder="Brief description of your platform"
+              rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Default Theme</Label>
+            <Select value={defaultTheme} onValueChange={setDefaultTheme}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="system">System Default</SelectItem>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+            Feature Toggles
+          </CardTitle>
+          <CardDescription>Enable or disable platform features</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">Maintenance Mode</Label>
+              <p className="text-sm text-muted-foreground">
+                Disable site access for non-admins
+              </p>
+            </div>
+            <Switch
+              checked={maintenanceMode}
+              onCheckedChange={setMaintenanceMode}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">Analytics Tracking</Label>
+              <p className="text-sm text-muted-foreground">
+                Enable usage analytics
+              </p>
+            </div>
+            <Switch
+              checked={analyticsEnabled}
+              onCheckedChange={setAnalyticsEnabled}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">Public Registration</Label>
+              <p className="text-sm text-muted-foreground">
+                Allow new user signups
+              </p>
+            </div>
+            <Switch
+              checked={publicRegistration}
+              onCheckedChange={setPublicRegistration}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DatabaseIcon className="h-5 w-5 text-muted-foreground" />
+            Data Management
+          </CardTitle>
+          <CardDescription>Export and manage platform data</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button variant="outline" className="w-full justify-start gap-2">
+            <Download className="h-4 w-4" />
+            Export Token Listings (CSV)
+          </Button>
+          <Button variant="outline" className="w-full justify-start gap-2">
+            <Download className="h-4 w-4" />
+            Export Feedback (CSV)
+          </Button>
+          <Button variant="outline" className="w-full justify-start gap-2">
+            <Download className="h-4 w-4" />
+            Export Update Logs (CSV)
+          </Button>
+          <Button variant="outline" className="w-full justify-start gap-2">
+            <Upload className="h-4 w-4" />
+            Import Token Listings
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-muted-foreground" />
+            Quick Actions
+          </CardTitle>
+          <CardDescription>Common administrative tasks</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button variant="outline" className="w-full justify-start gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh Price Data
+          </Button>
+          <Button variant="outline" className="w-full justify-start gap-2">
+            <Eye className="h-4 w-4" />
+            Preview Site as User
+          </Button>
+          <Button variant="outline" className="w-full justify-start gap-2 text-destructive hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+            Clear Cache
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
