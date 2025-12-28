@@ -39,9 +39,23 @@ export default function Tokens() {
 
   // Get the correct route ID for each token
   const getTokenRouteId = (token: any) => {
-    // For community tokens, use the contract address
-    if (token.isCommunityToken && token.contract) {
-      return token.contract;
+    // For DB listings, use coingecko_id if available, otherwise the DB id
+    if (token.isDbListing) {
+      return token.id;
+    }
+    
+    // For community tokens, use coingeckoId if available, otherwise contract
+    if (token.isCommunityToken) {
+      // Find the matching community token to get its coingeckoId
+      const communityMatch = XLAYER_COMMUNITY_TOKENS.find(
+        t => t.symbol.toLowerCase() === token.symbol.toLowerCase()
+      );
+      if (communityMatch?.coingeckoId) {
+        return communityMatch.coingeckoId;
+      }
+      if (token.contract) {
+        return token.contract;
+      }
     }
     
     // For standard tokens, use CoinGecko ID if available, otherwise the stored id
