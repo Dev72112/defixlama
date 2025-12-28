@@ -1,20 +1,37 @@
 import { useTranslation } from "react-i18next";
 import { Activity, Zap, Clock, Users } from "lucide-react";
+import { useMemo } from "react";
 
 interface NetworkStatsCardProps {
   loading?: boolean;
+  protocols?: any[];
+  dexVolumes?: any[];
 }
 
-export function NetworkStatsCard({ loading }: NetworkStatsCardProps) {
+export function NetworkStatsCard({ loading, protocols = [], dexVolumes = [] }: NetworkStatsCardProps) {
   const { t } = useTranslation();
 
-  // Simulated network stats - in production, these would come from an API
-  const stats = {
-    transactions24h: 125847,
-    activeAddresses: 8234,
-    avgBlockTime: 2.1,
-    gasPrice: 0.001,
-  };
+  // Calculate live stats from actual data
+  const stats = useMemo(() => {
+    // Active protocols count
+    const activeProtocols = protocols.filter(p => p && (p.tvl > 0 || p.change_1d !== undefined)).length;
+    
+    // Calculate total 24h volume from DEX data
+    const total24hVolume = dexVolumes.reduce((acc, dex) => acc + (dex?.total24h || 0), 0);
+    
+    // Count protocols with positive growth
+    const growingProtocols = protocols.filter(p => p && (p.change_1d || 0) > 0).length;
+    
+    // Count unique categories
+    const categories = new Set(protocols.map(p => p?.category).filter(Boolean));
+    
+    return {
+      activeProtocols,
+      total24hVolume,
+      growingProtocols,
+      categoriesCount: categories.size,
+    };
+  }, [protocols, dexVolumes]);
 
   if (loading) {
     return (
@@ -42,37 +59,41 @@ export function NetworkStatsCard({ loading }: NetworkStatsCardProps) {
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Zap className="h-3 w-3" />
-            {t("dashboard.transactions24h")}
+            {t("dashboard.activeProtocols")}
           </div>
           <div className="text-lg font-bold text-foreground">
-            {stats.transactions24h.toLocaleString()}
+            {stats.activeProtocols.toLocaleString()}
           </div>
         </div>
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Users className="h-3 w-3" />
-            {t("dashboard.activeAddresses")}
+            {t("dashboard.categories")}
           </div>
           <div className="text-lg font-bold text-foreground">
-            {stats.activeAddresses.toLocaleString()}
+            {stats.categoriesCount.toLocaleString()}
           </div>
         </div>
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {t("dashboard.avgBlockTime")}
+            {t("dashboard.growingProtocols")}
           </div>
-          <div className="text-lg font-bold text-foreground">
-            {stats.avgBlockTime}s
+          <div className="text-lg font-bold text-success">
+            {stats.growingProtocols}
           </div>
         </div>
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Zap className="h-3 w-3" />
-            {t("dashboard.gasTracker")}
+            {t("dashboard.dexVolume24h")}
           </div>
-          <div className="text-lg font-bold text-success">
-            {stats.gasPrice} OKB
+          <div className="text-lg font-bold text-foreground">
+            ${stats.total24hVolume >= 1e9 
+              ? `${(stats.total24hVolume / 1e9).toFixed(1)}B` 
+              : stats.total24hVolume >= 1e6 
+                ? `${(stats.total24hVolume / 1e6).toFixed(1)}M` 
+                : stats.total24hVolume.toLocaleString()}
           </div>
         </div>
       </div>

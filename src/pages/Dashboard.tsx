@@ -227,7 +227,11 @@ function DashboardContent() {
 
       {/* New Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <NetworkStatsCard loading={protocols?.isLoading} />
+        <NetworkStatsCard 
+          loading={protocols?.isLoading} 
+          protocols={protocols?.data ?? []} 
+          dexVolumes={dexVolumes?.data ?? []} 
+        />
         <StablecoinStats stablecoins={stablecoins?.data ?? []} loading={stablecoins?.isLoading} />
         <FeesOverview feesData={feesData?.data ?? []} loading={feesData?.isLoading} />
       </div>

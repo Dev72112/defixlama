@@ -89,7 +89,11 @@
     "networkStats": "Network Stats",
     "transactions24h": "24h Transactions",
     "activeAddresses": "Active Addresses",
-    "avgBlockTime": "Avg Block Time"
+    "avgBlockTime": "Avg Block Time",
+    "activeProtocols": "Active Protocols",
+    "categories": "Categories",
+    "growingProtocols": "Growing (24h)",
+    "dexVolume24h": "24h DEX Volume"
   },
   "protocols": {
     "title": "Protocols",

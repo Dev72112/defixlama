@@ -94,7 +94,7 @@ export default function Stablecoins() {
           />
           <StatCard
             title={t('stablecoins.mostUsed')}
-            value="USDT"
+            value={filteredStablecoins[0]?.symbol || "-"}
             icon={Activity}
             loading={isLoading}
           />
