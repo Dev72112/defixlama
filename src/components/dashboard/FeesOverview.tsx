@@ -3,6 +3,7 @@ import { Receipt, ArrowUpRight } from "lucide-react";
 import { formatCurrency } from "@/lib/api/defillama";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface FeesOverviewProps {
   feesData: any[];
@@ -15,13 +16,17 @@ export function FeesOverview({ feesData, loading }: FeesOverviewProps) {
   if (loading) {
     return (
       <div className="rounded-lg border border-border bg-card p-4">
-        <div className="skeleton h-5 w-32 mb-4" />
-        <div className="skeleton h-10 w-full mb-4" />
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-5 w-32" delay={0} />
+          <Skeleton className="h-8 w-16" delay={1} />
+        </div>
+        <Skeleton className="h-8 w-28 mb-1" delay={2} />
+        <Skeleton className="h-3 w-20 mb-4" delay={3} />
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-center justify-between">
-              <div className="skeleton h-4 w-24" />
-              <div className="skeleton h-4 w-20" />
+              <Skeleton className="h-4 w-24" delay={i + 4} />
+              <Skeleton className="h-4 w-20" delay={i + 4} />
             </div>
           ))}
         </div>
@@ -44,8 +49,8 @@ export function FeesOverview({ feesData, loading }: FeesOverviewProps) {
           {t("dashboard.fees24h")}
         </h3>
         <Link to="/fees">
-          <Button variant="ghost" size="sm" className="text-primary">
-            {t("dashboard.viewAll")} <ArrowUpRight className="h-3 w-3 ml-1" />
+          <Button variant="ghost" size="sm" className="text-primary text-xs">
+            {t("common.viewAll", "View All")} →
           </Button>
         </Link>
       </div>
@@ -57,14 +62,18 @@ export function FeesOverview({ feesData, loading }: FeesOverviewProps) {
       </div>
       <div className="space-y-2">
         {topFees.map((fee: any, i: number) => (
-          <div key={fee?.name || i} className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground truncate max-w-[120px]">
+          <Link
+            key={fee?.name || i}
+            to={`/fees/${(fee?.displayName || fee?.name || '').toLowerCase().replace(/\s+/g, '-')}`}
+            className="flex items-center justify-between text-sm p-1.5 rounded hover:bg-muted/50 transition-colors"
+          >
+            <span className="text-muted-foreground truncate max-w-[100px] font-medium">
               {fee?.displayName || fee?.name || "—"}
             </span>
-            <span className="font-medium text-foreground">
+            <span className="font-medium font-mono text-foreground">
               {formatCurrency(fee?.total24h || fee?.total_24h || 0)}
             </span>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
