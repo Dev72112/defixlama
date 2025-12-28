@@ -1,7 +1,7 @@
-import { Search, Moon, Sun, Menu, RefreshCw } from "lucide-react";
+import { Search, Menu, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
@@ -9,6 +9,7 @@ import { KeyboardShortcutsDialog } from "@/components/KeyboardShortcutsDialog";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -19,33 +20,12 @@ export function Header({ onMenuClick }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
-  const [theme, setTheme] = useState<string>(() => {
-    try {
-      const stored = localStorage.getItem("xlayer-theme");
-      if (stored) return stored;
-    } catch (e) {}
-    return "bright";
-  });
 
   // Register keyboard shortcuts
   useKeyboardShortcuts({
     onSearch: () => setSearchOpen(true),
     onEscape: () => setSearchOpen(false),
   });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("xlayer-theme", theme);
-      // Add transitioning class for smooth animation
-      document.documentElement.classList.add('theme-transitioning');
-      document.documentElement.setAttribute("data-theme", theme === "dark" ? "dark" : "bright");
-      // Remove transitioning class after animation completes
-      const timeout = setTimeout(() => {
-        document.documentElement.classList.remove('theme-transitioning');
-      }, 400);
-      return () => clearTimeout(timeout);
-    } catch (e) {}
-  }, [theme]);
 
   return (
     <>
@@ -114,16 +94,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <LanguageSwitcher />
 
           {/* Theme toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("header.toggleTheme")}
-            onClick={() => setTheme((th) => (th === "dark" ? "bright" : "dark"))}
-            title={t("header.toggleTheme")}
-            className="hover:bg-primary/10 hover:text-primary transition-all duration-200"
-          >
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+          <ThemeToggle />
         </div>
       </header>
 
