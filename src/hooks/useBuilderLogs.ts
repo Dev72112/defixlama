@@ -1,9 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 export type FeedbackType = 'bug' | 'error' | 'feature_request' | 'listing' | 'other';
 export type FeedbackStatus = 'pending' | 'approved' | 'denied' | 'in_progress' | 'fixed' | 'wont_fix' | 'duplicate';
+
+// Zod schema for input validation
+const feedbackInputSchema = z.object({
+  type: z.enum(['bug', 'error', 'feature_request', 'listing', 'other']),
+  title: z.string()
+    .trim()
+    .min(1, 'Title is required')
+    .max(200, 'Title must be less than 200 characters'),
+  description: z.string()
+    .trim()
+    .min(1, 'Description is required')
+    .max(5000, 'Description must be less than 5000 characters'),
+  contact_email: z.string()
+    .trim()
+    .email('Invalid email address')
+    .max(255, 'Email must be less than 255 characters')
+    .optional()
+    .or(z.literal('')),
+});
 
 export interface UpdateLog {
   id: string;
@@ -66,12 +86,27 @@ export function useSubmitFeedback() {
   
   return useMutation({
     mutationFn: async (input: FeedbackInput) => {
-      // IMPORTANT: don't call .select() here.
-      // The feedback table is not publicly selectable (to protect contact_email/admin_notes),
-      // and requesting RETURNING data can trigger an RLS error.
+      // Validate input using zod schema
+      const validationResult = feedbackInputSchema.safeParse(input);
+      
+      if (!validationResult.success) {
+        const errorMessage = validationResult.error.errors[0]?.message || 'Invalid input';
+        throw new Error(errorMessage);
+      }
+      
+      const validatedInput = validationResult.data;
+      
+      // Clean up empty email
+      const insertData = {
+        type: validatedInput.type,
+        title: validatedInput.title,
+        description: validatedInput.description,
+        ...(validatedInput.contact_email ? { contact_email: validatedInput.contact_email } : {}),
+      };
+      
       const { error } = await supabase
         .from('feedback')
-        .insert([input]);
+        .insert([insertData]);
 
       if (error) throw error;
       return true;
