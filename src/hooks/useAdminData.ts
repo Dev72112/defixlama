@@ -356,3 +356,83 @@ export function useDeleteTokenListing() {
     },
   });
 }
+
+// ============= SITE SETTINGS =============
+
+interface SiteSetting {
+  id: string;
+  key: string;
+  value: Record<string, any>;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GeneralSettings {
+  site_name: string;
+  site_description: string;
+  default_theme: 'system' | 'light' | 'dark';
+}
+
+export interface FeatureSettings {
+  maintenance_mode: boolean;
+  analytics_enabled: boolean;
+  public_registration: boolean;
+}
+
+export interface ApiSettings {
+  rate_limit: number;
+  cache_ttl: number;
+}
+
+// Fetch all site settings
+export function useSiteSettings() {
+  return useQuery({
+    queryKey: ['site-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*');
+
+      if (error) throw error;
+      
+      // Convert array to object keyed by setting key
+      const settings: Record<string, any> = {};
+      (data as SiteSetting[])?.forEach((setting) => {
+        settings[setting.key] = setting.value;
+      });
+      
+      return {
+        general: (settings.general || {}) as GeneralSettings,
+        features: (settings.features || {}) as FeatureSettings,
+        api: (settings.api || {}) as ApiSettings,
+      };
+    },
+  });
+}
+
+// Update a site setting
+export function useUpdateSiteSetting() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ key, value }: { key: string; value: Record<string, any> }) => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .update({ value })
+        .eq('key', key)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-settings'] });
+      toast.success('Settings updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update settings: ${error.message}`);
+    },
+  });
+}
