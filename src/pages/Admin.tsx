@@ -94,8 +94,12 @@ import {
   useCreateTokenListing,
   useUpdateTokenListing,
   useDeleteTokenListing,
+  useSiteSettings,
+  useUpdateSiteSetting,
   type UpdateLogInput,
   type TokenListingInput,
+  type GeneralSettings,
+  type FeatureSettings,
 } from '@/hooks/useAdminData';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -1144,12 +1148,67 @@ function OverviewTab() {
 }
 
 function SiteSettingsTab() {
-  const [siteName, setSiteName] = useState('DeFi Dashboard');
-  const [siteDescription, setSiteDescription] = useState('Your comprehensive DeFi analytics platform');
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
-  const [publicRegistration, setPublicRegistration] = useState(true);
-  const [defaultTheme, setDefaultTheme] = useState('system');
+  const { data: settings, isLoading } = useSiteSettings();
+  const updateMutation = useUpdateSiteSetting();
+
+  const [generalForm, setGeneralForm] = useState<GeneralSettings>({
+    site_name: 'DeFi Dashboard',
+    site_description: 'Your comprehensive DeFi analytics platform',
+    default_theme: 'system',
+  });
+
+  const [featuresForm, setFeaturesForm] = useState<FeatureSettings>({
+    maintenance_mode: false,
+    analytics_enabled: true,
+    public_registration: true,
+  });
+
+  const [hasChanges, setHasChanges] = useState({ general: false, features: false });
+
+  // Sync form state with loaded settings
+  useState(() => {
+    if (settings) {
+      setGeneralForm(settings.general);
+      setFeaturesForm(settings.features);
+    }
+  });
+
+  // Update local form when settings load
+  if (settings && !hasChanges.general && generalForm.site_name === 'DeFi Dashboard') {
+    if (settings.general.site_name !== generalForm.site_name) {
+      setGeneralForm(settings.general);
+    }
+  }
+
+  if (settings && !hasChanges.features && featuresForm.maintenance_mode === false) {
+    if (settings.features.maintenance_mode !== featuresForm.maintenance_mode) {
+      setFeaturesForm(settings.features);
+    }
+  }
+
+  const handleSaveGeneral = () => {
+    updateMutation.mutate({ key: 'general', value: generalForm });
+    setHasChanges(prev => ({ ...prev, general: false }));
+  };
+
+  const handleSaveFeatures = () => {
+    updateMutation.mutate({ key: 'features', value: featuresForm });
+    setHasChanges(prev => ({ ...prev, features: false }));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -1165,23 +1224,35 @@ function SiteSettingsTab() {
           <div className="space-y-2">
             <Label>Site Name</Label>
             <Input
-              value={siteName}
-              onChange={(e) => setSiteName(e.target.value)}
+              value={generalForm.site_name}
+              onChange={(e) => {
+                setGeneralForm({ ...generalForm, site_name: e.target.value });
+                setHasChanges(prev => ({ ...prev, general: true }));
+              }}
               placeholder="Your platform name"
             />
           </div>
           <div className="space-y-2">
             <Label>Site Description</Label>
             <Textarea
-              value={siteDescription}
-              onChange={(e) => setSiteDescription(e.target.value)}
+              value={generalForm.site_description}
+              onChange={(e) => {
+                setGeneralForm({ ...generalForm, site_description: e.target.value });
+                setHasChanges(prev => ({ ...prev, general: true }));
+              }}
               placeholder="Brief description of your platform"
               rows={3}
             />
           </div>
           <div className="space-y-2">
             <Label>Default Theme</Label>
-            <Select value={defaultTheme} onValueChange={setDefaultTheme}>
+            <Select 
+              value={generalForm.default_theme} 
+              onValueChange={(v: 'system' | 'light' | 'dark') => {
+                setGeneralForm({ ...generalForm, default_theme: v });
+                setHasChanges(prev => ({ ...prev, general: true }));
+              }}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -1192,6 +1263,14 @@ function SiteSettingsTab() {
               </SelectContent>
             </Select>
           </div>
+          <Button 
+            onClick={handleSaveGeneral} 
+            disabled={!hasChanges.general || updateMutation.isPending}
+            className="w-full"
+          >
+            {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            Save General Settings
+          </Button>
         </CardContent>
       </Card>
 
@@ -1212,8 +1291,11 @@ function SiteSettingsTab() {
               </p>
             </div>
             <Switch
-              checked={maintenanceMode}
-              onCheckedChange={setMaintenanceMode}
+              checked={featuresForm.maintenance_mode}
+              onCheckedChange={(v) => {
+                setFeaturesForm({ ...featuresForm, maintenance_mode: v });
+                setHasChanges(prev => ({ ...prev, features: true }));
+              }}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -1224,8 +1306,11 @@ function SiteSettingsTab() {
               </p>
             </div>
             <Switch
-              checked={analyticsEnabled}
-              onCheckedChange={setAnalyticsEnabled}
+              checked={featuresForm.analytics_enabled}
+              onCheckedChange={(v) => {
+                setFeaturesForm({ ...featuresForm, analytics_enabled: v });
+                setHasChanges(prev => ({ ...prev, features: true }));
+              }}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -1236,10 +1321,21 @@ function SiteSettingsTab() {
               </p>
             </div>
             <Switch
-              checked={publicRegistration}
-              onCheckedChange={setPublicRegistration}
+              checked={featuresForm.public_registration}
+              onCheckedChange={(v) => {
+                setFeaturesForm({ ...featuresForm, public_registration: v });
+                setHasChanges(prev => ({ ...prev, features: true }));
+              }}
             />
           </div>
+          <Button 
+            onClick={handleSaveFeatures} 
+            disabled={!hasChanges.features || updateMutation.isPending}
+            className="w-full"
+          >
+            {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            Save Feature Settings
+          </Button>
         </CardContent>
       </Card>
 
