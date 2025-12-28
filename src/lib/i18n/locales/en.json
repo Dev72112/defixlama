@@ -199,14 +199,6 @@
     "apy": "APY",
     "tvl": "TVL"
   },
-  "stablecoins": {
-    "title": "Stablecoins",
-    "subtitle": "Stablecoin analytics on XLayer",
-    "totalMcap": "Total Market Cap",
-    "stablecoinCount": "Stablecoin Count",
-    "avgPeg": "Avg. Peg",
-    "searchPlaceholder": "Search stablecoins..."
-  },
   "chains": {
     "title": "Chains",
     "subtitle": "Multi-chain TVL comparison",
@@ -248,6 +240,7 @@
     "loading": "Loading...",
     "error": "Error",
     "noData": "No data available",
+    "noDataMessage": "There is no data to display at this time.",
     "refresh": "Refresh data",
     "live": "Live",
     "protocol": "Protocol",
@@ -273,7 +266,37 @@
     "language": "Language",
     "poweredBy": "Powered by DefiLlama",
     "name": "Name",
-    "symbol": "Symbol"
+    "symbol": "Symbol",
+    "retry": "Retry",
+    "tryAgain": "Try Again"
+  },
+  "errors": {
+    "networkTitle": "Connection Error",
+    "networkMessage": "Unable to connect to the server. Please check your internet connection and try again.",
+    "serverTitle": "Server Error",
+    "serverMessage": "The server encountered an error. Please try again in a few moments.",
+    "notFoundTitle": "Not Found",
+    "notFoundMessage": "The requested resource could not be found.",
+    "genericTitle": "Something went wrong",
+    "genericMessage": "An unexpected error occurred. Please try again."
+  },
+  "stablecoins": {
+    "title": "Stablecoins",
+    "subtitle": "Stablecoin analytics for XLayer",
+    "totalMarketCap": "Total Market Cap",
+    "stablecoinsAvailable": "Available",
+    "mostUsed": "Most Used",
+    "stabilityScore": "Stability Score",
+    "stablecoins": "stablecoins",
+    "marketCapDominance": "Market Cap Dominance",
+    "marketCap": "Market Cap",
+    "searchStablecoins": "Search stablecoins...",
+    "noStablecoinsFound": "No stablecoins found",
+    "pegged": "Pegged",
+    "depegged": "De-pegged",
+    "price": "Price",
+    "pegType": "Peg Type",
+    "chains": "Chains"
   },
   "header": {
     "searchPlaceholder": "Search protocols, tokens, chains...",

@@ -18,10 +18,11 @@ import {
 import { YieldDistributionChart } from "@/components/dashboard/YieldDistributionChart";
 import { TopYieldPools } from "@/components/dashboard/TopYieldPools";
 import { exportToCSV } from "@/lib/export";
+import { ErrorState } from "@/components/ErrorState";
 
 export default function Yields() {
   const { t } = useTranslation();
-  const { data: pools, isLoading } = useXLayerYieldPools();
+  const { data: pools, isLoading, isError, error, refetch } = useXLayerYieldPools();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("apy");
@@ -182,7 +183,14 @@ export default function Yields() {
         </div>
 
         {/* Yield Table */}
-        <YieldTable pools={filteredPools} loading={isLoading} />
+        {isError ? (
+          <ErrorState 
+            error={error as Error}
+            onRetry={() => refetch()}
+          />
+        ) : (
+          <YieldTable pools={filteredPools} loading={isLoading} />
+        )}
 
         {/* Results count */}
         {!isLoading && (

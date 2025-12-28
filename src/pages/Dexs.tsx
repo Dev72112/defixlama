@@ -17,10 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ErrorState } from "@/components/ErrorState";
 
 export default function Dexs() {
   const { t } = useTranslation();
-  const { data: dexes, isLoading } = useXLayerDexVolumes();
+  const { data: dexes, isLoading, isError, error, refetch } = useXLayerDexVolumes();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("volume24h");
@@ -158,7 +159,12 @@ export default function Dexs() {
 
         {/* DEX Table */}
         {/* pagination */}
-        {(() => {
+        {isError ? (
+          <ErrorState 
+            error={error as Error}
+            onRetry={() => refetch()}
+          />
+        ) : (() => {
           const totalPages = Math.max(1, Math.ceil(filteredDexes.length / pageSize));
           if (page > totalPages) setPage(1);
           const paged = filteredDexes.slice((page-1)*pageSize, page*pageSize);
@@ -174,7 +180,7 @@ export default function Dexs() {
                 </div>
               </div>
             </>
-          )
+          );
         })()}
 
         {/* Results count */}

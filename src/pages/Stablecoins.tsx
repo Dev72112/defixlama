@@ -10,10 +10,11 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { ErrorState } from "@/components/ErrorState";
 
 export default function Stablecoins() {
   const { t } = useTranslation();
-  const { data: stablecoins, isLoading } = useStablecoins();
+  const { data: stablecoins, isLoading, isError, error, refetch } = useStablecoins();
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter stablecoins that might be on XLayer
@@ -164,7 +165,12 @@ export default function Stablecoins() {
         </div>
 
         {/* Stablecoins Grid */}
-        {isLoading ? (
+        {isError ? (
+          <ErrorState 
+            error={error as Error}
+            onRetry={() => refetch()}
+          />
+        ) : isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array(6).fill(0).map((_, i) => (
               <div key={i} className="rounded-lg border border-border bg-card p-6">

@@ -16,10 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { HistoricalTVLChart } from "@/components/dashboard/HistoricalTVLChart";
+import { ErrorState } from "@/components/ErrorState";
 
 export default function Protocols() {
   const { t } = useTranslation();
-  const { data: protocols, isLoading: protocolsLoading } = useXLayerProtocols();
+  const { data: protocols, isLoading: protocolsLoading, isError: protocolsError, error, refetch } = useXLayerProtocols();
   const { data: tvl, isLoading: tvlLoading } = useXLayerTVL();
   const { data: tvlHistory, isLoading: tvlHistoryLoading } = useXLayerTVLHistory();
   
@@ -208,11 +209,18 @@ export default function Protocols() {
         </div>
 
         {/* Protocols Table */}
-        <ProtocolTable
-          protocols={pagedProtocols}
-          loading={protocolsLoading}
-          showCategory={true}
-        />
+        {protocolsError ? (
+          <ErrorState 
+            error={error as Error}
+            onRetry={() => refetch()}
+          />
+        ) : (
+          <ProtocolTable
+            protocols={pagedProtocols}
+            loading={protocolsLoading}
+            showCategory={true}
+          />
+        )}
 
         {/* Pagination controls */}
         <div className="flex items-center justify-between">

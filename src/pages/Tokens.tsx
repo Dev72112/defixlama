@@ -13,10 +13,12 @@ import { TOKEN_IDS, XLAYER_COMMUNITY_TOKENS } from "@/lib/api/coingecko";
 import { PriceComparison } from "@/components/PriceComparison";
 import { WatchlistButton } from "@/components/WatchlistButton";
 import { exportToCSV } from "@/lib/export";
+import { PriceDisplay, ChangeDisplay } from "@/components/PriceDisplay";
+import { ErrorState } from "@/components/ErrorState";
 
 export default function Tokens() {
   const { t } = useTranslation();
-  const { data: tokens, isLoading } = useTokenPrices();
+  const { data: tokens, isLoading, isError, error, refetch } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState("");
   const [showComparison, setShowComparison] = useState(false);
   const navigate = useNavigate();
@@ -182,6 +184,16 @@ export default function Tokens() {
                     <td className="hidden sm:table-cell"></td>
                   </tr>
                 ))
+              ) : isError ? (
+                <tr>
+                  <td colSpan={8} className="py-8">
+                    <ErrorState 
+                      error={error as Error}
+                      onRetry={() => refetch()}
+                      compact
+                    />
+                  </td>
+                </tr>
               ) : filteredTokens.map((token, index) => {
                 const routeId = getTokenRouteId(token);
                 const isCommunity = token.isCommunityToken;
@@ -257,16 +269,13 @@ export default function Tokens() {
                       </div>
                     </td>
                     <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
+                      <PriceDisplay price={token.price} />
+                    </td>
+                    <td className="text-right whitespace-nowrap">
                       {token.price > 0 ? (
-                        (() => {
-                          const p = token.price;
-                          if (p >= 1) return `$${p.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                          // small prices: show up to 8 decimals, trim trailing zeros
-                          const s = p.toFixed(8).replace(/(?:\.0+|(?<=\.[0-9]*?)0+)$/, "");
-                          return `$${s}`;
-                        })()
+                        <ChangeDisplay change={token.change24h} />
                       ) : (
-                        <span className="text-muted-foreground">{t("tokens.fetching")}</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </td>
                     <td className="text-right whitespace-nowrap">
