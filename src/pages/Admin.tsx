@@ -113,10 +113,10 @@ const statusColors: Record<FeedbackStatus, string> = {
 
 export default function Admin() {
   const { t } = useTranslation();
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin, adminLoading } = useAuth();
 
-  // Redirect if not admin
-  if (authLoading) {
+  // Redirect if not admin - wait for both auth and admin check
+  if (authLoading || adminLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
