@@ -19,7 +19,11 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Coins,
+  Star,
+  Globe,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
@@ -70,7 +74,12 @@ import {
   useAdminFeedback,
   useUpdateFeedback,
   useDeleteFeedback,
+  useAdminTokenListings,
+  useCreateTokenListing,
+  useUpdateTokenListing,
+  useDeleteTokenListing,
   type UpdateLogInput,
+  type TokenListingInput,
 } from '@/hooks/useAdminData';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -78,6 +87,8 @@ type FeedbackStatus = Database['public']['Enums']['feedback_status'];
 type FeedbackType = Database['public']['Enums']['feedback_type'];
 
 const categoryOptions = ['feature', 'bugfix', 'improvement', 'security', 'performance', 'general'];
+
+const chainOptions = ['ethereum', 'bsc', 'polygon', 'arbitrum', 'optimism', 'avalanche', 'fantom', 'solana', 'base', 'other'];
 
 const feedbackTypeIcons: Record<FeedbackType, React.ReactNode> = {
   bug: <Bug className="h-4 w-4" />,
@@ -153,6 +164,10 @@ export default function Admin() {
               <MessageSquare className="h-4 w-4" />
               Feedback
             </TabsTrigger>
+            <TabsTrigger value="tokens" className="gap-2">
+              <Coins className="h-4 w-4" />
+              Token Listings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="update-logs">
@@ -161,6 +176,10 @@ export default function Admin() {
 
           <TabsContent value="feedback">
             <FeedbackTab />
+          </TabsContent>
+
+          <TabsContent value="tokens">
+            <TokenListingsTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -589,5 +608,321 @@ function FeedbackTab() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function TokenListingsTab() {
+  const { data: listings, isLoading } = useAdminTokenListings();
+  const createMutation = useCreateTokenListing();
+  const updateMutation = useUpdateTokenListing();
+  const deleteMutation = useDeleteTokenListing();
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<TokenListingInput>({
+    name: '',
+    symbol: '',
+    contract_address: null,
+    chain: 'ethereum',
+    logo_url: null,
+    website_url: null,
+    coingecko_id: null,
+    description: null,
+    is_active: true,
+    is_featured: false,
+  });
+
+  const resetForm = () => {
+    setForm({
+      name: '',
+      symbol: '',
+      contract_address: null,
+      chain: 'ethereum',
+      logo_url: null,
+      website_url: null,
+      coingecko_id: null,
+      description: null,
+      is_active: true,
+      is_featured: false,
+    });
+    setEditingId(null);
+  };
+
+  const handleCreate = async () => {
+    await createMutation.mutateAsync(form);
+    setIsCreateOpen(false);
+    resetForm();
+  };
+
+  const handleUpdate = async () => {
+    if (!editingId) return;
+    await updateMutation.mutateAsync({ id: editingId, ...form });
+    resetForm();
+  };
+
+  const startEdit = (listing: any) => {
+    setForm({
+      name: listing.name,
+      symbol: listing.symbol,
+      contract_address: listing.contract_address,
+      chain: listing.chain,
+      logo_url: listing.logo_url,
+      website_url: listing.website_url,
+      coingecko_id: listing.coingecko_id,
+      description: listing.description,
+      is_active: listing.is_active,
+      is_featured: listing.is_featured,
+    });
+    setEditingId(listing.id);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Token Listings</CardTitle>
+          <CardDescription>Manage listed tokens on the platform</CardDescription>
+        </div>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Token
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add Token Listing</DialogTitle>
+              <DialogDescription>Add a new token to the platform</DialogDescription>
+            </DialogHeader>
+            <TokenListingForm form={form} setForm={setForm} />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Add Token
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Token</TableHead>
+              <TableHead>Chain</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Featured</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {listings?.map((listing) => (
+              <TableRow key={listing.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    {listing.logo_url ? (
+                      <img src={listing.logo_url} alt={listing.name} className="h-8 w-8 rounded-full" />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                        <Coins className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{listing.name}</p>
+                      <p className="text-xs text-muted-foreground">{listing.symbol}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="capitalize">{listing.chain}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={listing.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}>
+                    {listing.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {listing.is_featured ? <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> : '-'}
+                </TableCell>
+                <TableCell>{format(new Date(listing.created_at), 'MMM d, yyyy')}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="ghost" onClick={() => startEdit(listing)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Edit Token Listing</DialogTitle>
+                          <DialogDescription>Update token information</DialogDescription>
+                        </DialogHeader>
+                        <TokenListingForm form={form} setForm={setForm} />
+                        <DialogFooter>
+                          <Button variant="outline" onClick={resetForm}>Cancel</Button>
+                          <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+                            {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Save Changes
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="ghost" className="text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Token Listing</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete "{listing.name}" ({listing.symbol}). This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteMutation.mutate(listing.id)}
+                            className="bg-destructive text-destructive-foreground"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {listings?.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            No token listings yet. Add your first one!
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TokenListingForm({ form, setForm }: { form: TokenListingInput; setForm: (f: TokenListingInput) => void }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Name *</Label>
+          <Input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Bitcoin"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Symbol *</Label>
+          <Input
+            value={form.symbol}
+            onChange={(e) => setForm({ ...form, symbol: e.target.value.toUpperCase() })}
+            placeholder="BTC"
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Chain *</Label>
+          <Select value={form.chain} onValueChange={(v) => setForm({ ...form, chain: v })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {chainOptions.map((chain) => (
+                <SelectItem key={chain} value={chain} className="capitalize">{chain}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Contract Address</Label>
+          <Input
+            value={form.contract_address || ''}
+            onChange={(e) => setForm({ ...form, contract_address: e.target.value || null })}
+            placeholder="0x..."
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Logo URL</Label>
+          <Input
+            value={form.logo_url || ''}
+            onChange={(e) => setForm({ ...form, logo_url: e.target.value || null })}
+            placeholder="https://..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Website URL</Label>
+          <Input
+            value={form.website_url || ''}
+            onChange={(e) => setForm({ ...form, website_url: e.target.value || null })}
+            placeholder="https://..."
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>CoinGecko ID</Label>
+        <Input
+          value={form.coingecko_id || ''}
+          onChange={(e) => setForm({ ...form, coingecko_id: e.target.value || null })}
+          placeholder="bitcoin"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Description</Label>
+        <Textarea
+          value={form.description || ''}
+          onChange={(e) => setForm({ ...form, description: e.target.value || null })}
+          placeholder="Brief description of the token..."
+          rows={3}
+        />
+      </div>
+
+      <div className="flex gap-6">
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={form.is_active ?? true}
+            onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+          />
+          <Label>Active</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={form.is_featured ?? false}
+            onCheckedChange={(v) => setForm({ ...form, is_featured: v })}
+          />
+          <Label>Featured</Label>
+        </div>
+      </div>
+    </div>
   );
 }
