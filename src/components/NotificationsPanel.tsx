@@ -19,6 +19,12 @@ function NotificationIcon({ type, data }: { type: Notification["type"]; data?: a
       ) : (
         <TrendingDown className="h-4 w-4 text-destructive" />
       );
+    case "user_alert":
+      return data?.condition === "above" ? (
+        <TrendingUp className="h-4 w-4 text-success" />
+      ) : (
+        <TrendingDown className="h-4 w-4 text-destructive" />
+      );
     case "new_protocol":
       return <Layers className="h-4 w-4 text-primary" />;
     case "tvl_change":
