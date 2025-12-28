@@ -1,6 +1,9 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 import { 
   Shield, 
   FileText, 
@@ -1150,6 +1153,11 @@ function OverviewTab() {
 function SiteSettingsTab() {
   const { data: settings, isLoading } = useSiteSettings();
   const updateMutation = useUpdateSiteSetting();
+  const { data: listings } = useAdminTokenListings();
+  const { data: feedback } = useAdminFeedback();
+  const { data: logs } = useAdminUpdateLogs();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [generalForm, setGeneralForm] = useState<GeneralSettings>({
     site_name: 'DeFi Dashboard',
@@ -1164,36 +1172,110 @@ function SiteSettingsTab() {
   });
 
   const [hasChanges, setHasChanges] = useState({ general: false, features: false });
+  const [initialized, setInitialized] = useState(false);
 
-  // Sync form state with loaded settings
-  useState(() => {
-    if (settings) {
-      setGeneralForm(settings.general);
-      setFeaturesForm(settings.features);
+  // Properly sync form state with loaded settings using useEffect
+  useEffect(() => {
+    if (settings && !initialized) {
+      setGeneralForm({
+        site_name: settings.general.site_name || 'DeFi Dashboard',
+        site_description: settings.general.site_description || 'Your comprehensive DeFi analytics platform',
+        default_theme: settings.general.default_theme || 'system',
+      });
+      setFeaturesForm({
+        maintenance_mode: settings.features.maintenance_mode ?? false,
+        analytics_enabled: settings.features.analytics_enabled ?? true,
+        public_registration: settings.features.public_registration ?? true,
+      });
+      setInitialized(true);
     }
-  });
+  }, [settings, initialized]);
 
-  // Update local form when settings load
-  if (settings && !hasChanges.general && generalForm.site_name === 'DeFi Dashboard') {
-    if (settings.general.site_name !== generalForm.site_name) {
-      setGeneralForm(settings.general);
-    }
-  }
-
-  if (settings && !hasChanges.features && featuresForm.maintenance_mode === false) {
-    if (settings.features.maintenance_mode !== featuresForm.maintenance_mode) {
-      setFeaturesForm(settings.features);
-    }
-  }
-
-  const handleSaveGeneral = () => {
-    updateMutation.mutate({ key: 'general', value: generalForm });
+  const handleSaveGeneral = async () => {
+    await updateMutation.mutateAsync({ key: 'general', value: generalForm });
     setHasChanges(prev => ({ ...prev, general: false }));
   };
 
-  const handleSaveFeatures = () => {
-    updateMutation.mutate({ key: 'features', value: featuresForm });
+  const handleSaveFeatures = async () => {
+    await updateMutation.mutateAsync({ key: 'features', value: featuresForm });
     setHasChanges(prev => ({ ...prev, features: false }));
+  };
+
+  // Data management exports
+  const handleExportTokens = () => {
+    if (!listings?.length) {
+      toast.error('No token listings to export');
+      return;
+    }
+    exportToCSV(
+      listings.map(t => ({
+        Name: t.name,
+        Symbol: t.symbol,
+        Chain: t.chain,
+        'Contract Address': t.contract_address || '',
+        'CoinGecko ID': t.coingecko_id || '',
+        'Website': t.website_url || '',
+        'Active': t.is_active ? 'Yes' : 'No',
+        'Featured': t.is_featured ? 'Yes' : 'No',
+        'Created': t.created_at,
+      })),
+      'token_listings'
+    );
+    toast.success('Token listings exported');
+  };
+
+  const handleExportFeedback = () => {
+    if (!feedback?.length) {
+      toast.error('No feedback to export');
+      return;
+    }
+    exportToCSV(
+      feedback.map(f => ({
+        Title: f.title,
+        Type: f.type,
+        Description: f.description,
+        Status: f.status,
+        'Contact Email': f.contact_email || '',
+        'Admin Notes': f.admin_notes || '',
+        'Created': f.created_at,
+      })),
+      'feedback'
+    );
+    toast.success('Feedback exported');
+  };
+
+  const handleExportLogs = () => {
+    if (!logs?.length) {
+      toast.error('No update logs to export');
+      return;
+    }
+    exportToCSV(
+      logs.map(l => ({
+        Title: l.title,
+        Description: l.description,
+        Category: l.category,
+        Version: l.version || '',
+        'Is Major': l.is_major ? 'Yes' : 'No',
+        'Created': l.created_at,
+      })),
+      'update_logs'
+    );
+    toast.success('Update logs exported');
+  };
+
+  // Quick actions
+  const handleRefreshPrices = () => {
+    queryClient.invalidateQueries({ queryKey: ['token-prices'] });
+    toast.success('Price data refresh triggered');
+  };
+
+  const handlePreviewAsUser = () => {
+    window.open('/', '_blank');
+  };
+
+  const handleClearCache = () => {
+    queryClient.clear();
+    toast.success('Application cache cleared');
   };
 
   if (isLoading) {
@@ -1348,21 +1430,29 @@ function SiteSettingsTab() {
           <CardDescription>Export and manage platform data</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2"
+            onClick={handleExportTokens}
+          >
             <Download className="h-4 w-4" />
-            Export Token Listings (CSV)
+            Export Token Listings ({listings?.length || 0} tokens)
           </Button>
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2"
+            onClick={handleExportFeedback}
+          >
             <Download className="h-4 w-4" />
-            Export Feedback (CSV)
+            Export Feedback ({feedback?.length || 0} items)
           </Button>
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2"
+            onClick={handleExportLogs}
+          >
             <Download className="h-4 w-4" />
-            Export Update Logs (CSV)
-          </Button>
-          <Button variant="outline" className="w-full justify-start gap-2">
-            <Upload className="h-4 w-4" />
-            Import Token Listings
+            Export Update Logs ({logs?.length || 0} logs)
           </Button>
         </CardContent>
       </Card>
@@ -1376,15 +1466,27 @@ function SiteSettingsTab() {
           <CardDescription>Common administrative tasks</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2"
+            onClick={handleRefreshPrices}
+          >
             <RefreshCw className="h-4 w-4" />
             Refresh Price Data
           </Button>
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2"
+            onClick={handlePreviewAsUser}
+          >
             <Eye className="h-4 w-4" />
             Preview Site as User
           </Button>
-          <Button variant="outline" className="w-full justify-start gap-2 text-destructive hover:text-destructive">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2 text-destructive hover:text-destructive"
+            onClick={handleClearCache}
+          >
             <Trash2 className="h-4 w-4" />
             Clear Cache
           </Button>

@@ -18,6 +18,7 @@ import {
 } from "@/lib/api/coingecko";
 import oklink from "@/lib/api/oklink";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // Track API failures for fallback logic
 let apiFailures = { defillama: 0, coingecko: 0, oklink: 0, dexscreener: 0 };
@@ -135,12 +136,90 @@ export function useTokenPrices() {
         })
       );
 
+      // Fetch admin-added token listings from database
+      let dbListings: any[] = [];
+      try {
+        const { data, error } = await supabase
+          .from('token_listings')
+          .select('*')
+          .eq('is_active', true);
+        
+        if (!error && data) {
+          dbListings = await Promise.all(
+            data.map(async (listing) => {
+              let price = 0;
+              let change24h = 0;
+              let volume24h = 0;
+              let mcap = 0;
+              
+              // Try CoinGecko if we have a coingecko_id
+              if (listing.coingecko_id) {
+                try {
+                  const cgData = await fetchTokenDetails(listing.coingecko_id);
+                  if (cgData?.market_data) {
+                    price = cgData.market_data.current_price?.usd || 0;
+                    change24h = cgData.market_data.price_change_percentage_24h || 0;
+                    volume24h = cgData.market_data.total_volume?.usd || 0;
+                    mcap = cgData.market_data.market_cap?.usd || 0;
+                  }
+                } catch (e) {
+                  console.log(`CoinGecko failed for ${listing.symbol}`);
+                }
+              }
+              
+              // Try DexScreener if we have a contract address and no price yet
+              if (price === 0 && listing.contract_address) {
+                try {
+                  const dexPrices = await fetchDexScreenerPrices([listing.contract_address]);
+                  const dexData = dexPrices[listing.contract_address.toLowerCase()];
+                  if (dexData) {
+                    price = dexData.price || 0;
+                    change24h = dexData.change24h || 0;
+                    volume24h = dexData.volume24h || 0;
+                  }
+                } catch (e) {}
+              }
+              
+              return {
+                id: listing.coingecko_id || listing.id,
+                symbol: listing.symbol,
+                name: listing.name,
+                price,
+                change24h,
+                volume24h,
+                mcap,
+                logo: listing.logo_url,
+                sparkline: [] as number[],
+                contract: listing.contract_address,
+                isCommunityToken: true,
+                isDbListing: true,
+                dbId: listing.id,
+                chain: listing.chain,
+              };
+            })
+          );
+        }
+      } catch (e) {
+        console.log('Failed to fetch DB token listings');
+      }
+
       // Log data source for debugging
       if (source !== "none") {
         console.log(`Token prices loaded from: ${source}`);
       }
 
-      return [...mapped, ...communityTokens];
+      // Combine all sources, avoiding duplicates
+      const allTokens = [...mapped, ...communityTokens];
+      const existingSymbols = new Set(allTokens.map(t => t.symbol.toLowerCase()));
+      
+      for (const dbToken of dbListings) {
+        if (!existingSymbols.has(dbToken.symbol.toLowerCase())) {
+          allTokens.push(dbToken);
+          existingSymbols.add(dbToken.symbol.toLowerCase());
+        }
+      }
+
+      return allTokens;
     },
     staleTime: 5 * 1000,
     refetchInterval: 5 * 1000,
@@ -158,9 +237,83 @@ export function useTokenDetails(id: string | null) {
       
       const lower = id.toLowerCase();
       
+      // First check if this is a DB token listing (by ID or coingecko_id)
+      try {
+        const { data: dbListing } = await supabase
+          .from('token_listings')
+          .select('*')
+          .or(`id.eq.${id},coingecko_id.ilike.${lower},symbol.ilike.${id},contract_address.ilike.${lower}`)
+          .eq('is_active', true)
+          .maybeSingle();
+        
+        if (dbListing) {
+          let marketData = {
+            current_price: { usd: 0 },
+            price_change_percentage_24h: 0,
+            price_change_percentage_7d: 0,
+            total_volume: { usd: 0 },
+            market_cap: { usd: 0 },
+            circulating_supply: 0,
+            total_supply: 0,
+            max_supply: null as number | null,
+          };
+          
+          // Try to get price data from CoinGecko
+          if (dbListing.coingecko_id) {
+            try {
+              const cgData = await fetchTokenDetails(dbListing.coingecko_id);
+              if (cgData?.market_data) {
+                return {
+                  ...cgData,
+                  id: dbListing.id,
+                  name: dbListing.name,
+                  symbol: dbListing.symbol,
+                  contract: dbListing.contract_address,
+                  chain: dbListing.chain,
+                  isDbListing: true,
+                  isCommunityToken: true,
+                  image: cgData.image || { large: dbListing.logo_url, small: dbListing.logo_url },
+                };
+              }
+            } catch (e) {}
+          }
+          
+          // Try DexScreener for price
+          if (dbListing.contract_address) {
+            try {
+              const dexPrices = await fetchDexScreenerPrices([dbListing.contract_address]);
+              const dexData = dexPrices[dbListing.contract_address.toLowerCase()];
+              if (dexData) {
+                marketData.current_price.usd = dexData.price || 0;
+                marketData.price_change_percentage_24h = dexData.change24h || 0;
+                marketData.total_volume.usd = dexData.volume24h || 0;
+              }
+            } catch (e) {}
+          }
+          
+          return {
+            id: dbListing.id,
+            name: dbListing.name,
+            symbol: dbListing.symbol,
+            image: { large: dbListing.logo_url, small: dbListing.logo_url },
+            contract: dbListing.contract_address,
+            chain: dbListing.chain,
+            market_data: marketData,
+            description: { en: dbListing.description || `${dbListing.name} is a token on ${dbListing.chain}.` },
+            isDbListing: true,
+            isCommunityToken: true,
+            links: { homepage: [dbListing.website_url].filter(Boolean) },
+          };
+        }
+      } catch (e) {
+        console.log('DB lookup failed:', e);
+      }
+      
       // Check if id matches a community token
       const communityMatch = XLAYER_COMMUNITY_TOKENS.find(
-        (t) => t.symbol.toLowerCase() === lower || t.contract.toLowerCase() === lower
+        (t) => t.symbol.toLowerCase() === lower || 
+               t.contract.toLowerCase() === lower ||
+               t.coingeckoId?.toLowerCase() === lower
       );
       
       if (communityMatch) {
