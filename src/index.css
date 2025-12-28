@@ -603,3 +603,27 @@
     opacity: 0.7;
   }
 }
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* WebSocket live indicator pulse */
+@keyframes ws-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(var(--success) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px hsl(var(--success) / 0);
+  }
+}
+
+.ws-pulse {
+  animation: ws-pulse 2s ease-in-out infinite;
+}

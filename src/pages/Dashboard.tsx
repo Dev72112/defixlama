@@ -5,6 +5,8 @@ import { Activity } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDashboardData, useChainsTVL, useFeesData, useStablecoins, useTop10Chains } from "@/hooks/useDefiData";
 import { useTokenPrices } from "@/hooks/useTokenData";
+import { LivePriceIndicator } from "@/components/LivePriceIndicator";
+import { LivePriceTicker } from "@/components/LivePriceTicker";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TVLChart } from "@/components/dashboard/TVLChart";
 import { MarketSentiment } from "@/components/dashboard/MarketSentiment";
@@ -191,10 +193,18 @@ function DashboardContent() {
           <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{t("dashboard.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">{t("dashboard.subtitle")}</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium pulse-live badge-pulse">
-          <Activity className="h-4 w-4 animate-pulse" />
-          {t("dashboard.liveData")}
+        <div className="flex items-center gap-3">
+          <LivePriceIndicator />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium pulse-live badge-pulse">
+            <Activity className="h-4 w-4 animate-pulse" />
+            {t("dashboard.liveData")}
+          </div>
         </div>
+      </div>
+
+      {/* Live Price Ticker */}
+      <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm overflow-hidden">
+        <LivePriceTicker />
       </div>
 
       {/* Stats Grid */}
