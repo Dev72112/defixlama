@@ -26,6 +26,7 @@ import Docs from "./pages/Docs";
 import Portfolio from "./pages/Portfolio";
 import Alerts from "./pages/Alerts";
 import BuilderLogs from "./pages/BuilderLogs";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/protocols" element={<Protocols />} />
           <Route path="/protocols/:slug" element={<ProtocolDetail />} />
           <Route path="/dexs" element={<Dexs />} />

@@ -10,6 +10,7 @@ import { GlobalSearch } from "@/components/GlobalSearch";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -95,6 +96,9 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           {/* Theme toggle */}
           <ThemeToggle />
+
+          {/* User menu */}
+          <UserMenu />
         </div>
       </header>
 
