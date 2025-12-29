@@ -114,6 +114,8 @@ export type Database = {
           logo_url: string | null
           name: string
           symbol: string
+          telegram_url: string | null
+          twitter_url: string | null
           updated_at: string
           website_url: string | null
         }
@@ -129,6 +131,8 @@ export type Database = {
           logo_url?: string | null
           name: string
           symbol: string
+          telegram_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
           website_url?: string | null
         }
@@ -144,6 +148,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           symbol?: string
+          telegram_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
           website_url?: string | null
         }
