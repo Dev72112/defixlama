@@ -691,6 +691,8 @@ function TokenListingsTab() {
     chain: 'ethereum',
     logo_url: null,
     website_url: null,
+    twitter_url: null,
+    telegram_url: null,
     coingecko_id: null,
     description: null,
     is_active: true,
@@ -705,6 +707,8 @@ function TokenListingsTab() {
       chain: 'ethereum',
       logo_url: null,
       website_url: null,
+      twitter_url: null,
+      telegram_url: null,
       coingecko_id: null,
       description: null,
       is_active: true,
@@ -733,6 +737,8 @@ function TokenListingsTab() {
       chain: listing.chain,
       logo_url: listing.logo_url,
       website_url: listing.website_url,
+      twitter_url: listing.twitter_url,
+      telegram_url: listing.telegram_url,
       coingecko_id: listing.coingecko_id,
       description: listing.description,
       is_active: listing.is_active,
@@ -956,6 +962,25 @@ function TokenListingForm({ form, setForm }: { form: TokenListingInput; setForm:
             value={form.website_url || ''}
             onChange={(e) => setForm({ ...form, website_url: e.target.value || null })}
             placeholder="https://..."
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Twitter/X URL</Label>
+          <Input
+            value={form.twitter_url || ''}
+            onChange={(e) => setForm({ ...form, twitter_url: e.target.value || null })}
+            placeholder="https://x.com/..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Telegram URL</Label>
+          <Input
+            value={form.telegram_url || ''}
+            onChange={(e) => setForm({ ...form, telegram_url: e.target.value || null })}
+            placeholder="https://t.me/..."
           />
         </div>
       </div>

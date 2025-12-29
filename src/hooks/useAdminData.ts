@@ -20,6 +20,8 @@ interface TokenListing {
   website_url: string | null;
   coingecko_id: string | null;
   description: string | null;
+  twitter_url: string | null;
+  telegram_url: string | null;
   is_active: boolean;
   is_featured: boolean;
   created_at: string;
@@ -42,6 +44,8 @@ const tokenListingSchema = z.object({
   chain: z.string().min(1, 'Chain is required').max(50),
   logo_url: z.string().url().nullable().optional().or(z.literal('')),
   website_url: z.string().url().nullable().optional().or(z.literal('')),
+  twitter_url: z.string().url().nullable().optional().or(z.literal('')),
+  telegram_url: z.string().url().nullable().optional().or(z.literal('')),
   coingecko_id: z.string().max(100).nullable().optional(),
   description: z.string().max(1000).nullable().optional(),
   is_active: z.boolean().optional(),
@@ -274,6 +278,8 @@ export function useCreateTokenListing() {
           chain: validated.chain,
           logo_url: validated.logo_url || null,
           website_url: validated.website_url || null,
+          twitter_url: validated.twitter_url || null,
+          telegram_url: validated.telegram_url || null,
           coingecko_id: validated.coingecko_id || null,
           description: validated.description || null,
           is_active: validated.is_active ?? true,
@@ -287,6 +293,7 @@ export function useCreateTokenListing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-token-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['token-prices'] });
       toast.success('Token listing created');
     },
     onError: (error) => {
@@ -312,6 +319,8 @@ export function useUpdateTokenListing() {
           chain: validated.chain,
           logo_url: validated.logo_url || null,
           website_url: validated.website_url || null,
+          twitter_url: validated.twitter_url || null,
+          telegram_url: validated.telegram_url || null,
           coingecko_id: validated.coingecko_id || null,
           description: validated.description || null,
           is_active: validated.is_active ?? true,
@@ -326,6 +335,7 @@ export function useUpdateTokenListing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-token-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['token-prices'] });
       toast.success('Token listing updated');
     },
     onError: (error) => {
@@ -349,6 +359,7 @@ export function useDeleteTokenListing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-token-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['token-prices'] });
       toast.success('Token listing deleted');
     },
     onError: (error) => {
