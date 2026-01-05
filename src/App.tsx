@@ -13,6 +13,7 @@ import Stablecoins from "./pages/Stablecoins";
 import StablecoinDetail from "./pages/StablecoinDetail";
 import Tokens from "./pages/Tokens";
 import TokenDetail from "./pages/TokenDetail";
+import TokenRanking from "./pages/TokenRanking";
 import Chains from "./pages/Chains";
 import ChainDetail from "./pages/ChainDetail";
 import Fees from "./pages/Fees";
@@ -57,6 +58,7 @@ const App = () => (
           <Route path="/stablecoins/:id" element={<StablecoinDetail />} />
           <Route path="/tokens" element={<Tokens />} />
           <Route path="/tokens/:id" element={<TokenDetail />} />
+          <Route path="/token-ranking" element={<TokenRanking />} />
           <Route path="/chains" element={<Chains />} />
           <Route path="/chains/:id" element={<ChainDetail />} />
           <Route path="/fees" element={<Fees />} />

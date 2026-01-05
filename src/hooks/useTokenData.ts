@@ -17,7 +17,7 @@ import {
   TOKEN_IDS_REVERSE,
 } from "@/lib/api/coingecko";
 import oklink from "@/lib/api/oklink";
-import { fetchOkxTicker, fetchOkxTokenPrice, getOkxChainId } from "@/lib/api/okx";
+import { fetchOkxTicker, fetchOkxTokenPriceInfo, getOkxChainIndex } from "@/lib/api/okx";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -96,14 +96,15 @@ export function useTokenPrices() {
             }
           }
           
-          // Fallback: Try OKX API v5
+          // Fallback: Try OKX API v6
           if (price === 0) {
             try {
-              const chainId = getOkxChainId('xlayer');
-              const okxPrice = await fetchOkxTokenPrice(chainId, t.contract);
-              if (okxPrice && okxPrice.price > 0) {
-                price = okxPrice.price;
-                change24h = okxPrice.change24h;
+              const chainIndex = getOkxChainIndex('xlayer');
+              const okxData = await fetchOkxTokenPriceInfo(chainIndex, t.contract);
+              if (okxData && parseFloat(okxData.price) > 0) {
+                price = parseFloat(okxData.price);
+                change24h = parseFloat(okxData.priceChange24h || '0');
+                volume24h = parseFloat(okxData.volume24h || '0');
               }
             } catch (e) {}
           }
@@ -183,11 +184,12 @@ export function useTokenPrices() {
               // Try OKX if we have a contract address
               if (price === 0 && listing.contract_address) {
                 try {
-                  const chainId = getOkxChainId(listing.chain || 'ethereum');
-                  const okxPrice = await fetchOkxTokenPrice(chainId, listing.contract_address);
-                  if (okxPrice && okxPrice.price > 0) {
-                    price = okxPrice.price;
-                    change24h = okxPrice.change24h;
+                  const chainIndex = getOkxChainIndex(listing.chain || 'ethereum');
+                  const okxData = await fetchOkxTokenPriceInfo(chainIndex, listing.contract_address);
+                  if (okxData && parseFloat(okxData.price) > 0) {
+                    price = parseFloat(okxData.price);
+                    change24h = parseFloat(okxData.priceChange24h || '0');
+                    volume24h = parseFloat(okxData.volume24h || '0');
                   }
                 } catch (e) {}
               }
@@ -306,11 +308,11 @@ export function useTokenDetails(id: string | null) {
           // Try OKX for price
           if (dbListing.contract_address) {
             try {
-              const chainId = getOkxChainId(dbListing.chain || 'ethereum');
-              const okxPrice = await fetchOkxTokenPrice(chainId, dbListing.contract_address);
-              if (okxPrice && okxPrice.price > 0) {
-                marketData.current_price.usd = okxPrice.price;
-                marketData.price_change_percentage_24h = okxPrice.change24h;
+              const chainIndex = getOkxChainIndex(dbListing.chain || 'ethereum');
+              const okxData = await fetchOkxTokenPriceInfo(chainIndex, dbListing.contract_address);
+              if (okxData && parseFloat(okxData.price) > 0) {
+                marketData.current_price.usd = parseFloat(okxData.price);
+                marketData.price_change_percentage_24h = parseFloat(okxData.priceChange24h || '0');
               }
             } catch (e) {}
           }
