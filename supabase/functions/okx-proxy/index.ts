@@ -5,27 +5,33 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Rate limiting
+// Rate limiting (protect upstream API key)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 30;
+// This is per edge instance; keep it generous and rely on caching to reduce upstream calls.
+const RATE_LIMIT_MAX_REQUESTS = 120;
 
 function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
   const now = Date.now();
   const record = rateLimitMap.get(ip);
-  
+
   if (!record || now > record.resetTime) {
     rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
     return { allowed: true };
   }
-  
+
   if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
     return { allowed: false, retryAfter: Math.ceil((record.resetTime - now) / 1000) };
   }
-  
+
   record.count++;
   return { allowed: true };
 }
+
+// Simple in-memory response cache + request de-dupe (reduces upstream 429s)
+type CacheEntry = { data: unknown; freshUntil: number; staleUntil: number };
+const responseCache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<Response>>();
 
 // Generate OKX signature
 function generateSignature(
@@ -111,23 +117,24 @@ serve(async (req) => {
   try {
     const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
     const rateCheck = checkRateLimit(clientIp);
-    
+
+    // IMPORTANT: avoid returning HTTP 429 because supabase-js treats non-2xx as an error and discards JSON.
     if (!rateCheck.allowed) {
       return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateCheck.retryAfter }),
-        { 
-          status: 429, 
-          headers: { 
-            ...corsHeaders, 
+        JSON.stringify({ code: '50011', msg: 'Too Many Requests', retryAfter: rateCheck.retryAfter, source: 'proxy' }),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Retry-After': String(rateCheck.retryAfter)
-          } 
+            ...(rateCheck.retryAfter ? { 'Retry-After': String(rateCheck.retryAfter) } : {}),
+          },
         }
       );
     }
 
     const { endpoint, params, method = 'GET', body: requestBody } = await req.json();
-    
+
     if (!endpoint) {
       return new Response(
         JSON.stringify({ error: 'Missing endpoint parameter' }),
@@ -179,72 +186,142 @@ serve(async (req) => {
     const timestamp = new Date().toISOString().slice(0, -5) + 'Z';
     const bodyStr = method === 'GET' ? '' : JSON.stringify(requestBody || {});
 
-    // Compute signature (sign the path + query for GET)
-    const signPath = method === 'GET' ? requestPath : endpoint;
-    const signature = await computeSignature(
-      timestamp,
-      method,
-      signPath,
-      bodyStr,
-      secretKey
-    );
+    const cacheKey = `${method}:${requestPath}:${bodyStr}`;
+    const now = Date.now();
 
-    const headers: Record<string, string> = {
-      'OK-ACCESS-KEY': apiKey,
-      'OK-ACCESS-SIGN': signature,
-      'OK-ACCESS-TIMESTAMP': timestamp,
-      'OK-ACCESS-PASSPHRASE': passphrase,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'User-Agent': 'defixlama/1.0',
+    // Serve fresh cache immediately
+    const cached = responseCache.get(cacheKey);
+    if (cached && now < cached.freshUntil) {
+      return new Response(JSON.stringify(cached.data), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'HIT' },
+      });
+    }
+
+    // De-dupe concurrent identical requests
+    const existing = inflight.get(cacheKey);
+    if (existing) return await existing;
+
+    const ttlFor = (ep: string) => {
+      // freshMs + staleMs
+      if (ep.startsWith('/api/v6/dex/token/price-info')) return { freshMs: 30_000, staleMs: 5 * 60_000 };
+      if (ep.startsWith('/api/v6/dex/market/price')) return { freshMs: 10_000, staleMs: 60_000 };
+      if (ep.startsWith('/api/v6/dex/market/token/toplist')) return { freshMs: 60_000, staleMs: 10 * 60_000 };
+      if (ep.startsWith('/api/v6/dex/market/supported-chains')) return { freshMs: 24 * 60_000, staleMs: 7 * 24 * 60_000 };
+      if (ep.startsWith('/api/v6/dex/market/trades')) return { freshMs: 10_000, staleMs: 60_000 };
+      if (ep.startsWith('/api/v6/dex/market/candles') || ep.startsWith('/api/v6/dex/market/historical-candles')) return { freshMs: 60_000, staleMs: 10 * 60_000 };
+      return { freshMs: 15_000, staleMs: 60_000 };
     };
 
-    // OKX Web3/WaaS APIs use project header in some cases; safe to include when available
-    if (isV6) {
-      const projectId = Deno.env.get('OKX_PROJECT_ID');
-      if (projectId) headers['OK-ACCESS-PROJECT'] = projectId;
-    }
+    const promise = (async (): Promise<Response> => {
+      try {
+        // Compute signature (sign the path + query for GET)
+        const signPath = method === 'GET' ? requestPath : endpoint;
+        const signature = await computeSignature(
+          timestamp,
+          method,
+          signPath,
+          bodyStr,
+          secretKey
+        );
 
-    let lastNonJson: { status: number; contentType: string; preview: string; url: string } | null = null;
+        const headers: Record<string, string> = {
+          'OK-ACCESS-KEY': apiKey,
+          'OK-ACCESS-SIGN': signature,
+          'OK-ACCESS-TIMESTAMP': timestamp,
+          'OK-ACCESS-PASSPHRASE': passphrase,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'defixlama/1.0',
+        };
 
-    for (const baseUrl of baseUrls) {
-      const url = baseUrl + requestPath;
-      console.log(`OKX API Request: ${method} ${url}`);
+        // OKX Web3/WaaS APIs use project header in some cases; safe to include when available
+        if (isV6) {
+          const projectId = Deno.env.get('OKX_PROJECT_ID');
+          if (projectId) headers['OK-ACCESS-PROJECT'] = projectId;
+        }
 
-      const response = await fetch(url, {
-        method,
-        headers,
-        body: method === 'GET' ? undefined : bodyStr,
-      });
+        let lastNonJson: { status: number; contentType: string; preview: string; url: string } | null = null;
 
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const data = await response.json();
-        console.log(`OKX API Response: ${response.status}, code: ${data?.code}`);
+        for (const baseUrl of baseUrls) {
+          const url = baseUrl + requestPath;
+          console.log(`OKX API Request: ${method} ${url}`);
 
-        return new Response(JSON.stringify(data), {
-          status: response.status,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+          const response = await fetch(url, {
+            method,
+            headers,
+            body: method === 'GET' ? undefined : bodyStr,
+          });
+
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await response.json();
+            const upstreamStatus = response.status;
+            console.log(`OKX API Response: ${upstreamStatus}, code: ${data?.code}`);
+
+            // If upstream is rate-limiting, serve stale cache if we have it, otherwise return 200 with the error payload.
+            if (upstreamStatus === 429 || data?.code === '50011') {
+              const stale = responseCache.get(cacheKey);
+              if (stale && now < stale.staleUntil) {
+                return new Response(JSON.stringify(stale.data), {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE', 'X-Upstream-Status': String(upstreamStatus) },
+                });
+              }
+
+              return new Response(JSON.stringify({ ...data, upstreamStatus }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Upstream-Status': String(upstreamStatus) },
+              });
+            }
+
+            // Cache successful responses
+            if (data?.code === '0') {
+              const { freshMs, staleMs } = ttlFor(endpoint);
+              responseCache.set(cacheKey, {
+                data,
+                freshUntil: now + freshMs,
+                staleUntil: now + staleMs,
+              });
+            }
+
+            return new Response(JSON.stringify(data), {
+              status: upstreamStatus,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': cached ? 'REFRESH' : 'MISS' },
+            });
+          }
+
+          const text = await response.text();
+          const preview = text.substring(0, 200);
+          console.error(`OKX API returned non-JSON response (${response.status}) from ${url}: ${preview}`);
+          lastNonJson = { status: response.status, contentType, preview, url };
+        }
+
+        return new Response(
+          JSON.stringify({
+            error: 'OKX API returned non-JSON response',
+            code: '50000',
+            data: [],
+            msg: 'API temporarily unavailable',
+            details: lastNonJson,
+          }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (error: unknown) {
+        console.error('OKX Proxy Error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return new Response(
+          JSON.stringify({ error: 'Internal server error', details: errorMessage }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } finally {
+        inflight.delete(cacheKey);
       }
+    })();
 
-      const text = await response.text();
-      const preview = text.substring(0, 200);
-      console.error(`OKX API returned non-JSON response (${response.status}) from ${url}: ${preview}`);
-      lastNonJson = { status: response.status, contentType, preview, url };
-    }
+    inflight.set(cacheKey, promise);
+    return await promise;
 
-    return new Response(
-      JSON.stringify({
-        error: 'OKX API returned non-JSON response',
-        code: '50000',
-        data: [],
-        msg: 'API temporarily unavailable',
-        details: lastNonJson,
-      }),
-      { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-    
   } catch (error: unknown) {
     console.error('OKX Proxy Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
