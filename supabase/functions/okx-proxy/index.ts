@@ -72,8 +72,9 @@ async function computeSignature(
   return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
-// Allowed endpoints
+// Allowed endpoints - OKX Web3 API v5 + v6
 const ALLOWED_ENDPOINTS = [
+  // v5 Legacy endpoints
   '/api/v5/dex/aggregator/all-tokens',
   '/api/v5/dex/aggregator/quote',
   '/api/v5/dex/market/price',
@@ -81,6 +82,23 @@ const ALLOWED_ENDPOINTS = [
   '/api/v5/market/tickers',
   '/api/v5/market/index-tickers',
   '/api/v5/public/mark-price',
+  // v6 Market Price API
+  '/api/v6/dex/market/candles',
+  '/api/v6/dex/market/historical-candles',
+  '/api/v6/dex/market/trades',
+  '/api/v6/dex/market/price',
+  '/api/v6/dex/market/supported-chains',
+  // v6 Token API
+  '/api/v6/dex/token/search',
+  '/api/v6/dex/token/basic-info',
+  '/api/v6/dex/token/price-info',
+  '/api/v6/dex/token/ranking',
+  '/api/v6/dex/token/top-holders',
+  // v6 Index Price API
+  '/api/v6/dex/index/price',
+  // v6 Transaction API
+  '/api/v6/dex/tx/history',
+  '/api/v6/dex/tx/detail',
 ];
 
 serve(async (req) => {
