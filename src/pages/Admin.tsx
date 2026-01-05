@@ -45,6 +45,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { LogoUpload } from '@/components/admin/LogoUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -947,23 +948,19 @@ function TokenListingForm({ form, setForm }: { form: TokenListingInput; setForm:
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Logo URL</Label>
-          <Input
-            value={form.logo_url || ''}
-            onChange={(e) => setForm({ ...form, logo_url: e.target.value || null })}
-            placeholder="https://..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Website URL</Label>
-          <Input
-            value={form.website_url || ''}
-            onChange={(e) => setForm({ ...form, website_url: e.target.value || null })}
-            placeholder="https://..."
-          />
-        </div>
+      <LogoUpload
+        currentLogoUrl={form.logo_url || ''}
+        onLogoChange={(url) => setForm({ ...form, logo_url: url || null })}
+        tokenSymbol={form.symbol}
+      />
+
+      <div className="space-y-2">
+        <Label>Website URL</Label>
+        <Input
+          value={form.website_url || ''}
+          onChange={(e) => setForm({ ...form, website_url: e.target.value || null })}
+          placeholder="https://..."
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
