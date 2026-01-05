@@ -156,8 +156,9 @@ serve(async (req) => {
       );
     }
 
-    // Build URL
-    const baseUrl = 'https://www.okx.com';
+    // Build URL - v6 Web3 API uses web3.okx.com, v5 uses www.okx.com
+    const isV6 = endpoint.startsWith('/api/v6/');
+    const baseUrl = isV6 ? 'https://web3.okx.com' : 'https://www.okx.com';
     let requestPath = endpoint;
     
     if (params && Object.keys(params).length > 0 && method === 'GET') {
@@ -174,16 +175,17 @@ serve(async (req) => {
     const timestamp = new Date().toISOString();
     const bodyStr = method === 'GET' ? '' : JSON.stringify(requestBody || {});
     
-    // Compute signature
+    // Compute signature - for v6 Web3 API, sign the path with query params
+    const signPath = method === 'GET' ? requestPath : endpoint;
     const signature = await computeSignature(
       timestamp,
       method,
-      method === 'GET' ? requestPath : endpoint,
+      signPath,
       bodyStr,
       secretKey
     );
 
-    console.log(`OKX API Request: ${method} ${requestPath}`);
+    console.log(`OKX API Request: ${method} ${url}`);
 
     const headers: Record<string, string> = {
       'OK-ACCESS-KEY': apiKey,
@@ -193,11 +195,35 @@ serve(async (req) => {
       'Content-Type': 'application/json',
     };
 
+    // v6 Web3 API requires project ID header
+    if (isV6) {
+      const projectId = Deno.env.get('OKX_PROJECT_ID');
+      if (projectId) {
+        headers['OK-ACCESS-PROJECT'] = projectId;
+      }
+    }
+
     const response = await fetch(url, {
       method,
       headers,
       body: method === 'GET' ? undefined : bodyStr,
     });
+
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error(`OKX API returned non-JSON response: ${text.substring(0, 200)}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'OKX API returned non-JSON response', 
+          code: '50000',
+          data: [],
+          msg: 'API temporarily unavailable'
+        }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const data = await response.json();
     
