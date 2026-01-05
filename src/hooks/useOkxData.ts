@@ -241,6 +241,47 @@ export function useOkxGainersAndLosers(chainIndex: string = DEFAULT_CHAIN_INDEX,
 }
 
 /**
+ * Hook to fetch summary data for all stat cards (always enabled, longer cache)
+ * This fetches just the top 1 item from each category for display in stat cards
+ */
+export function useOkxRankingSummary(chainIndex: string = DEFAULT_CHAIN_INDEX) {
+  const topGainer = useQuery<OkxTokenRankingItem[]>({
+    queryKey: ['okx-summary-gainer', chainIndex],
+    queryFn: () => fetchOkxTokenRanking(chainIndex, 'change24h', 'desc', 1),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: 2 * 60 * 1000,
+  });
+
+  const topLoser = useQuery<OkxTokenRankingItem[]>({
+    queryKey: ['okx-summary-loser', chainIndex],
+    queryFn: () => fetchOkxTokenRanking(chainIndex, 'change24h', 'asc', 1),
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
+  });
+
+  const topVolume = useQuery<OkxTokenRankingItem[]>({
+    queryKey: ['okx-summary-volume', chainIndex],
+    queryFn: () => fetchOkxTokenRanking(chainIndex, 'volume24h', 'desc', 1),
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
+  });
+
+  return {
+    topGainer: topGainer.data?.[0] || null,
+    topLoser: topLoser.data?.[0] || null,
+    topVolume: topVolume.data?.[0] || null,
+    isLoading: topGainer.isLoading || topLoser.isLoading || topVolume.isLoading,
+    dataUpdatedAt: Math.max(
+      topGainer.dataUpdatedAt || 0,
+      topLoser.dataUpdatedAt || 0,
+      topVolume.dataUpdatedAt || 0
+    ),
+    isFetching: topGainer.isFetching || topLoser.isFetching || topVolume.isFetching,
+    isStale: topGainer.isStale || topLoser.isStale || topVolume.isStale,
+  };
+}
+
+/**
  * Hook to get full token details (basic + price info combined)
  */
 export function useOkxFullTokenInfo(

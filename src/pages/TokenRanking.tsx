@@ -21,6 +21,7 @@ import {
   useOkxTopGainers,
   useOkxTopLosers,
   useOkxTopVolume,
+  useOkxRankingSummary,
 } from "@/hooks/useOkxData";
 import {
   TrendingUp,
@@ -28,8 +29,8 @@ import {
   BarChart3,
   Activity,
   RefreshCw,
-  ExternalLink,
   Flame,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +65,15 @@ function formatHolders(holders: string | number): string {
   if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
   if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
   return num.toFixed(0);
+}
+
+function formatTimeAgo(timestamp: number): string {
+  if (!timestamp) return '';
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  return `${Math.floor(minutes / 60)}h ago`;
 }
 
 interface RankingTableProps {
@@ -101,9 +111,7 @@ function RankingTable({ data, loading, showRank = true, highlightChange = null }
             {showRank && <TableHead className="w-12">#</TableHead>}
             <TableHead>Token</TableHead>
             <TableHead className="text-right">Price</TableHead>
-            <TableHead className="text-right">5m</TableHead>
-            <TableHead className="text-right">1h</TableHead>
-            <TableHead className="text-right">24h</TableHead>
+            <TableHead className="text-right">Change (24h)</TableHead>
             <TableHead className="text-right">Volume (24h)</TableHead>
             <TableHead className="text-right">Liquidity</TableHead>
             <TableHead className="text-right">Holders</TableHead>
@@ -112,8 +120,6 @@ function RankingTable({ data, loading, showRank = true, highlightChange = null }
         <TableBody>
           {data.map((token, index) => {
             const change24h = parseFloat(token.priceChange24h || '0');
-            const change1h = parseFloat(token.priceChange1h || '0');
-            const change5m = parseFloat(token.priceChange5m || '0');
             
             return (
               <TableRow key={`${token.chainIndex}-${token.tokenContractAddress}`}>
@@ -153,22 +159,8 @@ function RankingTable({ data, loading, showRank = true, highlightChange = null }
                   {formatPrice(token.price)}
                 </TableCell>
                 <TableCell className={cn(
-                  "text-right font-mono",
-                  change5m > 0 ? "text-green-500" : change5m < 0 ? "text-red-500" : ""
-                )}>
-                  {formatChange(change5m)}
-                </TableCell>
-                <TableCell className={cn(
-                  "text-right font-mono",
-                  change1h > 0 ? "text-green-500" : change1h < 0 ? "text-red-500" : ""
-                )}>
-                  {formatChange(change1h)}
-                </TableCell>
-                <TableCell className={cn(
-                  "text-right font-mono",
-                  change24h > 0 ? "text-green-500" : change24h < 0 ? "text-red-500" : "",
-                  highlightChange === 'positive' && "font-bold",
-                  highlightChange === 'negative' && "font-bold"
+                  "text-right font-mono font-bold",
+                  change24h > 0 ? "text-green-500" : change24h < 0 ? "text-red-500" : ""
                 )}>
                   {formatChange(change24h)}
                 </TableCell>
@@ -195,11 +187,22 @@ export default function TokenRanking() {
   const [chainIndex, setChainIndex] = useState(DEFAULT_CHAIN);
   const [activeTab, setActiveTab] = useState('gainers');
   
+  // Summary data for stat cards (always enabled, longer cache)
+  const { 
+    topGainer, 
+    topLoser, 
+    topVolume, 
+    isLoading: summaryLoading,
+    dataUpdatedAt,
+    isFetching,
+    isStale,
+  } = useOkxRankingSummary(chainIndex);
+
   // Only fetch the active tab's data to avoid rate limiting
   const { data: gainers, isLoading: gainersLoading, refetch: refetchGainers } = useOkxTopGainers(
     chainIndex, 
     50,
-    activeTab === 'gainers' // Only enable when tab is active
+    activeTab === 'gainers'
   );
   const { data: losers, isLoading: losersLoading, refetch: refetchLosers } = useOkxTopLosers(
     chainIndex, 
@@ -250,13 +253,29 @@ export default function TokenRanking() {
               onChange={setChainIndex}
               className="w-[180px]"
             />
-            <Button variant="outline" size="icon" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4" />
+            <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isFetching}>
+              <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
             </Button>
-            <Badge variant="outline" className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              Live Data
+            <Badge 
+              variant="outline" 
+              className={cn(
+                "flex items-center gap-1.5",
+                isStale && "border-yellow-500/50"
+              )}
+            >
+              <span className={cn(
+                "w-2 h-2 rounded-full",
+                isStale ? "bg-yellow-500" : "bg-green-500",
+                !isStale && "animate-pulse"
+              )} />
+              {isStale ? "Cached" : "Live"}
             </Badge>
+            {dataUpdatedAt > 0 && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatTimeAgo(dataUpdatedAt)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -268,13 +287,13 @@ export default function TokenRanking() {
                 <TrendingUp className="h-4 w-4 text-green-500" />
                 Top Gainer (24h)
               </div>
-              {gainersLoading ? (
+              {summaryLoading ? (
                 <Skeleton className="h-6 w-24 mt-2" />
-              ) : gainers?.[0] ? (
+              ) : topGainer ? (
                 <div className="mt-2">
-                  <span className="font-bold">{gainers[0].tokenSymbol}</span>
+                  <span className="font-bold">{topGainer.tokenSymbol}</span>
                   <span className="text-green-500 ml-2">
-                    {formatChange(gainers[0].priceChange24h || 0)}
+                    {formatChange(topGainer.priceChange24h || 0)}
                   </span>
                 </div>
               ) : (
@@ -289,13 +308,13 @@ export default function TokenRanking() {
                 <TrendingDown className="h-4 w-4 text-red-500" />
                 Top Loser (24h)
               </div>
-              {losersLoading ? (
+              {summaryLoading ? (
                 <Skeleton className="h-6 w-24 mt-2" />
-              ) : losers?.[0] ? (
+              ) : topLoser ? (
                 <div className="mt-2">
-                  <span className="font-bold">{losers[0].tokenSymbol}</span>
+                  <span className="font-bold">{topLoser.tokenSymbol}</span>
                   <span className="text-red-500 ml-2">
-                    {formatChange(losers[0].priceChange24h || 0)}
+                    {formatChange(topLoser.priceChange24h || 0)}
                   </span>
                 </div>
               ) : (
@@ -310,13 +329,13 @@ export default function TokenRanking() {
                 <BarChart3 className="h-4 w-4 text-primary" />
                 Highest Volume
               </div>
-              {volumeLoading ? (
+              {summaryLoading ? (
                 <Skeleton className="h-6 w-24 mt-2" />
-              ) : volume?.[0] ? (
+              ) : topVolume ? (
                 <div className="mt-2">
-                  <span className="font-bold">{volume[0].tokenSymbol}</span>
+                  <span className="font-bold">{topVolume.tokenSymbol}</span>
                   <span className="text-muted-foreground ml-2">
-                    {formatVolume(volume[0].volume24h || 0)}
+                    {formatVolume(topVolume.volume24h || 0)}
                   </span>
                 </div>
               ) : (
