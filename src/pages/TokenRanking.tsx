@@ -195,21 +195,40 @@ export default function TokenRanking() {
   const [chainIndex, setChainIndex] = useState(DEFAULT_CHAIN);
   const [activeTab, setActiveTab] = useState('gainers');
   
-  // Fetch different rankings
-  const { data: gainers, isLoading: gainersLoading, refetch: refetchGainers } = useOkxTopGainers(chainIndex, 50);
-  const { data: losers, isLoading: losersLoading, refetch: refetchLosers } = useOkxTopLosers(chainIndex, 50);
-  const { data: volume, isLoading: volumeLoading, refetch: refetchVolume } = useOkxTopVolume(chainIndex, 50);
-  const { data: marketCap, isLoading: mcLoading, refetch: refetchMC } = useOkxTokenRanking(chainIndex, 'marketCap', 'desc', 50);
+  // Only fetch the active tab's data to avoid rate limiting
+  const { data: gainers, isLoading: gainersLoading, refetch: refetchGainers } = useOkxTopGainers(
+    chainIndex, 
+    50,
+    activeTab === 'gainers' // Only enable when tab is active
+  );
+  const { data: losers, isLoading: losersLoading, refetch: refetchLosers } = useOkxTopLosers(
+    chainIndex, 
+    50,
+    activeTab === 'losers'
+  );
+  const { data: volume, isLoading: volumeLoading, refetch: refetchVolume } = useOkxTopVolume(
+    chainIndex, 
+    50,
+    activeTab === 'volume'
+  );
+  const { data: marketCap, isLoading: mcLoading, refetch: refetchMC } = useOkxTokenRanking(
+    chainIndex, 
+    'marketCap', 
+    'desc', 
+    50,
+    activeTab === 'marketcap'
+  );
 
   const chainName = useMemo(() => {
     return POPULAR_CHAINS.find(c => c.index === chainIndex)?.name || 'Unknown Chain';
   }, [chainIndex]);
 
   const handleRefresh = () => {
-    refetchGainers();
-    refetchLosers();
-    refetchVolume();
-    refetchMC();
+    // Only refetch active tab
+    if (activeTab === 'gainers') refetchGainers();
+    else if (activeTab === 'losers') refetchLosers();
+    else if (activeTab === 'volume') refetchVolume();
+    else if (activeTab === 'marketcap') refetchMC();
   };
 
   return (
