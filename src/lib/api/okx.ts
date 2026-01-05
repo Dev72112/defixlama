@@ -358,27 +358,75 @@ export async function fetchOkxTokenPriceInfo(
 
 /**
  * Get token rankings
- * @param sortBy - Sort field: change5m, change1h, change4h, change24h, volume24h, marketCap, liquidity
- * @param direction - Sort direction: asc or desc
+ *
+ * NOTE: OKX Wallet Market API uses this endpoint (per docs):
+ * GET https://web3.okx.com/api/v6/dex/market/token/toplist
+ *
+ * Params:
+ * - chains: comma-separated chainIndex list
+ * - sortBy: 2=price change, 5=volume, 6=market cap
+ * - timeFrame: 1=5m, 2=1h, 3=4h, 4=24h
  */
 export async function fetchOkxTokenRanking(
   chainIndex: string,
-  sortBy: 'change5m' | 'change1h' | 'change4h' | 'change24h' | 'volume24h' | 'marketCap' | 'liquidity' = 'volume24h',
+  sortBy:
+    | 'change5m'
+    | 'change1h'
+    | 'change4h'
+    | 'change24h'
+    | 'volume24h'
+    | 'marketCap'
+    | 'liquidity' = 'volume24h',
   direction: 'asc' | 'desc' = 'desc',
   limit: number = 50
 ): Promise<OkxTokenRankingItem[]> {
-  const data = await callOkxProxy('/api/v6/dex/token/ranking', {
-    chainIndex,
-    sortBy,
-    direction,
-    limit: String(limit),
+  const sortByMap: Record<string, { sortBy: string; timeFrame: string }> = {
+    change5m: { sortBy: '2', timeFrame: '1' },
+    change1h: { sortBy: '2', timeFrame: '2' },
+    change4h: { sortBy: '2', timeFrame: '3' },
+    change24h: { sortBy: '2', timeFrame: '4' },
+    volume24h: { sortBy: '5', timeFrame: '4' },
+    marketCap: { sortBy: '6', timeFrame: '4' },
+    // Not supported in this endpoint; fall back to volume
+    liquidity: { sortBy: '5', timeFrame: '4' },
+  };
+
+  const mapped = sortByMap[sortBy] ?? sortByMap.volume24h;
+
+  const data = await callOkxProxy('/api/v6/dex/market/token/toplist', {
+    chains: chainIndex,
+    sortBy: mapped.sortBy,
+    timeFrame: mapped.timeFrame,
   });
-  
-  if (data?.code === '0' && data?.data) {
-    return data.data;
-  }
-  
-  return [];
+
+  if (data?.code !== '0' || !Array.isArray(data?.data)) return [];
+
+  const normalized: OkxTokenRankingItem[] = data.data
+    .slice(0, Math.min(limit, 100))
+    .map((item: any) => {
+      const change = item.change ?? '0';
+
+      return {
+        chainIndex: item.chainIndex ?? chainIndex,
+        tokenContractAddress: item.tokenContractAddress,
+        tokenSymbol: item.tokenSymbol,
+        tokenName: item.tokenName ?? item.tokenSymbol,
+        tokenLogo: item.tokenLogoUrl,
+        price: item.price,
+        // This API returns a single 'change' for the selected timeFrame.
+        priceChange5m: mapped.timeFrame === '1' ? change : undefined,
+        priceChange1h: mapped.timeFrame === '2' ? change : undefined,
+        priceChange4h: mapped.timeFrame === '3' ? change : undefined,
+        priceChange24h: mapped.timeFrame === '4' ? change : undefined,
+        volume24h: item.volume,
+        liquidity: item.liquidity,
+        holders: item.holders,
+        marketCap: item.marketCap,
+      };
+    });
+
+  // Endpoint is desc-only; emulate asc for the UI when needed.
+  return direction === 'asc' ? normalized.reverse() : normalized;
 }
 
 /**

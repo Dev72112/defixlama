@@ -88,11 +88,12 @@ const ALLOWED_ENDPOINTS = [
   '/api/v6/dex/market/trades',
   '/api/v6/dex/market/price',
   '/api/v6/dex/market/supported-chains',
+  // v6 Market Token API (ranking)
+  '/api/v6/dex/market/token/toplist',
   // v6 Token API
   '/api/v6/dex/token/search',
   '/api/v6/dex/token/basic-info',
   '/api/v6/dex/token/price-info',
-  '/api/v6/dex/token/ranking',
   '/api/v6/dex/token/top-holders',
   // v6 Index Price API
   '/api/v6/dex/index/price',
