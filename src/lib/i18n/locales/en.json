@@ -17,7 +17,8 @@
     "more": "More",
     "resources": "Resources",
     "defillamaApi": "DefiLlama API",
-    "builderLogs": "Builder Logs"
+    "builderLogs": "Builder Logs",
+    "tokenRanking": "Token Ranking"
   },
   "builderLogs": {
     "title": "Builder Logs",

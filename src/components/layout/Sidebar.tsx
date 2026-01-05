@@ -39,7 +39,8 @@ const navItems: NavItem[] = [
   { labelKey: "nav.yields", href: "/yields", icon: TrendingUp, badge: "APY" },
   { labelKey: "nav.stablecoins", href: "/stablecoins", icon: Coins },
   { labelKey: "nav.tokens", href: "/tokens", icon: Wallet },
-  { labelKey: "nav.portfolio", href: "/portfolio", icon: PieChart, badge: "NEW" },
+  { labelKey: "nav.tokenRanking", href: "/token-ranking", icon: BarChart3, badge: "NEW" },
+  { labelKey: "nav.portfolio", href: "/portfolio", icon: PieChart },
   { labelKey: "nav.alerts", href: "/alerts", icon: Bell },
 ];
 

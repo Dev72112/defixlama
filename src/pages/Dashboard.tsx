@@ -20,6 +20,7 @@ import { NetworkStatsCard } from "@/components/dashboard/NetworkStatsCard";
 import { StablecoinStats } from "@/components/dashboard/StablecoinStats";
 import { FeesOverview } from "@/components/dashboard/FeesOverview";
 import { TopChainsCard } from "@/components/dashboard/TopChainsCard";
+import { TopGainersLosers } from "@/components/dashboard/TopGainersLosers";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -300,6 +301,9 @@ function DashboardContent() {
           limit={5}
         />
       </div>
+
+      {/* OKX Top Gainers/Losers - X Layer */}
+      <TopGainersLosers chainIndex="196" limit={5} />
 
       {/* Quick Insights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
