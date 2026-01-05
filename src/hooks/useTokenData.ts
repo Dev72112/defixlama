@@ -1,4 +1,4 @@
-// Token data hooks with multi-source fallback (DefiLlama -> OKLink -> DexScreener -> CoinGecko)
+// Token data hooks with multi-source fallback (OKX -> DefiLlama -> DexScreener -> CoinGecko)
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchTokenPrices,
@@ -17,11 +17,12 @@ import {
   TOKEN_IDS_REVERSE,
 } from "@/lib/api/coingecko";
 import oklink from "@/lib/api/oklink";
+import { fetchOkxTicker, fetchOkxTokenPrice, getOkxChainId } from "@/lib/api/okx";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 // Track API failures for fallback logic
-let apiFailures = { defillama: 0, coingecko: 0, oklink: 0, dexscreener: 0 };
+let apiFailures = { okx: 0, defillama: 0, coingecko: 0, oklink: 0, dexscreener: 0 };
 const MAX_FAILURES = 3;
 
 function resetFailureCount(api: keyof typeof apiFailures) {
@@ -95,6 +96,18 @@ export function useTokenPrices() {
             }
           }
           
+          // Fallback: Try OKX API v5
+          if (price === 0) {
+            try {
+              const chainId = getOkxChainId('xlayer');
+              const okxPrice = await fetchOkxTokenPrice(chainId, t.contract);
+              if (okxPrice && okxPrice.price > 0) {
+                price = okxPrice.price;
+                change24h = okxPrice.change24h;
+              }
+            } catch (e) {}
+          }
+          
           // Fallback: Try OKLink
           if (price === 0) {
             try {
@@ -165,6 +178,18 @@ export function useTokenPrices() {
                 } catch (e) {
                   console.log(`CoinGecko failed for ${listing.symbol}`);
                 }
+              }
+              
+              // Try OKX if we have a contract address
+              if (price === 0 && listing.contract_address) {
+                try {
+                  const chainId = getOkxChainId(listing.chain || 'ethereum');
+                  const okxPrice = await fetchOkxTokenPrice(chainId, listing.contract_address);
+                  if (okxPrice && okxPrice.price > 0) {
+                    price = okxPrice.price;
+                    change24h = okxPrice.change24h;
+                  }
+                } catch (e) {}
               }
               
               // Try DexScreener if we have a contract address and no price yet
@@ -278,8 +303,20 @@ export function useTokenDetails(id: string | null) {
             } catch (e) {}
           }
           
-          // Try DexScreener for price
+          // Try OKX for price
           if (dbListing.contract_address) {
+            try {
+              const chainId = getOkxChainId(dbListing.chain || 'ethereum');
+              const okxPrice = await fetchOkxTokenPrice(chainId, dbListing.contract_address);
+              if (okxPrice && okxPrice.price > 0) {
+                marketData.current_price.usd = okxPrice.price;
+                marketData.price_change_percentage_24h = okxPrice.change24h;
+              }
+            } catch (e) {}
+          }
+          
+          // Try DexScreener for price as fallback
+          if (marketData.current_price.usd === 0 && dbListing.contract_address) {
             try {
               const dexPrices = await fetchDexScreenerPrices([dbListing.contract_address]);
               const dexData = dexPrices[dbListing.contract_address.toLowerCase()];
