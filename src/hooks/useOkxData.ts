@@ -31,49 +31,54 @@ export function useOkxTokenRanking(
   chainIndex: string = DEFAULT_CHAIN_INDEX,
   sortBy: 'change5m' | 'change1h' | 'change4h' | 'change24h' | 'volume24h' | 'marketCap' | 'liquidity' = 'volume24h',
   direction: 'asc' | 'desc' = 'desc',
-  limit: number = 50
+  limit: number = 50,
+  enabled: boolean = true
 ) {
   return useQuery<OkxTokenRankingItem[]>({
     queryKey: ['okx-token-ranking', chainIndex, sortBy, direction, limit],
     queryFn: () => fetchOkxTokenRanking(chainIndex, sortBy, direction, limit),
-    staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 30 * 1000,
+    enabled,
+    staleTime: 60 * 1000, // 1 minute
+    refetchInterval: 60 * 1000, // Slower refetch to avoid rate limits
   });
 }
 
 /**
  * Hook to fetch top gainers
  */
-export function useOkxTopGainers(chainIndex: string = DEFAULT_CHAIN_INDEX, limit: number = 10) {
+export function useOkxTopGainers(chainIndex: string = DEFAULT_CHAIN_INDEX, limit: number = 10, enabled: boolean = true) {
   return useQuery<OkxTokenRankingItem[]>({
     queryKey: ['okx-top-gainers', chainIndex, limit],
     queryFn: () => fetchOkxTokenRanking(chainIndex, 'change24h', 'desc', limit),
-    staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
+    enabled,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
   });
 }
 
 /**
  * Hook to fetch top losers
  */
-export function useOkxTopLosers(chainIndex: string = DEFAULT_CHAIN_INDEX, limit: number = 10) {
+export function useOkxTopLosers(chainIndex: string = DEFAULT_CHAIN_INDEX, limit: number = 10, enabled: boolean = true) {
   return useQuery<OkxTokenRankingItem[]>({
     queryKey: ['okx-top-losers', chainIndex, limit],
     queryFn: () => fetchOkxTokenRanking(chainIndex, 'change24h', 'asc', limit),
-    staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
+    enabled,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
   });
 }
 
 /**
  * Hook to fetch top volume tokens
  */
-export function useOkxTopVolume(chainIndex: string = DEFAULT_CHAIN_INDEX, limit: number = 10) {
+export function useOkxTopVolume(chainIndex: string = DEFAULT_CHAIN_INDEX, limit: number = 10, enabled: boolean = true) {
   return useQuery<OkxTokenRankingItem[]>({
     queryKey: ['okx-top-volume', chainIndex, limit],
     queryFn: () => fetchOkxTokenRanking(chainIndex, 'volume24h', 'desc', limit),
-    staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
+    enabled,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
   });
 }
 
