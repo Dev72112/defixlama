@@ -1,6 +1,8 @@
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { useState, useCallback } from "react";
+import { MobileNavigation } from "./MobileNavigation";
+import { MobileMoreDrawer } from "./MobileMoreDrawer";
+import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,13 +14,25 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
+  // Check theme on mount
+  useEffect(() => {
+    const theme = document.documentElement.getAttribute('data-theme');
+    setIsDark(theme === 'dark');
+  }, []);
+
+  const handleThemeToggle = () => {
+    const newTheme = isDark ? 'bright' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    setIsDark(!isDark);
+  };
+
   const handleRefresh = useCallback(async () => {
-    // Invalidate all queries to refetch data
     await queryClient.invalidateQueries();
-    // Small delay for visual feedback
     await new Promise((resolve) => setTimeout(resolve, 500));
   }, [queryClient]);
 
@@ -29,8 +43,8 @@ export function Layout({ children }: LayoutProps) {
         <Sidebar />
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
+      {/* Mobile sidebar overlay (legacy, kept for tablet) */}
+      {sidebarOpen && !isMobile && (
         <div
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
@@ -45,16 +59,32 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="lg:pl-[220px] w-full max-w-[100vw] overflow-x-hidden">
+      <div className={cn(
+        "lg:pl-[220px] w-full max-w-[100vw] overflow-x-hidden",
+        isMobile && "pb-[calc(64px+env(safe-area-inset-bottom))]"
+      )}>
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         {isMobile ? (
           <PullToRefresh onRefresh={handleRefresh}>
-            <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
+            <main className="p-4 w-full max-w-full overflow-x-hidden">{children}</main>
           </PullToRefresh>
         ) : (
           <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
         )}
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <MobileNavigation onMoreClick={() => setMoreDrawerOpen(true)} />
+      )}
+
+      {/* Mobile More Drawer */}
+      <MobileMoreDrawer 
+        isOpen={moreDrawerOpen} 
+        onClose={() => setMoreDrawerOpen(false)}
+        onThemeToggle={handleThemeToggle}
+        isDark={isDark}
+      />
     </div>
   );
 }

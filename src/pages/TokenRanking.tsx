@@ -7,14 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ChainSelector, POPULAR_CHAINS } from "@/components/ChainSelector";
 import {
   useOkxTokenRanking,
@@ -33,8 +25,9 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-const DEFAULT_CHAIN = '196'; // X Layer
+const DEFAULT_CHAIN = '196';
 
 function formatPrice(price: string | number): string {
   const num = typeof price === 'string' ? parseFloat(price) : price;
@@ -83,7 +76,50 @@ interface RankingTableProps {
   highlightChange?: 'positive' | 'negative' | null;
 }
 
+// Mobile card view for tokens
+function MobileTokenCard({ token, index }: { token: any; index: number }) {
+  const change24h = parseFloat(token.priceChange24h || '0');
+  
+  return (
+    <Link 
+      to={`/tokens/${token.tokenContractAddress}`}
+      className="touch-card flex items-center gap-3 p-3"
+    >
+      <span className="text-sm text-muted-foreground w-6">{index + 1}</span>
+      {token.tokenLogo ? (
+        <img 
+          src={token.tokenLogo} 
+          alt={token.tokenSymbol} 
+          className="w-10 h-10 rounded-full"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
+        />
+      ) : (
+        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
+          {token.tokenSymbol?.charAt(0)}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="font-medium truncate">{token.tokenSymbol}</div>
+        <div className="text-xs text-muted-foreground">{formatPrice(token.price)}</div>
+      </div>
+      <div className="text-right">
+        <div className={cn(
+          "font-mono text-sm font-bold",
+          change24h > 0 ? "text-success" : change24h < 0 ? "text-destructive" : ""
+        )}>
+          {formatChange(change24h)}
+        </div>
+        <div className="text-xs text-muted-foreground">{formatVolume(token.volume24h || 0)}</div>
+      </div>
+    </Link>
+  );
+}
+
 function RankingTable({ data, loading, showRank = true, highlightChange = null }: RankingTableProps) {
+  const isMobile = useIsMobile();
+  
   if (loading) {
     return (
       <div className="space-y-3">
@@ -103,32 +139,44 @@ function RankingTable({ data, loading, showRank = true, highlightChange = null }
     );
   }
 
+  // Mobile: Card list view
+  if (isMobile) {
+    return (
+      <div className="space-y-2">
+        {data.map((token, index) => (
+          <MobileTokenCard key={`${token.chainIndex}-${token.tokenContractAddress}`} token={token} index={index} />
+        ))}
+      </div>
+    );
+  }
+
+  // Desktop: Table view
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {showRank && <TableHead className="w-12">#</TableHead>}
-            <TableHead>Token</TableHead>
-            <TableHead className="text-right">Price</TableHead>
-            <TableHead className="text-right">Change (24h)</TableHead>
-            <TableHead className="text-right">Volume (24h)</TableHead>
-            <TableHead className="text-right">Liquidity</TableHead>
-            <TableHead className="text-right">Holders</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div className="rounded-md border overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b bg-muted/50">
+            {showRank && <th className="text-left p-3 text-xs font-medium text-muted-foreground w-12">#</th>}
+            <th className="text-left p-3 text-xs font-medium text-muted-foreground">Token</th>
+            <th className="text-right p-3 text-xs font-medium text-muted-foreground">Price</th>
+            <th className="text-right p-3 text-xs font-medium text-muted-foreground">Change (24h)</th>
+            <th className="text-right p-3 text-xs font-medium text-muted-foreground hidden md:table-cell">Volume (24h)</th>
+            <th className="text-right p-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Liquidity</th>
+            <th className="text-right p-3 text-xs font-medium text-muted-foreground hidden lg:table-cell">Holders</th>
+          </tr>
+        </thead>
+        <tbody>
           {data.map((token, index) => {
             const change24h = parseFloat(token.priceChange24h || '0');
             
             return (
-              <TableRow key={`${token.chainIndex}-${token.tokenContractAddress}`}>
+              <tr key={`${token.chainIndex}-${token.tokenContractAddress}`} className="border-b hover:bg-muted/30 transition-colors">
                 {showRank && (
-                  <TableCell className="font-medium text-muted-foreground">
+                  <td className="p-3 font-medium text-muted-foreground">
                     {index + 1}
-                  </TableCell>
+                  </td>
                 )}
-                <TableCell>
+                <td className="p-3">
                   <Link 
                     to={`/tokens/${token.tokenContractAddress}`}
                     className="flex items-center gap-3 hover:underline"
@@ -154,30 +202,30 @@ function RankingTable({ data, loading, showRank = true, highlightChange = null }
                       </div>
                     </div>
                   </Link>
-                </TableCell>
-                <TableCell className="text-right font-mono">
+                </td>
+                <td className="p-3 text-right font-mono">
                   {formatPrice(token.price)}
-                </TableCell>
-                <TableCell className={cn(
-                  "text-right font-mono font-bold",
-                  change24h > 0 ? "text-green-500" : change24h < 0 ? "text-red-500" : ""
+                </td>
+                <td className={cn(
+                  "p-3 text-right font-mono font-bold",
+                  change24h > 0 ? "text-success" : change24h < 0 ? "text-destructive" : ""
                 )}>
                   {formatChange(change24h)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
+                </td>
+                <td className="p-3 text-right font-mono hidden md:table-cell">
                   {formatVolume(token.volume24h || 0)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
+                </td>
+                <td className="p-3 text-right font-mono hidden lg:table-cell">
                   {formatVolume(token.liquidity || 0)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
+                </td>
+                <td className="p-3 text-right font-mono hidden lg:table-cell">
                   {formatHolders(token.holders || 0)}
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             );
           })}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 }
