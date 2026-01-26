@@ -1,271 +1,245 @@
 
-# Mobile App Restructure & Crimson UI Redesign
+# Comprehensive Site Improvement Plan
+## Mobile App Enhancement & Desktop Restructure
+
+---
 
 ## Overview
-This plan transforms defiXlama into a native-like mobile app experience with a complete crimson color rebrand matching xlamaexchange.com's design aesthetic. The redesign includes a mobile-first bottom navigation, improved touch interactions, and a cohesive dark theme with crimson accents.
 
-## Design Reference Analysis
-From xlamaexchange.com, key design elements identified:
-- **Dark background**: Near-black (#0a0a0f to #0d0d12)
-- **Primary accent**: Green/teal used for CTAs (will replace with crimson)
-- **Card style**: Subtle borders, dark glass-effect cards
-- **Typography**: Clean, modern with strong hierarchy
-- **Mobile-first**: App-like navigation patterns
+This plan enhances the existing mobile app experience and introduces a modern desktop layout with improved navigation, better data visualization, and a more cohesive UX across all device sizes. The crimson theme will be further refined with subtle improvements.
 
 ---
 
-## Phase 1: Color System Overhaul - Crimson Theme
+## Phase 1: Enhanced Mobile Navigation & UX
 
-### File: `src/index.css`
-Update CSS custom properties for both light and dark themes:
+### 1.1 Swipe Gestures for Navigation
+**New File: `src/hooks/useSwipeGestures.ts`**
+- Implement swipe-left/swipe-right gestures for tab switching on TokenRanking page
+- Add swipe-down to refresh (enhance existing PullToRefresh)
+- Swipe-right from edge for "back" navigation
 
-**Dark Theme (Primary):**
-```css
---primary: 348 83% 47%;           /* Crimson #DC143C */
---primary-foreground: 0 0% 100%;
---accent: 348 70% 55%;            /* Lighter crimson */
---xlayer-green → --xlayer-crimson: 348 83% 47%;
---ring: 348 83% 47%;
-```
+### 1.2 Improved Mobile Navigation
+**File: `src/components/layout/MobileNavigation.tsx`**
+Current: 5 items (Home, Rank, DEXs, Portfolio, More)
+Improvements:
+- Add subtle haptic-like animation feedback on tap
+- Active tab indicator with animated crimson underline/dot
+- Badge support for notifications count
+- Smooth icon scale animation on tap
 
-**Light Theme:**
-```css
---primary: 348 83% 40%;           /* Darker crimson for light mode */
---accent: 348 70% 45%;
-```
+### 1.3 Enhanced Mobile More Drawer
+**File: `src/components/layout/MobileMoreDrawer.tsx`**
+Add:
+- Grouped sections (Analytics, Settings, Resources)
+- Search within drawer for quick access
+- Recently visited pages section
+- Quick action shortcuts (Refresh All, Toggle Alerts)
 
-**Additional accent colors:**
-```css
---crimson-glow: 348 83% 47%;
---crimson-dim: 348 60% 35%;
---gradient-primary: linear-gradient(135deg, hsl(348 83% 47%) 0%, hsl(348 60% 35%) 100%);
-```
-
-### File: `public/manifest.json`
-```json
-{
-  "theme_color": "#DC143C",
-  "background_color": "#0a0a0f"
-}
-```
-
-### File: `tailwind.config.ts`
-Add crimson color palette:
-```typescript
-xlayer: {
-  crimson: "hsl(var(--xlayer-crimson))",
-  "crimson-dim": "hsl(var(--xlayer-crimson-dim))",
-  // ... keep other colors
-}
-```
+### 1.4 Mobile-First Page Headers
+**New Component: `src/components/layout/MobilePageHeader.tsx`**
+- Sticky header with page title
+- Back button for detail pages
+- Right actions slot (share, bookmark, etc.)
+- Collapsible on scroll (hide title, show compact mode)
 
 ---
 
-## Phase 2: Mobile-First Layout Architecture
+## Phase 2: Desktop Layout Restructure
 
-### File: `src/components/layout/MobileNavigation.tsx` (NEW)
-Create a native-app-style bottom navigation bar:
+### 2.1 Redesigned Desktop Sidebar
+**File: `src/components/layout/Sidebar.tsx`**
+Current: 220px fixed sidebar with expandable "More" section
 
-```text
-┌─────────────────────────────────────────┐
-│  Fixed bottom bar with 5 main tabs:     │
-│  ┌─────┬─────┬─────┬─────┬─────┐       │
-│  │ 🏠  │ 📊  │ 🔄  │ 💰  │ 👤  │       │
-│  │Home │Rank │Swap │Port │More │       │
-│  └─────┴─────┴─────┴─────┴─────┘       │
-└─────────────────────────────────────────┘
-```
+Redesign to:
+- Collapsible sidebar (icons-only mode: 64px, expanded: 260px)
+- Persistent collapse state in localStorage
+- Grouped navigation sections with headers:
+  - **Overview**: Dashboard
+  - **Markets**: Protocols, DEXs, Tokens, Token Ranking, Stablecoins
+  - **Analytics**: Chains, Fees, Yields, Activities, Security
+  - **Personal**: Portfolio, Alerts, Watchlist
+  - **Resources**: Docs, Donations, Builder Logs
+- Hover tooltips in collapsed mode
+- Active route indicator with crimson accent bar
+- Keyboard shortcut hints next to items
 
+### 2.2 Desktop Header Improvements
+**File: `src/components/layout/Header.tsx`**
+Add:
+- Breadcrumb navigation for detail pages
+- Global command palette trigger (Cmd/Ctrl + K)
+- Quick stats bar (TVL, Gas, Active Users) - optional toggle
+- User avatar dropdown with recent activity
+
+### 2.3 Command Palette Enhancement
+**File: `src/components/GlobalSearch.tsx`**
+Enhance to full command palette:
+- Page navigation commands
+- Recent searches
+- Quick actions (Toggle Theme, Refresh Data, Export)
+- Keyboard shortcuts display
+- Fuzzy search across all entities
+
+---
+
+## Phase 3: Desktop Dashboard Redesign
+
+### 3.1 Flexible Grid Layout
+**File: `src/pages/Dashboard.tsx`**
+Create a configurable dashboard with:
+- Draggable widget positions (optional, future enhancement)
+- 3-column layout for wide screens (>1600px)
+- Collapsible sections with state persistence
+- Quick filters for displayed chains/protocols
+
+### 3.2 New Dashboard Widgets
+**New Components:**
+- `src/components/dashboard/QuickActions.tsx` - FAB-style quick action buttons
+- `src/components/dashboard/MiniWatchlist.tsx` - Compact watchlist widget
+- `src/components/dashboard/AlertsPreview.tsx` - Recent price alerts
+- `src/components/dashboard/ChainQuickSwitch.tsx` - Fast chain selector with TVL
+
+### 3.3 Enhanced Data Visualization
+- Add sparkline mini-charts to more stat cards
+- Animate value changes with count-up effect
+- Color-coded trend indicators
+
+---
+
+## Phase 4: Responsive Table Improvements
+
+### 4.1 Unified Responsive Table Component
+**New Component: `src/components/ui/ResponsiveTable.tsx`**
 Features:
-- Fixed at bottom with safe area padding
-- Active state with crimson highlight
-- Haptic feedback simulation on tap
-- "More" opens a drawer with secondary nav items
+- Auto-switches between table (desktop) and card list (mobile)
+- Configurable visible columns per breakpoint
+- Sortable columns with visual indicators
+- Sticky header on scroll
+- Virtualized rendering for large datasets (100+ rows)
 
-### File: `src/components/layout/Layout.tsx`
-Restructure for mobile-first approach:
-- Remove sidebar on mobile completely (replace with bottom nav)
-- Add bottom padding to main content to account for nav bar
-- Simplified header on mobile (logo + search icon + notifications only)
-- Use safe area insets for notched devices
+### 4.2 Page-Specific Table Updates
+Apply to:
+- `src/components/dashboard/ProtocolTable.tsx`
+- `src/components/dashboard/DexTable.tsx`
+- `src/components/dashboard/YieldTable.tsx`
+- Token ranking tables
 
-### File: `src/components/layout/Header.tsx`
-Mobile-optimized header:
-- Condensed height (48px vs 64px)
-- Center-aligned logo
-- Left: Back button (when applicable)
-- Right: Search icon + Notifications
-- Remove language switcher from header (move to More menu)
-
-### File: `src/components/layout/MobileMoreDrawer.tsx` (NEW)
-Slide-up drawer for secondary navigation:
-- Settings, Language, Theme toggle
-- Docs, Donations, Builder Logs
-- Admin (if applicable)
-- Sign out
+Mobile card view features:
+- Swipe actions (add to watchlist, set alert)
+- Expandable details on tap
+- Pull-down to reveal filters
 
 ---
 
-## Phase 3: Mobile-Optimized Components
+## Phase 5: Visual Polish & Micro-Interactions
 
-### File: `src/components/dashboard/StatCard.tsx`
-- Increase touch target sizes (min 44px)
-- Larger text on mobile for readability
-- Swipeable card actions on mobile
+### 5.1 Animation Enhancements
+**File: `src/index.css`**
+Add:
+- Stagger animations for list items (refined timing)
+- Card entrance animations with intersection observer
+- Button press feedback (scale + shadow)
+- Tab switch slide animation
+- Loading skeleton wave effect improvement
 
-### File: `src/components/ui/button.tsx`
-Add mobile-specific size variant:
+### 5.2 Crimson Theme Refinement
+- Add crimson accent to active states more consistently
+- Subtle crimson glow on focus states
+- Chart colors with crimson as primary data series
+- Toast notifications with crimson accent for important alerts
+
+### 5.3 Dark Mode Improvements
+- Deeper blacks for OLED screens (optional toggle)
+- Improved contrast for text readability
+- Subtle texture/grain overlay option for premium feel
+
+---
+
+## Phase 6: Performance & PWA Enhancements
+
+### 6.1 Code Splitting Improvements
+- Lazy load detail pages (ChainDetail, TokenDetail, etc.)
+- Split heavy chart libraries
+- Prefetch adjacent routes on hover
+
+### 6.2 PWA Improvements
+**File: `public/sw.js`**
+- Implement proper cache versioning
+- Add offline fallback page
+- Background sync for pending actions
+- Push notification preparation
+
+### 6.3 Data Caching Strategy
+- Implement SWR (stale-while-revalidate) pattern more consistently
+- Add cache indicators on stale data
+- Optimistic UI updates for user actions
+
+---
+
+## Files to Create
+
+| File Path | Purpose |
+|-----------|---------|
+| `src/hooks/useSwipeGestures.ts` | Touch gesture handling |
+| `src/components/layout/MobilePageHeader.tsx` | Collapsible mobile headers |
+| `src/components/layout/CollapsibleSidebar.tsx` | New desktop sidebar |
+| `src/components/layout/Breadcrumb.tsx` | Navigation breadcrumbs |
+| `src/components/ui/ResponsiveTable.tsx` | Unified table/card component |
+| `src/components/dashboard/QuickActions.tsx` | FAB quick actions |
+| `src/components/dashboard/MiniWatchlist.tsx` | Compact watchlist widget |
+
+## Files to Modify
+
+| File Path | Changes |
+|-----------|---------|
+| `src/components/layout/Layout.tsx` | Integrate collapsible sidebar, mobile header |
+| `src/components/layout/MobileNavigation.tsx` | Animation improvements, badges |
+| `src/components/layout/MobileMoreDrawer.tsx` | Grouped sections, search |
+| `src/components/layout/Sidebar.tsx` | Collapsible mode, grouped nav |
+| `src/components/layout/Header.tsx` | Breadcrumbs, command palette, stats bar |
+| `src/components/GlobalSearch.tsx` | Command palette features |
+| `src/index.css` | New animations, theme refinements |
+| `tailwind.config.ts` | New spacing, animation utilities |
+| `src/pages/Dashboard.tsx` | New widget layout, 3-column support |
+| `src/pages/TokenRanking.tsx` | Swipe gestures, improved mobile |
+| `src/pages/Protocols.tsx` | Responsive table component |
+
+---
+
+## Technical Implementation Details
+
+### Collapsible Sidebar State
 ```typescript
-size: {
-  // ... existing
-  touch: "h-12 px-6 min-w-[44px]", // 48px height for mobile touch
-}
+// localStorage key: 'sidebar-collapsed'
+// Default: expanded on desktop, N/A on mobile
+const [collapsed, setCollapsed] = useLocalStorage('sidebar-collapsed', false);
 ```
 
-### File: `src/components/MobileCard.tsx` (NEW)
-Reusable card component optimized for mobile:
-- Larger padding
-- Full-width on mobile
-- Press/active states
-- Swipe gestures support
-
-### File: `src/components/ui/tabs.tsx` (MODIFY)
-Mobile-optimized tabs:
-- Horizontally scrollable when many tabs
-- Larger touch targets
-- Active indicator animation
-
----
-
-## Phase 4: Page-Level Mobile Optimizations
-
-### File: `src/pages/Dashboard.tsx`
-- Stack cards vertically on mobile (single column)
-- Collapsible sections to reduce scroll depth
-- Quick action FAB (Floating Action Button) for common actions
-- Pull-to-refresh integration (already exists)
-
-### File: `src/pages/TokenRanking.tsx`
-- Simplified table view on mobile (fewer columns)
-- Card-based list view option
-- Horizontal scroll for full table view
-- Sticky header row
-
-### General Mobile Patterns (apply to all pages):
-- Single column layouts on mobile
-- Bottom sheets instead of modals on mobile
-- Swipe-to-go-back gesture support
-- Larger font sizes (base 16px)
-- Increased line heights for readability
-
----
-
-## Phase 5: PWA Enhancements for App-Like Experience
-
-### File: `public/sw.js`
-Enhanced service worker:
-- Aggressive caching for app shell
-- Background sync for offline actions
-- Push notification support preparation
-
-### File: `index.html`
-Mobile meta tags update:
-```html
-<meta name="theme-color" content="#DC143C">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-```
-
-### File: `src/App.tsx`
-Add viewport height fix for mobile browsers:
+### Swipe Gesture Detection
 ```typescript
-// Handle mobile viewport height (100vh issue)
-useEffect(() => {
-  const setVH = () => {
-    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
-  };
-  setVH();
-  window.addEventListener('resize', setVH);
-  return () => window.removeEventListener('resize', setVH);
-}, []);
+// Minimum swipe distance: 50px
+// Maximum swipe time: 300ms
+// Direction detection with threshold: 20px vertical tolerance
 ```
 
----
+### Responsive Breakpoints
+- **Mobile**: < 768px (bottom nav, no sidebar)
+- **Tablet**: 768px - 1024px (collapsible sidebar default collapsed)
+- **Desktop**: 1024px - 1600px (sidebar expanded)
+- **Wide**: > 1600px (3-column dashboard layout)
 
-## Phase 6: Visual Polish & Animation Updates
-
-### File: `src/index.css`
-Update animations and glows to crimson:
-- Change all `--success` based glows to use crimson for primary actions
-- Update gradient backgrounds
-- Add new mobile-specific animations:
-  - Bottom sheet slide-up
-  - FAB pulse
-  - Tab switch slide
-
-### Component Style Updates:
-- Cards: Subtle crimson border on hover
-- Buttons: Crimson gradient for primary CTA
-- Active states: Crimson glow
-- Links: Crimson accent color
-- Success indicators: Keep green (semantic)
-- Error indicators: Keep red (semantic)
+### Animation Timing
+- Page transitions: 200ms ease-out
+- Card hover: 150ms ease
+- Tab switch: 250ms spring
+- Stagger delay: 50ms per item (max 10 items)
 
 ---
 
-## Files to Create:
-1. `src/components/layout/MobileNavigation.tsx`
-2. `src/components/layout/MobileMoreDrawer.tsx`
-3. `src/components/MobileCard.tsx`
+## Expected Outcomes
 
-## Files to Modify:
-1. `src/index.css` - Color system overhaul
-2. `tailwind.config.ts` - Crimson palette addition
-3. `public/manifest.json` - Theme color update
-4. `index.html` - Mobile meta tags
-5. `src/components/layout/Layout.tsx` - Mobile-first structure
-6. `src/components/layout/Header.tsx` - Compact mobile header
-7. `src/components/layout/Sidebar.tsx` - Desktop-only, remove mobile handling
-8. `src/components/ui/button.tsx` - Touch-friendly size
-9. `src/components/dashboard/StatCard.tsx` - Mobile optimization
-10. `src/pages/Dashboard.tsx` - Mobile layout adjustments
-11. `src/pages/TokenRanking.tsx` - Mobile table optimization
-12. `src/App.tsx` - Viewport height fix
-
----
-
-## Technical Implementation Notes
-
-### Safe Area Handling
-```css
-padding-bottom: calc(env(safe-area-inset-bottom) + 64px);
-```
-
-### Bottom Navigation Z-Index
-```css
-z-index: 50; /* Above content, below modals */
-```
-
-### Breakpoint Strategy
-- Mobile-first: Default styles for mobile
-- `sm:` (640px) - Large phones, small tablets
-- `lg:` (1024px) - Desktop sidebar appears
-
-### Color Migration Mapping
-| Old (Green)        | New (Crimson)        |
-|--------------------|---------------------|
-| `hsl(163 60% 50%)` | `hsl(348 83% 47%)`  |
-| Primary buttons    | Crimson gradient    |
-| Active nav items   | Crimson highlight   |
-| Chart accent 1     | Crimson             |
-| Glow effects       | Crimson glow        |
-
----
-
-## Expected Outcome
-- True mobile app experience with bottom navigation
-- Cohesive crimson-themed dark UI matching xlamaexchange.com aesthetic
-- Improved touch interactions and accessibility
-- PWA-ready for home screen installation
-- Consistent experience across all device sizes
+1. **Mobile**: True native-app feel with gestures, smooth animations, intuitive navigation
+2. **Tablet**: Optimized hybrid experience with collapsible sidebar
+3. **Desktop**: Power-user features with command palette, collapsible navigation, multi-column layouts
+4. **Performance**: Faster initial load, better perceived performance with optimistic updates
+5. **Consistency**: Unified component patterns across all pages
