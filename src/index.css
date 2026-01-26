@@ -299,6 +299,11 @@
   .glow-primary-strong {
     box-shadow: 0 0 40px hsl(var(--primary) / 0.5);
   }
+  
+  /* Focus glow */
+  .focus-glow:focus-visible {
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.5);
+  }
 
   /* Card variants */
   .card-gradient {
@@ -333,6 +338,11 @@
 
   .card-interactive:hover::before {
     @apply opacity-100;
+  }
+  
+  /* Button press feedback */
+  .btn-press {
+    @apply transition-all duration-150 active:scale-[0.97] active:shadow-inner;
   }
 
   /* Text gradients */
@@ -509,6 +519,18 @@
   .stagger-item {
     animation: stagger-fade-in 0.4s ease-out both;
   }
+  
+  /* Stagger delay utility classes */
+  .stagger-item:nth-child(1) { animation-delay: 0ms; }
+  .stagger-item:nth-child(2) { animation-delay: 50ms; }
+  .stagger-item:nth-child(3) { animation-delay: 100ms; }
+  .stagger-item:nth-child(4) { animation-delay: 150ms; }
+  .stagger-item:nth-child(5) { animation-delay: 200ms; }
+  .stagger-item:nth-child(6) { animation-delay: 250ms; }
+  .stagger-item:nth-child(7) { animation-delay: 300ms; }
+  .stagger-item:nth-child(8) { animation-delay: 350ms; }
+  .stagger-item:nth-child(9) { animation-delay: 400ms; }
+  .stagger-item:nth-child(10) { animation-delay: 450ms; }
 
   @keyframes stagger-fade-in {
     from {
@@ -528,7 +550,7 @@
   }
   
   .mobile-nav-item {
-    @apply flex flex-col items-center justify-center gap-0.5 py-2 px-3 text-muted-foreground transition-colors min-h-[56px];
+    @apply flex flex-col items-center justify-center gap-0.5 py-2 px-3 text-muted-foreground transition-all min-h-[56px];
   }
   
   .mobile-nav-item.active {
@@ -537,13 +559,30 @@
   
   .mobile-nav-item:active {
     @apply scale-95;
+    transition: transform 0.1s ease;
+  }
+  
+  /* Tab switch animation */
+  .tab-switch-enter {
+    animation: tab-slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes tab-slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
   
   /* Mobile drawer */
   .mobile-drawer {
     @apply fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-2xl border-t border-border;
     padding-bottom: env(safe-area-inset-bottom);
-    animation: slide-up 0.3s ease-out;
+    animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   @keyframes slide-up {
@@ -572,6 +611,33 @@
   
   .touch-card:active {
     @apply bg-muted/50;
+  }
+  
+  /* Sidebar collapse animation */
+  .sidebar-collapsed .sidebar-label {
+    @apply opacity-0 w-0 overflow-hidden;
+    transition: opacity 0.2s ease, width 0.3s ease;
+  }
+  
+  .sidebar-expanded .sidebar-label {
+    @apply opacity-100;
+    transition: opacity 0.2s ease 0.1s;
+  }
+  
+  /* Card entrance animation with intersection observer */
+  .card-enter {
+    animation: card-entrance 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+  
+  @keyframes card-entrance {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 }
 
