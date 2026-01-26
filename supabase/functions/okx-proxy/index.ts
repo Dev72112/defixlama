@@ -242,59 +242,95 @@ serve(async (req) => {
         }
 
         let lastNonJson: { status: number; contentType: string; preview: string; url: string } | null = null;
+        let lastError: { status: number; code: string; msg: string } | null = null;
 
         for (const baseUrl of baseUrls) {
           const url = baseUrl + requestPath;
           console.log(`OKX API Request: ${method} ${url}`);
 
-          const response = await fetch(url, {
-            method,
-            headers,
-            body: method === 'GET' ? undefined : bodyStr,
-          });
+          try {
+            const response = await fetch(url, {
+              method,
+              headers,
+              body: method === 'GET' ? undefined : bodyStr,
+            });
 
-          const contentType = response.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const data = await response.json();
-            const upstreamStatus = response.status;
-            console.log(`OKX API Response: ${upstreamStatus}, code: ${data?.code}`);
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              const data = await response.json();
+              const upstreamStatus = response.status;
+              console.log(`OKX API Response: ${upstreamStatus}, code: ${data?.code}`);
 
-            // If upstream is rate-limiting, serve stale cache if we have it, otherwise return 200 with the error payload.
-            if (upstreamStatus === 429 || data?.code === '50011') {
-              const stale = responseCache.get(cacheKey);
-              if (stale && now < stale.staleUntil) {
-                return new Response(JSON.stringify(stale.data), {
+              // Handle geo-restriction (53015) or auth errors (401) - try next base URL
+              if (upstreamStatus === 401 || data?.code === '53015') {
+                console.log(`Geo-restriction or auth error from ${baseUrl}, trying next...`);
+                lastError = { status: upstreamStatus, code: data?.code || 'unknown', msg: data?.msg || 'Geo-restricted' };
+                continue; // Try next base URL
+              }
+
+              // If upstream is rate-limiting, serve stale cache if we have it, otherwise return 200 with the error payload.
+              if (upstreamStatus === 429 || data?.code === '50011') {
+                const stale = responseCache.get(cacheKey);
+                if (stale && now < stale.staleUntil) {
+                  return new Response(JSON.stringify(stale.data), {
+                    status: 200,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE', 'X-Upstream-Status': String(upstreamStatus) },
+                  });
+                }
+
+                return new Response(JSON.stringify({ ...data, upstreamStatus }), {
                   status: 200,
-                  headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE', 'X-Upstream-Status': String(upstreamStatus) },
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Upstream-Status': String(upstreamStatus) },
                 });
               }
 
-              return new Response(JSON.stringify({ ...data, upstreamStatus }), {
-                status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Upstream-Status': String(upstreamStatus) },
+              // Cache successful responses
+              if (data?.code === '0') {
+                const { freshMs, staleMs } = ttlFor(endpoint);
+                responseCache.set(cacheKey, {
+                  data,
+                  freshUntil: now + freshMs,
+                  staleUntil: now + staleMs,
+                });
+              }
+
+              return new Response(JSON.stringify(data), {
+                status: upstreamStatus,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': cached ? 'REFRESH' : 'MISS' },
               });
             }
 
-            // Cache successful responses
-            if (data?.code === '0') {
-              const { freshMs, staleMs } = ttlFor(endpoint);
-              responseCache.set(cacheKey, {
-                data,
-                freshUntil: now + freshMs,
-                staleUntil: now + staleMs,
-              });
-            }
-
-            return new Response(JSON.stringify(data), {
-              status: upstreamStatus,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': cached ? 'REFRESH' : 'MISS' },
-            });
+            const text = await response.text();
+            const preview = text.substring(0, 200);
+            console.error(`OKX API returned non-JSON response (${response.status}) from ${url}: ${preview}`);
+            lastNonJson = { status: response.status, contentType, preview, url };
+          } catch (fetchErr) {
+            console.error(`Fetch error for ${url}:`, fetchErr);
+            continue; // Try next base URL
           }
+        }
 
-          const text = await response.text();
-          const preview = text.substring(0, 200);
-          console.error(`OKX API returned non-JSON response (${response.status}) from ${url}: ${preview}`);
-          lastNonJson = { status: response.status, contentType, preview, url };
+        // All base URLs failed - check for stale cache before returning error
+        const stale = responseCache.get(cacheKey);
+        if (stale && now < stale.staleUntil) {
+          console.log('All OKX endpoints failed, serving stale cache');
+          return new Response(JSON.stringify(stale.data), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE-FALLBACK' },
+          });
+        }
+
+        // Return appropriate error
+        if (lastError) {
+          return new Response(
+            JSON.stringify({
+              error: 'OKX API geo-restricted',
+              code: lastError.code,
+              msg: lastError.msg,
+              data: [],
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         return new Response(
@@ -305,7 +341,7 @@ serve(async (req) => {
             msg: 'API temporarily unavailable',
             details: lastNonJson,
           }),
-          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (error: unknown) {
         console.error('OKX Proxy Error:', error);
