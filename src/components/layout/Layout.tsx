@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [sidebarCollapsed] = useLocalStorage("sidebar-collapsed", false);
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
@@ -35,6 +37,9 @@ export function Layout({ children }: LayoutProps) {
     await queryClient.invalidateQueries();
     await new Promise((resolve) => setTimeout(resolve, 500));
   }, [queryClient]);
+
+  // Calculate sidebar width for main content offset
+  const sidebarWidth = sidebarCollapsed ? "64px" : "260px";
 
   return (
     <div className="min-h-screen bg-background w-full max-w-[100vw] overflow-x-hidden">
@@ -59,10 +64,15 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className={cn(
-        "lg:pl-[220px] w-full max-w-[100vw] overflow-x-hidden",
-        isMobile && "pb-[calc(64px+env(safe-area-inset-bottom))]"
-      )}>
+      <div 
+        className={cn(
+          "w-full max-w-[100vw] overflow-x-hidden transition-all duration-300",
+          isMobile && "pb-[calc(64px+env(safe-area-inset-bottom))]"
+        )}
+        style={{ 
+          paddingLeft: !isMobile ? sidebarWidth : undefined 
+        }}
+      >
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         {isMobile ? (
           <PullToRefresh onRefresh={handleRefresh}>
