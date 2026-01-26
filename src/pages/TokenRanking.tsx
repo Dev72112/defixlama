@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
@@ -23,9 +23,16 @@ import {
   RefreshCw,
   Flame,
   Clock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeGestures } from "@/hooks/useSwipeGestures";
+
+// Tab order for swipe navigation
+const TAB_ORDER = ['gainers', 'losers', 'volume', 'marketcap'] as const;
+type TabType = typeof TAB_ORDER[number];
 
 const DEFAULT_CHAIN = '196';
 
@@ -233,7 +240,28 @@ function RankingTable({ data, loading, showRank = true, highlightChange = null }
 export default function TokenRanking() {
   const { t } = useTranslation();
   const [chainIndex, setChainIndex] = useState(DEFAULT_CHAIN);
-  const [activeTab, setActiveTab] = useState('gainers');
+  const [activeTab, setActiveTab] = useState<TabType>('gainers');
+  const isMobile = useIsMobile();
+  
+  // Swipe navigation between tabs
+  const handleSwipeLeft = useCallback(() => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    if (currentIndex < TAB_ORDER.length - 1) {
+      setActiveTab(TAB_ORDER[currentIndex + 1]);
+    }
+  }, [activeTab]);
+  
+  const handleSwipeRight = useCallback(() => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(TAB_ORDER[currentIndex - 1]);
+    }
+  }, [activeTab]);
+  
+  const swipeHandlers = useSwipeGestures({
+    onSwipeLeft: handleSwipeLeft,
+    onSwipeRight: handleSwipeRight,
+  }, { minDistance: 50, maxTime: 300 });
   
   // Summary data for stat cards (always enabled, longer cache)
   const { 
@@ -406,50 +434,66 @@ export default function TokenRanking() {
         {/* Ranking Tabs */}
         <Card>
           <CardHeader className="pb-0">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4 lg:w-[400px]">
-                <TabsTrigger value="gainers" className="flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="hidden sm:inline">Gainers</span>
-                </TabsTrigger>
-                <TabsTrigger value="losers" className="flex items-center gap-1">
-                  <TrendingDown className="h-4 w-4" />
-                  <span className="hidden sm:inline">Losers</span>
-                </TabsTrigger>
-                <TabsTrigger value="volume" className="flex items-center gap-1">
-                  <BarChart3 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Volume</span>
-                </TabsTrigger>
-                <TabsTrigger value="marketcap" className="flex items-center gap-1">
-                  <Activity className="h-4 w-4" />
-                  <span className="hidden sm:inline">Market Cap</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center justify-between">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
+                <TabsList className="grid w-full grid-cols-4 lg:w-[400px]">
+                  <TabsTrigger value="gainers" className="flex items-center gap-1">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="hidden sm:inline">Gainers</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="losers" className="flex items-center gap-1">
+                    <TrendingDown className="h-4 w-4" />
+                    <span className="hidden sm:inline">Losers</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="volume" className="flex items-center gap-1">
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Volume</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="marketcap" className="flex items-center gap-1">
+                    <Activity className="h-4 w-4" />
+                    <span className="hidden sm:inline">Market Cap</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              
+              {/* Mobile swipe hint */}
+              {isMobile && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <ChevronLeft className="h-3 w-3" />
+                  <span>Swipe</span>
+                  <ChevronRight className="h-3 w-3" />
+                </div>
+              )}
+            </div>
           </CardHeader>
-          <CardContent className="pt-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsContent value="gainers">
+          
+          {/* Swipeable content area */}
+          <CardContent 
+            className="pt-6"
+            {...(isMobile ? swipeHandlers : {})}
+          >
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
+              <TabsContent value="gainers" className="tab-switch-enter">
                 <RankingTable 
                   data={gainers || []} 
                   loading={gainersLoading}
                   highlightChange="positive"
                 />
               </TabsContent>
-              <TabsContent value="losers">
+              <TabsContent value="losers" className="tab-switch-enter">
                 <RankingTable 
                   data={losers || []} 
                   loading={losersLoading}
                   highlightChange="negative"
                 />
               </TabsContent>
-              <TabsContent value="volume">
+              <TabsContent value="volume" className="tab-switch-enter">
                 <RankingTable 
                   data={volume || []} 
                   loading={volumeLoading}
                 />
               </TabsContent>
-              <TabsContent value="marketcap">
+              <TabsContent value="marketcap" className="tab-switch-enter">
                 <RankingTable 
                   data={marketCap || []} 
                   loading={mcLoading}
