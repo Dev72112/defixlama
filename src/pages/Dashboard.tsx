@@ -21,6 +21,8 @@ import { StablecoinStats } from "@/components/dashboard/StablecoinStats";
 import { FeesOverview } from "@/components/dashboard/FeesOverview";
 import { TopChainsCard } from "@/components/dashboard/TopChainsCard";
 import { TopGainersLosers } from "@/components/dashboard/TopGainersLosers";
+import { MiniWatchlist } from "@/components/dashboard/MiniWatchlist";
+import { FloatingQuickAction } from "@/components/dashboard/QuickActions";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -496,9 +498,13 @@ function DashboardContent() {
             icon={Database}
             loading={feesData?.isLoading ?? true}
           />
+          <MiniWatchlist />
           <PriceAlertsPanel />
         </div>
       </div>
+      
+      {/* Floating Quick Action Button - Mobile only */}
+      <FloatingQuickAction />
     </div>
   );
 }
