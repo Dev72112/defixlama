@@ -10,7 +10,7 @@ export function useTheme() {
       const stored = localStorage.getItem("xlayer-theme");
       if (stored === "dark" || stored === "bright") return stored;
     } catch (e) {}
-    return "bright";
+    return "dark"; // Default to dark mode
   });
 
   const setTheme = useCallback((newTheme: "bright" | "dark") => {
