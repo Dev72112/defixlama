@@ -1,178 +1,171 @@
 
-# Comprehensive Site Improvement Plan
-## Mobile App Enhancement & Desktop Restructure
-
----
+# CountUp Animations & Multi-Chain Expansion Plan
 
 ## Overview
 
-This plan enhances the existing mobile app experience and introduces a modern desktop layout with improved navigation, better data visualization, and a more cohesive UX across all device sizes. The crimson theme will be further refined with subtle improvements.
+This plan implements two key enhancements:
+1. **CountUp animations** on dashboard stat cards for smooth number transitions
+2. **Multi-chain expansion** across the platform while keeping X Layer as the highlighted/featured chain
 
 ---
 
-## Phase 1: Enhanced Mobile Navigation & UX
+## Part 1: CountUp Animations for Stat Cards
 
-### 1.1 Swipe Gestures for Navigation
-**New File: `src/hooks/useSwipeGestures.ts`**
-- Implement swipe-left/swipe-right gestures for tab switching on TokenRanking page
-- Add swipe-down to refresh (enhance existing PullToRefresh)
-- Swipe-right from edge for "back" navigation
+### 1.1 Enhanced CountUp Component
+**File: `src/components/ui/AnimatedCard.tsx`**
 
-### 1.2 Improved Mobile Navigation
-**File: `src/components/layout/MobileNavigation.tsx`**
-Current: 5 items (Home, Rank, DEXs, Portfolio, More)
-Improvements:
-- Add subtle haptic-like animation feedback on tap
-- Active tab indicator with animated crimson underline/dot
-- Badge support for notifications count
-- Smooth icon scale animation on tap
+Improve the existing `CountUp` component to:
+- Accept formatted string values (currency, percentages)
+- Support live value updates (re-animate on data change)
+- Add optional easing options (ease-out, spring, linear)
+- Parse and animate formatted numbers (e.g., "$1.2B" → animate the number, keep prefix/suffix)
 
-### 1.3 Enhanced Mobile More Drawer
-**File: `src/components/layout/MobileMoreDrawer.tsx`**
-Add:
-- Grouped sections (Analytics, Settings, Resources)
-- Search within drawer for quick access
-- Recently visited pages section
-- Quick action shortcuts (Refresh All, Toggle Alerts)
+### 1.2 New AnimatedNumber Wrapper
+**File: `src/components/ui/AnimatedNumber.tsx`**
 
-### 1.4 Mobile-First Page Headers
-**New Component: `src/components/layout/MobilePageHeader.tsx`**
-- Sticky header with page title
-- Back button for detail pages
-- Right actions slot (share, bookmark, etc.)
-- Collapsible on scroll (hide title, show compact mode)
+Create a dedicated component for animated number display:
+- Parse currency strings like "$1,234.56B"
+- Animate the numeric portion
+- Preserve formatting (commas, decimals, units)
+- Support price flash effects (green/red on change direction)
 
----
+### 1.3 StatCard Integration
+**File: `src/components/dashboard/StatCard.tsx`**
 
-## Phase 2: Desktop Layout Restructure
+Update StatCard to use animated numbers:
+- Parse the `value` prop to extract numeric portion
+- Use AnimatedNumber for the main value display
+- Animate on initial load and when value changes
+- Add optional `animate` prop to disable if needed
 
-### 2.1 Redesigned Desktop Sidebar
-**File: `src/components/layout/Sidebar.tsx`**
-Current: 220px fixed sidebar with expandable "More" section
-
-Redesign to:
-- Collapsible sidebar (icons-only mode: 64px, expanded: 260px)
-- Persistent collapse state in localStorage
-- Grouped navigation sections with headers:
-  - **Overview**: Dashboard
-  - **Markets**: Protocols, DEXs, Tokens, Token Ranking, Stablecoins
-  - **Analytics**: Chains, Fees, Yields, Activities, Security
-  - **Personal**: Portfolio, Alerts, Watchlist
-  - **Resources**: Docs, Donations, Builder Logs
-- Hover tooltips in collapsed mode
-- Active route indicator with crimson accent bar
-- Keyboard shortcut hints next to items
-
-### 2.2 Desktop Header Improvements
-**File: `src/components/layout/Header.tsx`**
-Add:
-- Breadcrumb navigation for detail pages
-- Global command palette trigger (Cmd/Ctrl + K)
-- Quick stats bar (TVL, Gas, Active Users) - optional toggle
-- User avatar dropdown with recent activity
-
-### 2.3 Command Palette Enhancement
-**File: `src/components/GlobalSearch.tsx`**
-Enhance to full command palette:
-- Page navigation commands
-- Recent searches
-- Quick actions (Toggle Theme, Refresh Data, Export)
-- Keyboard shortcuts display
-- Fuzzy search across all entities
-
----
-
-## Phase 3: Desktop Dashboard Redesign
-
-### 3.1 Flexible Grid Layout
+### 1.4 Dashboard Implementation
 **File: `src/pages/Dashboard.tsx`**
-Create a configurable dashboard with:
-- Draggable widget positions (optional, future enhancement)
-- 3-column layout for wide screens (>1600px)
-- Collapsible sections with state persistence
-- Quick filters for displayed chains/protocols
 
-### 3.2 New Dashboard Widgets
-**New Components:**
-- `src/components/dashboard/QuickActions.tsx` - FAB-style quick action buttons
-- `src/components/dashboard/MiniWatchlist.tsx` - Compact watchlist widget
-- `src/components/dashboard/AlertsPreview.tsx` - Recent price alerts
-- `src/components/dashboard/ChainQuickSwitch.tsx` - Fast chain selector with TVL
-
-### 3.3 Enhanced Data Visualization
-- Add sparkline mini-charts to more stat cards
-- Animate value changes with count-up effect
-- Color-coded trend indicators
+Pass raw numeric values to StatCard instead of pre-formatted strings:
+- Pass `rawValue` prop for animation
+- Let StatCard handle formatting internally
+- Ensure all stat cards animate on data refresh
 
 ---
 
-## Phase 4: Responsive Table Improvements
+## Part 2: Multi-Chain Expansion
 
-### 4.1 Unified Responsive Table Component
-**New Component: `src/components/ui/ResponsiveTable.tsx`**
-Features:
-- Auto-switches between table (desktop) and card list (mobile)
-- Configurable visible columns per breakpoint
-- Sortable columns with visual indicators
-- Sticky header on scroll
-- Virtualized rendering for large datasets (100+ rows)
+### 2.1 Chain Configuration System
+**New File: `src/lib/chains.ts`**
 
-### 4.2 Page-Specific Table Updates
-Apply to:
-- `src/components/dashboard/ProtocolTable.tsx`
-- `src/components/dashboard/DexTable.tsx`
-- `src/components/dashboard/YieldTable.tsx`
-- Token ranking tables
+Create a centralized chain configuration:
+```typescript
+export const SUPPORTED_CHAINS = [
+  { id: 'xlayer', name: 'X Layer', index: '196', featured: true, logo: '...' },
+  { id: 'ethereum', name: 'Ethereum', index: '1', featured: false, logo: '...' },
+  { id: 'arbitrum', name: 'Arbitrum', index: '42161', featured: false, logo: '...' },
+  // ... more chains
+];
 
-Mobile card view features:
-- Swipe actions (add to watchlist, set alert)
-- Expandable details on tap
-- Pull-down to reveal filters
+export const DEFAULT_CHAIN = 'xlayer';
+export const FEATURED_CHAIN = 'xlayer';
+```
+
+### 2.2 Global Chain Selector Context
+**New File: `src/contexts/ChainContext.tsx`**
+
+Create a React context for global chain selection:
+- Store selected chain in localStorage for persistence
+- Provide `useChainContext` hook for components
+- Include helper functions: `isXLayer()`, `getFeaturedChain()`
+- Support multi-chain mode vs single-chain mode
+
+### 2.3 Enhanced ChainSelector Component
+**File: `src/components/ChainSelector.tsx`**
+
+Upgrade the existing chain selector:
+- Add chain logos/icons
+- Show "Featured" badge on X Layer
+- Add "All Chains" option for aggregate views
+- Group chains by category (L1, L2, etc.)
+- Persist selection in localStorage
+
+### 2.4 Multi-Chain Token Data Hook
+**File: `src/hooks/useTokenData.ts`**
+
+Expand token fetching to support multiple chains:
+- Accept `chainId` parameter
+- Fetch tokens from DefiLlama for any supported chain
+- Merge with chain-specific community tokens
+- Add chain identifier to token objects
+
+### 2.5 Multi-Chain Dashboard
+**File: `src/pages/Dashboard.tsx`**
+
+Add multi-chain support to dashboard:
+- Add chain selector in header area
+- Show aggregate stats when "All Chains" selected
+- Highlight X Layer data when viewing other chains (e.g., "X Layer: $X TVL")
+- Keep TopGainersLosers configurable per chain
+
+### 2.6 Multi-Chain Token Ranking
+**File: `src/pages/TokenRanking.tsx`**
+
+Already has chain selector - enhance it:
+- Show X Layer badge/highlight in the selector
+- Add quick filter chips for popular chains
+- Remember last selected chain
+
+### 2.7 Multi-Chain Tokens Page
+**File: `src/pages/Tokens.tsx`**
+
+Add chain filtering:
+- Chain selector in page header
+- Filter tokens by chain
+- Show chain badge on each token row
+- Keep X Layer tokens highlighted with special styling
+
+### 2.8 Community Tokens Per Chain
+**File: `src/lib/api/coingecko.ts`**
+
+Expand community tokens to support multiple chains:
+```typescript
+export const COMMUNITY_TOKENS = {
+  xlayer: [ /* existing X Layer tokens */ ],
+  ethereum: [ /* popular ETH tokens */ ],
+  arbitrum: [ /* popular ARB tokens */ ],
+  // ...
+};
+```
+
+### 2.9 Chain-Aware Explorer Links
+**File: `src/pages/TokenDetail.tsx`** and related
+
+Update explorer links to be chain-aware:
+- X Layer → okx.com/explorer/xlayer
+- Ethereum → etherscan.io
+- Arbitrum → arbiscan.io
+- etc.
 
 ---
 
-## Phase 5: Visual Polish & Micro-Interactions
+## Part 3: X Layer Highlighting
 
-### 5.1 Animation Enhancements
-**File: `src/index.css`**
-Add:
-- Stagger animations for list items (refined timing)
-- Card entrance animations with intersection observer
-- Button press feedback (scale + shadow)
-- Tab switch slide animation
-- Loading skeleton wave effect improvement
+### 3.1 Visual Distinction for X Layer
+Throughout the site, X Layer elements get special treatment:
+- **ChainSelector**: X Layer has crimson accent/star icon
+- **Token cards**: X Layer tokens have subtle crimson border
+- **Dashboard widgets**: "X Layer Spotlight" section remains prominent
+- **Chain stats**: X Layer row highlighted in chain comparison tables
 
-### 5.2 Crimson Theme Refinement
-- Add crimson accent to active states more consistently
-- Subtle crimson glow on focus states
-- Chart colors with crimson as primary data series
-- Toast notifications with crimson accent for important alerts
+### 3.2 X Layer Spotlight Widget
+**New File: `src/components/dashboard/XLayerSpotlight.tsx`**
 
-### 5.3 Dark Mode Improvements
-- Deeper blacks for OLED screens (optional toggle)
-- Improved contrast for text readability
-- Subtle texture/grain overlay option for premium feel
+Dedicated widget for X Layer highlights:
+- Quick stats: TVL, protocols, DEXs, top token
+- "View X Layer" quick link
+- Always visible regardless of selected chain
 
----
-
-## Phase 6: Performance & PWA Enhancements
-
-### 6.1 Code Splitting Improvements
-- Lazy load detail pages (ChainDetail, TokenDetail, etc.)
-- Split heavy chart libraries
-- Prefetch adjacent routes on hover
-
-### 6.2 PWA Improvements
-**File: `public/sw.js`**
-- Implement proper cache versioning
-- Add offline fallback page
-- Background sync for pending actions
-- Push notification preparation
-
-### 6.3 Data Caching Strategy
-- Implement SWR (stale-while-revalidate) pattern more consistently
-- Add cache indicators on stale data
-- Optimistic UI updates for user actions
+### 3.3 "Featured on X Layer" Badge
+Add a reusable badge component for X Layer entities:
+- Protocols native to X Layer
+- Tokens with X Layer contracts
+- DEXs with X Layer support
 
 ---
 
@@ -180,66 +173,74 @@ Add:
 
 | File Path | Purpose |
 |-----------|---------|
-| `src/hooks/useSwipeGestures.ts` | Touch gesture handling |
-| `src/components/layout/MobilePageHeader.tsx` | Collapsible mobile headers |
-| `src/components/layout/CollapsibleSidebar.tsx` | New desktop sidebar |
-| `src/components/layout/Breadcrumb.tsx` | Navigation breadcrumbs |
-| `src/components/ui/ResponsiveTable.tsx` | Unified table/card component |
-| `src/components/dashboard/QuickActions.tsx` | FAB quick actions |
-| `src/components/dashboard/MiniWatchlist.tsx` | Compact watchlist widget |
+| `src/lib/chains.ts` | Centralized chain configuration |
+| `src/contexts/ChainContext.tsx` | Global chain selection context |
+| `src/components/ui/AnimatedNumber.tsx` | Animated number display component |
+| `src/components/dashboard/XLayerSpotlight.tsx` | X Layer highlight widget |
 
 ## Files to Modify
 
 | File Path | Changes |
 |-----------|---------|
-| `src/components/layout/Layout.tsx` | Integrate collapsible sidebar, mobile header |
-| `src/components/layout/MobileNavigation.tsx` | Animation improvements, badges |
-| `src/components/layout/MobileMoreDrawer.tsx` | Grouped sections, search |
-| `src/components/layout/Sidebar.tsx` | Collapsible mode, grouped nav |
-| `src/components/layout/Header.tsx` | Breadcrumbs, command palette, stats bar |
-| `src/components/GlobalSearch.tsx` | Command palette features |
-| `src/index.css` | New animations, theme refinements |
-| `tailwind.config.ts` | New spacing, animation utilities |
-| `src/pages/Dashboard.tsx` | New widget layout, 3-column support |
-| `src/pages/TokenRanking.tsx` | Swipe gestures, improved mobile |
-| `src/pages/Protocols.tsx` | Responsive table component |
+| `src/components/ui/AnimatedCard.tsx` | Enhance CountUp with value parsing |
+| `src/components/dashboard/StatCard.tsx` | Integrate AnimatedNumber |
+| `src/components/ChainSelector.tsx` | Add logos, featured badge, grouping |
+| `src/hooks/useTokenData.ts` | Multi-chain token fetching |
+| `src/hooks/useDefiData.ts` | Parameterize chain in data hooks |
+| `src/pages/Dashboard.tsx` | Add chain context, animated stats |
+| `src/pages/Tokens.tsx` | Chain filter, multi-chain display |
+| `src/pages/TokenRanking.tsx` | X Layer highlight in selector |
+| `src/lib/api/coingecko.ts` | Multi-chain community tokens |
+| `src/App.tsx` | Wrap app in ChainContext provider |
 
 ---
 
 ## Technical Implementation Details
 
-### Collapsible Sidebar State
+### CountUp Animation Logic
 ```typescript
-// localStorage key: 'sidebar-collapsed'
-// Default: expanded on desktop, N/A on mobile
-const [collapsed, setCollapsed] = useLocalStorage('sidebar-collapsed', false);
+// Parse formatted currency: "$1.23B" → { prefix: "$", value: 1.23, suffix: "B" }
+function parseFormattedNumber(str: string) {
+  const match = str.match(/^([^0-9.-]*)(-?[\d,]+\.?\d*)(.*)$/);
+  return {
+    prefix: match?.[1] || '',
+    value: parseFloat(match?.[2]?.replace(/,/g, '') || '0'),
+    suffix: match?.[3] || '',
+  };
+}
 ```
 
-### Swipe Gesture Detection
+### Chain Context Usage
 ```typescript
-// Minimum swipe distance: 50px
-// Maximum swipe time: 300ms
-// Direction detection with threshold: 20px vertical tolerance
+const { selectedChain, setSelectedChain, isXLayer } = useChainContext();
+
+// In components:
+<ChainSelector 
+  value={selectedChain} 
+  onChange={setSelectedChain}
+  highlightChain="xlayer"
+/>
 ```
 
-### Responsive Breakpoints
-- **Mobile**: < 768px (bottom nav, no sidebar)
-- **Tablet**: 768px - 1024px (collapsible sidebar default collapsed)
-- **Desktop**: 1024px - 1600px (sidebar expanded)
-- **Wide**: > 1600px (3-column dashboard layout)
+### Data Hook Chain Parameter
+```typescript
+// Before:
+export function useXLayerProtocols() { ... }
 
-### Animation Timing
-- Page transitions: 200ms ease-out
-- Card hover: 150ms ease
-- Tab switch: 250ms spring
-- Stagger delay: 50ms per item (max 10 items)
+// After:
+export function useProtocols(chainId?: string) {
+  const { selectedChain } = useChainContext();
+  const chain = chainId || selectedChain;
+  // Fetch for specific chain or aggregate
+}
+```
 
 ---
 
 ## Expected Outcomes
 
-1. **Mobile**: True native-app feel with gestures, smooth animations, intuitive navigation
-2. **Tablet**: Optimized hybrid experience with collapsible sidebar
-3. **Desktop**: Power-user features with command palette, collapsible navigation, multi-column layouts
-4. **Performance**: Faster initial load, better perceived performance with optimistic updates
-5. **Consistency**: Unified component patterns across all pages
+1. **Animated Numbers**: All dashboard stat values animate smoothly on load and data updates
+2. **Multi-Chain Support**: Users can explore tokens, protocols, and stats across 10+ chains
+3. **X Layer Focus**: X Layer remains prominently featured with visual distinction
+4. **Consistent UX**: Chain selection persists across pages and sessions
+5. **Performance**: Lazy loading of chain-specific data to avoid over-fetching
