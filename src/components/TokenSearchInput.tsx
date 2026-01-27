@@ -51,7 +51,8 @@ export function TokenSearchInput({
     if (onSelect) {
       onSelect(token);
     } else {
-      navigate(`/tokens/${token.contractAddress}`);
+      // Navigate with chain param so detail page knows which chain
+      navigate(`/tokens/${token.contractAddress}?chain=${token.chainIndex}`);
     }
     setQuery("");
     setIsOpen(false);
