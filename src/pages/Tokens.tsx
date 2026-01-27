@@ -3,6 +3,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight, GitCompare, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -15,12 +16,16 @@ import { WatchlistButton } from "@/components/WatchlistButton";
 import { exportToCSV } from "@/lib/export";
 import { PriceDisplay, ChangeDisplay } from "@/components/PriceDisplay";
 import { ErrorState } from "@/components/ErrorState";
+import { ChainSelector, POPULAR_CHAINS } from "@/components/ChainSelector";
+import { XLayerBadge } from "@/components/dashboard/XLayerSpotlight";
+import { isXLayerChain, getChainExplorerUrlByIndex } from "@/lib/chains";
 
 export default function Tokens() {
   const { t } = useTranslation();
   const { data: tokens, isLoading, isError, error, refetch } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState("");
   const [showComparison, setShowComparison] = useState(false);
+  const [selectedChain, setSelectedChain] = useState("196"); // Default to X Layer
   const navigate = useNavigate();
 
   // Filter tokens
@@ -108,7 +113,13 @@ export default function Tokens() {
               {t("tokens.subtitle")}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <ChainSelector 
+              value={selectedChain} 
+              onChange={setSelectedChain}
+              highlightFeatured
+              className="w-[160px]"
+            />
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
               <Download className="h-4 w-4" />
               {t("tokens.export")}
@@ -216,7 +227,7 @@ export default function Tokens() {
                     key={token.symbol}
                     className={cn(
                       "group hover:bg-muted/30 transition-colors cursor-pointer",
-                      isCommunity && "bg-primary/5"
+                      isCommunity && "bg-primary/5 border-l-2 border-l-primary/50"
                     )}
                     onClick={() => navigate(`/tokens/${routeId}`)}
                     role="button"
@@ -258,9 +269,7 @@ export default function Tokens() {
                               {token.name}
                             </span>
                             {isCommunity && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary/20 text-primary font-medium">
-                                {t("tokens.community")}
-                              </span>
+                              <XLayerBadge />
                             )}
                           </div>
                           <div className="flex items-center gap-2">
