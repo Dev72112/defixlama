@@ -37,16 +37,16 @@ export function StatCard({
   }
 
   return (
-    <div className={cn("stat-card card-hover group touch-card", className)}>
+    <div className={cn("stat-card card-hover group touch-card stagger-spring", className)}>
       <div className="flex items-start justify-between">
         <div className="space-y-1 min-w-0 flex-1">
           <p className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors truncate">{title}</p>
-          <p className="text-xl sm:text-2xl font-bold text-foreground tabular-nums group-hover:text-gradient-primary transition-all truncate">
+          <p className="text-xl sm:text-2xl font-bold text-foreground tabular-nums group-hover:text-gradient-primary transition-all truncate count-up">
             {value}
           </p>
         </div>
         {Icon && (
-          <div className="rounded-lg bg-primary/10 p-2 sm:p-2.5 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 group-hover:shadow-lg transition-all duration-300 flex-shrink-0">
+          <div className="rounded-xl bg-primary/10 p-2 sm:p-2.5 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20 transition-all duration-300 flex-shrink-0">
             <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
         )}
@@ -57,20 +57,22 @@ export function StatCard({
           {change !== undefined && (
             <div
               className={cn(
-                "flex items-center gap-1 text-xs sm:text-sm font-medium",
-                isPositive ? "text-success" : "text-destructive"
+                "flex items-center gap-1 text-xs sm:text-sm font-medium px-2 py-0.5 rounded-full",
+                isPositive 
+                  ? "text-success bg-success/10" 
+                  : "text-destructive bg-destructive/10"
               )}
             >
               {isPositive ? (
-                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               ) : (
-                <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
+                <TrendingDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               )}
               <span>
                 {isPositive ? "+" : ""}
                 {typeof change === 'number' && !isNaN(change) ? change.toFixed(2) : '0.00'}%
               </span>
-              <span className="text-muted-foreground font-normal hidden sm:inline">
+              <span className="text-muted-foreground font-normal hidden sm:inline ml-1">
                 {changeLabel}
               </span>
             </div>
@@ -86,8 +88,11 @@ export function StatCard({
                 return (
                   <div
                     key={i}
-                    className="mini-bar w-1 sm:w-1.5"
-                    style={{ height: `${Math.max(height, 10)}%` }}
+                    className="mini-bar w-1 sm:w-1.5 rounded-t transition-all duration-300 hover:bg-primary"
+                    style={{ 
+                      height: `${Math.max(height, 10)}%`,
+                      animationDelay: `${i * 50}ms`
+                    }}
                   />
                 );
               })}

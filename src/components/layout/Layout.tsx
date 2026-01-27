@@ -21,10 +21,10 @@ export function Layout({ children }: LayoutProps) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  // Check theme on mount
+  // Check theme on mount - default to dark
   useEffect(() => {
     const theme = document.documentElement.getAttribute('data-theme');
-    setIsDark(theme === 'dark');
+    setIsDark(theme !== 'bright'); // Default dark if not explicitly bright
   }, []);
 
   const handleThemeToggle = () => {

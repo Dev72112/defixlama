@@ -57,15 +57,17 @@ export function TopGainersLosers({ chainIndex = '196', limit = 5 }: TopGainersLo
   return (
     <div className="grid md:grid-cols-2 gap-4">
       {/* Top Gainers */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-green-500" />
+            <div className="p-1.5 rounded-lg bg-success/10">
+              <TrendingUp className="h-5 w-5 text-success" />
+            </div>
             Top Gainers (24h)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {gainers.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-4">
                 No data available
@@ -75,32 +77,35 @@ export function TopGainersLosers({ chainIndex = '196', limit = 5 }: TopGainersLo
                 <Link
                   key={`${token.chainIndex}-${token.tokenContractAddress}`}
                   to={`/tokens/${token.tokenContractAddress}`}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  className={cn(
+                    "flex items-center justify-between p-2.5 rounded-lg hover:bg-success/5 transition-all duration-200 group stagger-item",
+                    "border border-transparent hover:border-success/20"
+                  )}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground text-sm w-4">{idx + 1}</span>
+                    <span className="text-muted-foreground text-xs font-medium w-5 h-5 flex items-center justify-center rounded bg-muted/50">{idx + 1}</span>
                     {token.tokenLogo ? (
                       <img
                         src={token.tokenLogo}
                         alt={token.tokenSymbol}
-                        className="w-8 h-8 rounded-full"
+                        className="w-8 h-8 rounded-full ring-2 ring-success/20 group-hover:ring-success/40 transition-all"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/placeholder.svg';
                         }}
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
+                      <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center text-xs font-bold text-success">
                         {token.tokenSymbol?.charAt(0)}
                       </div>
                     )}
                     <div>
-                      <div className="font-medium text-sm">{token.tokenSymbol}</div>
+                      <div className="font-medium text-sm group-hover:text-success transition-colors">{token.tokenSymbol}</div>
                       <div className="text-xs text-muted-foreground">
                         {formatPrice(token.price)}
                       </div>
                     </div>
                   </div>
-                  <span className="text-green-500 font-mono text-sm font-medium">
+                  <span className="text-success font-mono text-sm font-semibold bg-success/10 px-2 py-0.5 rounded">
                     {formatChange(token.priceChange24h || 0)}
                   </span>
                 </Link>
@@ -109,7 +114,7 @@ export function TopGainersLosers({ chainIndex = '196', limit = 5 }: TopGainersLo
           </div>
           <Link
             to="/token-ranking"
-            className="flex items-center justify-center gap-1 text-sm text-primary mt-4 hover:underline"
+            className="flex items-center justify-center gap-1 text-sm text-primary mt-4 hover:underline font-medium"
           >
             View All <ArrowRight className="h-4 w-4" />
           </Link>
@@ -117,15 +122,17 @@ export function TopGainersLosers({ chainIndex = '196', limit = 5 }: TopGainersLo
       </Card>
 
       {/* Top Losers */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-red-500" />
+            <div className="p-1.5 rounded-lg bg-destructive/10">
+              <TrendingDown className="h-5 w-5 text-destructive" />
+            </div>
             Top Losers (24h)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {losers.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-4">
                 No data available
@@ -135,32 +142,35 @@ export function TopGainersLosers({ chainIndex = '196', limit = 5 }: TopGainersLo
                 <Link
                   key={`${token.chainIndex}-${token.tokenContractAddress}`}
                   to={`/tokens/${token.tokenContractAddress}`}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  className={cn(
+                    "flex items-center justify-between p-2.5 rounded-lg hover:bg-destructive/5 transition-all duration-200 group stagger-item",
+                    "border border-transparent hover:border-destructive/20"
+                  )}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground text-sm w-4">{idx + 1}</span>
+                    <span className="text-muted-foreground text-xs font-medium w-5 h-5 flex items-center justify-center rounded bg-muted/50">{idx + 1}</span>
                     {token.tokenLogo ? (
                       <img
                         src={token.tokenLogo}
                         alt={token.tokenSymbol}
-                        className="w-8 h-8 rounded-full"
+                        className="w-8 h-8 rounded-full ring-2 ring-destructive/20 group-hover:ring-destructive/40 transition-all"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/placeholder.svg';
                         }}
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
+                      <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive">
                         {token.tokenSymbol?.charAt(0)}
                       </div>
                     )}
                     <div>
-                      <div className="font-medium text-sm">{token.tokenSymbol}</div>
+                      <div className="font-medium text-sm group-hover:text-destructive transition-colors">{token.tokenSymbol}</div>
                       <div className="text-xs text-muted-foreground">
                         {formatPrice(token.price)}
                       </div>
                     </div>
                   </div>
-                  <span className="text-red-500 font-mono text-sm font-medium">
+                  <span className="text-destructive font-mono text-sm font-semibold bg-destructive/10 px-2 py-0.5 rounded">
                     {formatChange(token.priceChange24h || 0)}
                   </span>
                 </Link>
@@ -169,7 +179,7 @@ export function TopGainersLosers({ chainIndex = '196', limit = 5 }: TopGainersLo
           </div>
           <Link
             to="/token-ranking"
-            className="flex items-center justify-center gap-1 text-sm text-primary mt-4 hover:underline"
+            className="flex items-center justify-center gap-1 text-sm text-primary mt-4 hover:underline font-medium"
           >
             View All <ArrowRight className="h-4 w-4" />
           </Link>
