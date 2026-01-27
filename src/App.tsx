@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
+import { ChainProvider } from "@/contexts/ChainContext";
 
 // Eagerly load critical pages
 import Dashboard from "./pages/Dashboard";
@@ -63,47 +64,49 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Eagerly loaded routes */}
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/auth" element={<Auth />} />
-            
-            {/* Lazy loaded routes */}
-            <Route path="/protocols" element={<Protocols />} />
-            <Route path="/protocols/:slug" element={<ProtocolDetail />} />
-            <Route path="/dexs" element={<Dexs />} />
-            <Route path="/dexs/:id" element={<DexDetail />} />
-            <Route path="/yields" element={<Yields />} />
-            <Route path="/stablecoins" element={<Stablecoins />} />
-            <Route path="/stablecoins/:id" element={<StablecoinDetail />} />
-            <Route path="/tokens" element={<Tokens />} />
-            <Route path="/tokens/:id" element={<TokenDetail />} />
-            <Route path="/token-ranking" element={<TokenRanking />} />
-            <Route path="/chains" element={<Chains />} />
-            <Route path="/chains/:id" element={<ChainDetail />} />
-            <Route path="/fees" element={<Fees />} />
-            <Route path="/fees/:id" element={<FeeDetail />} />
-            <Route path="/activities" element={<Activities />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/security/:id" element={<SecurityDetail />} />
-            <Route path="/donations" element={<Donations />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/builder-logs" element={<BuilderLogs />} />
-            <Route path="/admin" element={<Admin />} />
-            
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ChainProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Eagerly loaded routes */}
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Lazy loaded routes */}
+              <Route path="/protocols" element={<Protocols />} />
+              <Route path="/protocols/:slug" element={<ProtocolDetail />} />
+              <Route path="/dexs" element={<Dexs />} />
+              <Route path="/dexs/:id" element={<DexDetail />} />
+              <Route path="/yields" element={<Yields />} />
+              <Route path="/stablecoins" element={<Stablecoins />} />
+              <Route path="/stablecoins/:id" element={<StablecoinDetail />} />
+              <Route path="/tokens" element={<Tokens />} />
+              <Route path="/tokens/:id" element={<TokenDetail />} />
+              <Route path="/token-ranking" element={<TokenRanking />} />
+              <Route path="/chains" element={<Chains />} />
+              <Route path="/chains/:id" element={<ChainDetail />} />
+              <Route path="/fees" element={<Fees />} />
+              <Route path="/fees/:id" element={<FeeDetail />} />
+              <Route path="/activities" element={<Activities />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/security/:id" element={<SecurityDetail />} />
+              <Route path="/donations" element={<Donations />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/docs" element={<Docs />} />
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/builder-logs" element={<BuilderLogs />} />
+              <Route path="/admin" element={<Admin />} />
+              
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ChainProvider>
   </QueryClientProvider>
 );
 

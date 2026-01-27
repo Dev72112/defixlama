@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
+import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 
 interface StatCardProps {
   title: string;
@@ -10,6 +11,8 @@ interface StatCardProps {
   loading?: boolean;
   className?: string;
   miniChart?: number[];
+  // Enable/disable animation
+  animate?: boolean;
 }
 
 export function StatCard({
@@ -21,6 +24,7 @@ export function StatCard({
   loading = false,
   className,
   miniChart,
+  animate = true,
 }: StatCardProps) {
   const isPositive = change !== undefined && change >= 0;
 
@@ -41,8 +45,12 @@ export function StatCard({
       <div className="flex items-start justify-between">
         <div className="space-y-1 min-w-0 flex-1">
           <p className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors truncate">{title}</p>
-          <p className="text-xl sm:text-2xl font-bold text-foreground tabular-nums group-hover:text-gradient-primary transition-all truncate count-up">
-            {value}
+          <p className="text-xl sm:text-2xl font-bold text-foreground group-hover:text-gradient-primary transition-all truncate">
+            {animate ? (
+              <AnimatedNumber value={value} duration={800} flashOnChange />
+            ) : (
+              value
+            )}
           </p>
         </div>
         {Icon && (

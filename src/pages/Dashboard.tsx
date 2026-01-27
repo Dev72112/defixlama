@@ -5,6 +5,7 @@ import { Activity } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDashboardData, useChainsTVL, useFeesData, useStablecoins, useTop10Chains } from "@/hooks/useDefiData";
 import { useTokenPrices } from "@/hooks/useTokenData";
+import { useChainContext } from "@/contexts/ChainContext";
 import { LivePriceIndicator } from "@/components/LivePriceIndicator";
 import { LivePriceTicker } from "@/components/LivePriceTicker";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -23,6 +24,8 @@ import { TopChainsCard } from "@/components/dashboard/TopChainsCard";
 import { TopGainersLosers } from "@/components/dashboard/TopGainersLosers";
 import { MiniWatchlist } from "@/components/dashboard/MiniWatchlist";
 import { FloatingQuickAction } from "@/components/dashboard/QuickActions";
+import { XLayerSpotlight } from "@/components/dashboard/XLayerSpotlight";
+import { ChainSelector } from "@/components/ChainSelector";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -304,8 +307,16 @@ function DashboardContent() {
         />
       </div>
 
-      {/* OKX Top Gainers/Losers - X Layer */}
-      <TopGainersLosers chainIndex="196" limit={5} />
+      {/* X Layer Spotlight - Always visible */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <XLayerSpotlight />
+        </div>
+        <div className="space-y-4">
+          {/* OKX Top Gainers/Losers - X Layer */}
+          <TopGainersLosers chainIndex="196" limit={5} />
+        </div>
+      </div>
 
       {/* Quick Insights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

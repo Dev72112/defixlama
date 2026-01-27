@@ -310,6 +310,15 @@ export default function TokenRanking() {
     else if (activeTab === 'marketcap') refetchMC();
   };
 
+  // Quick chain filter chips
+  const quickChains = [
+    { index: '196', name: 'X Layer', featured: true },
+    { index: '1', name: 'ETH' },
+    { index: '42161', name: 'ARB' },
+    { index: '8453', name: 'Base' },
+    { index: '10', name: 'OP' },
+  ];
+
   return (
     <Layout>
       <div className="container mx-auto py-6 space-y-6">
@@ -323,11 +332,12 @@ export default function TokenRanking() {
               Explore top performing tokens across chains
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <ChainSelector 
               value={chainIndex} 
               onChange={setChainIndex}
               className="w-[180px]"
+              highlightFeatured
             />
             <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isFetching}>
               <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
@@ -353,6 +363,26 @@ export default function TokenRanking() {
               </span>
             )}
           </div>
+        </div>
+
+        {/* Quick Chain Filter Chips */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-muted-foreground mr-1">Quick:</span>
+          {quickChains.map((chain) => (
+            <Badge 
+              key={chain.index}
+              variant={chainIndex === chain.index ? "default" : "outline"}
+              className={cn(
+                "cursor-pointer transition-all hover:scale-105",
+                chain.featured && chainIndex === chain.index && "bg-primary",
+                chain.featured && chainIndex !== chain.index && "border-primary/50 hover:bg-primary/10"
+              )}
+              onClick={() => setChainIndex(chain.index)}
+            >
+              {chain.featured && <Flame className="h-3 w-3 mr-1" />}
+              {chain.name}
+            </Badge>
+          ))}
         </div>
 
         {/* Stats Cards */}
