@@ -45,6 +45,7 @@ export function ChainSelector({
 }: ChainSelectorProps) {
   const selectedChain = POPULAR_CHAINS.find(c => c.index === value);
   const isFeaturedSelected = isXLayerChain(value);
+  const isAllChainsSelected = value === ALL_CHAINS_ID;
 
   // Group chains by type
   const l1Chains = POPULAR_CHAINS.filter(c => c.type === 'L1');
@@ -60,14 +61,19 @@ export function ChainSelector({
         )}
       >
         <SelectValue placeholder="Select chain">
-          {selectedChain && (
+          {isAllChainsSelected ? (
+            <div className="flex items-center gap-2">
+              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>All Chains</span>
+            </div>
+          ) : selectedChain ? (
             <div className="flex items-center gap-2">
               {selectedChain.featured && highlightFeatured && (
                 <Star className="h-3 w-3 text-primary fill-primary" />
               )}
               <span>{compact ? selectedChain.name.split(' ')[0] : selectedChain.name}</span>
             </div>
-          )}
+          ) : null}
         </SelectValue>
       </SelectTrigger>
       <SelectContent className="max-h-[300px]">
