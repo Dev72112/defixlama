@@ -88,7 +88,7 @@ export default function Tokens() {
   };
 
   const handleTokenSelect = (token: MultiChainToken) => {
-    navigate(`/tokens/${token.contractAddress}`);
+    navigate(`/tokens/${token.contractAddress}?chain=${token.chainIndex}`);
   };
 
   const getChainName = (chainIndex: string) => {
@@ -263,10 +263,10 @@ export default function Tokens() {
                       "group hover:bg-muted/30 transition-colors cursor-pointer",
                       isXLayer && "bg-primary/5 border-l-2 border-l-primary/50"
                     )}
-                    onClick={() => navigate(`/tokens/${token.contractAddress}`)}
+                    onClick={() => navigate(`/tokens/${token.contractAddress}?chain=${token.chainIndex}`)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${token.contractAddress}`); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${token.contractAddress}?chain=${token.chainIndex}`); }}
                   >
                     <td className="hidden sm:table-cell">
                       <WatchlistButton
