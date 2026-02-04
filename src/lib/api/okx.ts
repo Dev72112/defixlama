@@ -285,13 +285,16 @@ export async function fetchOkxTrades(
 }
 
 /**
- * Get supported chains
+ * Get supported chains (uses v5 cross-chain endpoint)
  */
 export async function fetchOkxSupportedChains(): Promise<OkxChain[]> {
-  const data = await callOkxProxy('/api/v6/dex/market/supported-chains');
+  const data = await callOkxProxy('/api/v5/dex/cross-chain/supported/chain');
   
   if (data?.code === '0' && data?.data) {
-    return data.data;
+    return data.data.map((chain: any) => ({
+      chainIndex: chain.chainId,
+      chainName: chain.chainName,
+    }));
   }
   
   return [];

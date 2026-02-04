@@ -84,6 +84,7 @@ const ALLOWED_ENDPOINTS = [
   '/api/v5/dex/aggregator/all-tokens',
   '/api/v5/dex/aggregator/quote',
   '/api/v5/dex/market/price',
+  '/api/v5/dex/cross-chain/supported/chain', // Supported chains
   '/api/v5/market/ticker',
   '/api/v5/market/tickers',
   '/api/v5/market/index-tickers',
@@ -93,7 +94,6 @@ const ALLOWED_ENDPOINTS = [
   '/api/v6/dex/market/historical-candles',
   '/api/v6/dex/market/trades',
   '/api/v6/dex/market/price',
-  '/api/v6/dex/market/supported-chains',
   // v6 Market Token API (ranking)
   '/api/v6/dex/market/token/toplist',
   // v6 Token API
@@ -164,10 +164,11 @@ serve(async (req) => {
       );
     }
 
-    // Build URL
+    // Build URL - v6 Web3 endpoints prefer web3.okx.com, v5 uses www.okx.com
     const isV6 = endpoint.startsWith('/api/v6/');
+    // web3.okx.com is the primary for v6 dex/market endpoints
     const baseUrls = isV6
-      ? ['https://www.okx.com', 'https://web3.okx.com']
+      ? ['https://web3.okx.com', 'https://www.okx.com']
       : ['https://www.okx.com'];
 
     let requestPath = endpoint;
@@ -261,10 +262,10 @@ serve(async (req) => {
               const upstreamStatus = response.status;
               console.log(`OKX API Response: ${upstreamStatus}, code: ${data?.code}`);
 
-              // Handle geo-restriction (53015) or auth errors (401) - try next base URL
-              if (upstreamStatus === 401 || data?.code === '53015') {
-                console.log(`Geo-restriction or auth error from ${baseUrl}, trying next...`);
-                lastError = { status: upstreamStatus, code: data?.code || 'unknown', msg: data?.msg || 'Geo-restricted' };
+              // Handle geo-restriction (53015), auth errors (401), or 404 - try next base URL
+              if (upstreamStatus === 401 || upstreamStatus === 404 || data?.code === '53015' || data?.code === '404') {
+                console.log(`Error ${upstreamStatus}/${data?.code} from ${baseUrl}, trying next...`);
+                lastError = { status: upstreamStatus, code: data?.code || String(upstreamStatus), msg: data?.msg || 'Not Found' };
                 continue; // Try next base URL
               }
 
