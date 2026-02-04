@@ -1,246 +1,247 @@
 
-# CountUp Animations & Multi-Chain Expansion Plan
+# Premium Matrix Theme + Token System Overhaul
 
-## Overview
+## Summary
 
-This plan implements two key enhancements:
-1. **CountUp animations** on dashboard stat cards for smooth number transitions
-2. **Multi-chain expansion** across the platform while keeping X Layer as the highlighted/featured chain
-
----
-
-## Part 1: CountUp Animations for Stat Cards
-
-### 1.1 Enhanced CountUp Component
-**File: `src/components/ui/AnimatedCard.tsx`**
-
-Improve the existing `CountUp` component to:
-- Accept formatted string values (currency, percentages)
-- Support live value updates (re-animate on data change)
-- Add optional easing options (ease-out, spring, linear)
-- Parse and animate formatted numbers (e.g., "$1.2B" → animate the number, keep prefix/suffix)
-
-### 1.2 New AnimatedNumber Wrapper
-**File: `src/components/ui/AnimatedNumber.tsx`**
-
-Create a dedicated component for animated number display:
-- Parse currency strings like "$1,234.56B"
-- Animate the numeric portion
-- Preserve formatting (commas, decimals, units)
-- Support price flash effects (green/red on change direction)
-
-### 1.3 StatCard Integration
-**File: `src/components/dashboard/StatCard.tsx`**
-
-Update StatCard to use animated numbers:
-- Parse the `value` prop to extract numeric portion
-- Use AnimatedNumber for the main value display
-- Animate on initial load and when value changes
-- Add optional `animate` prop to disable if needed
-
-### 1.4 Dashboard Implementation
-**File: `src/pages/Dashboard.tsx`**
-
-Pass raw numeric values to StatCard instead of pre-formatted strings:
-- Pass `rawValue` prop for animation
-- Let StatCard handle formatting internally
-- Ensure all stat cards animate on data refresh
+This plan addresses four key areas:
+1. **New Default Matrix Theme**: OLED-first with neon green accents, loaded by default for new users
+2. **Token Search Fix**: Repair the search functionality that's currently not working
+3. **Token List Stability**: Improve OKX API resilience and use dynamic chain support
+4. **Token Detail Fallback**: Prevent "Token Not Found" errors for any token
 
 ---
 
-## Part 2: Multi-Chain Expansion
+## Part 1: Matrix OLED Theme as Default
 
-### 2.1 Chain Configuration System
-**New File: `src/lib/chains.ts`**
+### 1.1 New Theme System Architecture
+**File: `src/components/ThemeToggle.tsx`**
 
-Create a centralized chain configuration:
-```typescript
-export const SUPPORTED_CHAINS = [
-  { id: 'xlayer', name: 'X Layer', index: '196', featured: true, logo: '...' },
-  { id: 'ethereum', name: 'Ethereum', index: '1', featured: false, logo: '...' },
-  { id: 'arbitrum', name: 'Arbitrum', index: '42161', featured: false, logo: '...' },
-  // ... more chains
-];
+Expand the theme system from 2 modes to 3:
+- `bright` - Light mode
+- `dark` - Standard dark (current default)
+- `matrix` - OLED black + neon green accents (NEW DEFAULT)
 
-export const DEFAULT_CHAIN = 'xlayer';
-export const FEATURED_CHAIN = 'xlayer';
+Changes:
+- Update `useTheme` hook to support `"bright" | "dark" | "matrix"`
+- Default to `"matrix"` for first-time visitors
+- Update toggle UI to cycle through modes or show a dropdown
+
+### 1.2 Matrix Theme CSS Variables
+**File: `src/index.css`**
+
+Add new `[data-theme="matrix"]` selector with:
+- True black background: `--background: 0 0% 0%`
+- Neon green primary: `--primary: 145 100% 45%` (vibrant matrix green)
+- Keep X Layer badge in crimson for brand distinction
+- Green glow effects on cards and buttons
+- Subtle matrix "rain" background gradient option
+
+Key variable changes for matrix mode:
+```css
+[data-theme="matrix"] {
+  --background: 0 0% 0%;
+  --foreground: 145 100% 85%;
+  --primary: 145 100% 45%;
+  --primary-foreground: 0 0% 0%;
+  --accent: 145 80% 50%;
+  /* X Layer badge stays crimson */
+  --xlayer-crimson: 348 83% 50%;
+}
 ```
 
-### 2.2 Global Chain Selector Context
-**New File: `src/contexts/ChainContext.tsx`**
+### 1.3 Layout Default Theme
+**File: `src/components/layout/Layout.tsx`**
 
-Create a React context for global chain selection:
-- Store selected chain in localStorage for persistence
-- Provide `useChainContext` hook for components
-- Include helper functions: `isXLayer()`, `getFeaturedChain()`
-- Support multi-chain mode vs single-chain mode
+Update initial theme detection:
+- If no theme in localStorage, default to `"matrix"`
+- On first load, set `data-theme="matrix"`
 
-### 2.3 Enhanced ChainSelector Component
-**File: `src/components/ChainSelector.tsx`**
+### 1.4 MobileMoreDrawer Theme Options
+**File: `src/components/layout/MobileMoreDrawer.tsx`**
 
-Upgrade the existing chain selector:
-- Add chain logos/icons
-- Show "Featured" badge on X Layer
-- Add "All Chains" option for aggregate views
-- Group chains by category (L1, L2, etc.)
-- Persist selection in localStorage
+Update theme toggle to show three options:
+- Light / Dark / Matrix toggle or cycle button
 
-### 2.4 Multi-Chain Token Data Hook
-**File: `src/hooks/useTokenData.ts`**
+---
 
-Expand token fetching to support multiple chains:
-- Accept `chainId` parameter
-- Fetch tokens from DefiLlama for any supported chain
-- Merge with chain-specific community tokens
-- Add chain identifier to token objects
+## Part 2: Fix Token Search
 
-### 2.5 Multi-Chain Dashboard
-**File: `src/pages/Dashboard.tsx`**
+### 2.1 Root Cause Analysis
 
-Add multi-chain support to dashboard:
-- Add chain selector in header area
-- Show aggregate stats when "All Chains" selected
-- Highlight X Layer data when viewing other chains (e.g., "X Layer: $X TVL")
-- Keep TopGainersLosers configurable per chain
+The search isn't working because:
+1. The OKX API is returning 429 (rate limit) errors
+2. Name/symbol search relies on ranking data which may be empty
+3. Address search needs better chain detection
 
-### 2.6 Multi-Chain Token Ranking
-**File: `src/pages/TokenRanking.tsx`**
+### 2.2 Enhanced Token Search Logic
+**File: `src/hooks/useMultiChainTokens.ts`**
 
-Already has chain selector - enhance it:
-- Show X Layer badge/highlight in the selector
-- Add quick filter chips for popular chains
-- Remember last selected chain
+Improve `useTokenSearch`:
+- Add OKX token search endpoint as primary source (`/api/v6/dex/token/search`)
+- Fall back to ranking data filter if search endpoint fails
+- For address lookups, try all chains in parallel with proper error handling
+- Add debouncing to prevent rapid API calls
 
-### 2.7 Multi-Chain Tokens Page
+```typescript
+// New approach for name/symbol search
+export async function searchTokens(query: string, chains: string[]) {
+  // Primary: Use OKX search endpoint
+  const searchResults = await fetchOkxTokenSearch(query);
+  if (searchResults.length > 0) return searchResults;
+  
+  // Fallback: Filter from cached ranking data
+  // ...existing filter logic
+}
+```
+
+### 2.3 Add OKX Token Search Integration
+**File: `src/lib/api/okx.ts`**
+
+The `fetchOkxTokenSearch` function already exists - verify it's being used and add to the search hook.
+
+### 2.4 Search Input Improvements
+**File: `src/components/TokenSearchInput.tsx`**
+
+Add:
+- Debounce input (300ms delay)
+- Show loading state while searching
+- Better error messaging when API fails
+- Direct navigation option for contract addresses
+
+---
+
+## Part 3: Stable Token List with Dynamic OKX Chains
+
+### 3.1 Dynamic Chain Discovery
+**File: `src/hooks/useMultiChainTokens.ts`**
+
+Replace hardcoded `AGGREGATE_CHAINS` with dynamic OKX-supported chains:
+
+```typescript
+// Instead of hardcoded:
+const AGGREGATE_CHAINS = ['196', '1', '56', ...];
+
+// Use OKX supported chains API
+const { data: supportedChains } = useOkxSupportedChains();
+const chainsToQuery = supportedChains?.map(c => c.chainIndex) || FALLBACK_CHAINS;
+```
+
+### 3.2 Rate Limit Handling
+**File: `src/hooks/useMultiChainTokens.ts`**
+
+Improve resilience:
+- Reduce parallel requests (fetch chains sequentially or in smaller batches)
+- Increase staleTime to reduce refetch frequency
+- Add retry logic with exponential backoff
+- Use cached data when fresh data unavailable
+
+### 3.3 Tokens Page Fallback
 **File: `src/pages/Tokens.tsx`**
 
-Add chain filtering:
-- Chain selector in page header
-- Filter tokens by chain
-- Show chain badge on each token row
-- Keep X Layer tokens highlighted with special styling
-
-### 2.8 Community Tokens Per Chain
-**File: `src/lib/api/coingecko.ts`**
-
-Expand community tokens to support multiple chains:
-```typescript
-export const COMMUNITY_TOKENS = {
-  xlayer: [ /* existing X Layer tokens */ ],
-  ethereum: [ /* popular ETH tokens */ ],
-  arbitrum: [ /* popular ARB tokens */ ],
-  // ...
-};
-```
-
-### 2.9 Chain-Aware Explorer Links
-**File: `src/pages/TokenDetail.tsx`** and related
-
-Update explorer links to be chain-aware:
-- X Layer → okx.com/explorer/xlayer
-- Ethereum → etherscan.io
-- Arbitrum → arbiscan.io
-- etc.
+When OKX returns empty/error:
+- Show cached tokens from localStorage
+- Display "Data temporarily unavailable" message
+- Add manual retry button
+- Consider DefiLlama as secondary data source
 
 ---
 
-## Part 3: X Layer Highlighting
+## Part 4: Token Detail Page Resilience
 
-### 3.1 Visual Distinction for X Layer
-Throughout the site, X Layer elements get special treatment:
-- **ChainSelector**: X Layer has crimson accent/star icon
-- **Token cards**: X Layer tokens have subtle crimson border
-- **Dashboard widgets**: "X Layer Spotlight" section remains prominent
-- **Chain stats**: X Layer row highlighted in chain comparison tables
+### 4.1 Enhanced Token Lookup
+**File: `src/hooks/useMultiChainTokens.ts`**
 
-### 3.2 X Layer Spotlight Widget
-**New File: `src/components/dashboard/XLayerSpotlight.tsx`**
+Improve `useTokenByAddress`:
+- Try provided chain first (from URL param)
+- Then try X Layer (featured chain)
+- Then try all OKX-supported chains in parallel
+- Cache successful lookups
 
-Dedicated widget for X Layer highlights:
-- Quick stats: TVL, protocols, DEXs, top token
-- "View X Layer" quick link
-- Always visible regardless of selected chain
+### 4.2 Detail Page Fallback Chain
+**File: `src/pages/TokenDetail.tsx`**
 
-### 3.3 "Featured on X Layer" Badge
-Add a reusable badge component for X Layer entities:
-- Protocols native to X Layer
-- Tokens with X Layer contracts
-- DEXs with X Layer support
+Add logic:
+- If URL has `?chain=` param, use it directly
+- If token not found on specified chain, try others
+- Show "Token found on [chain]" message if discovered elsewhere
+- Link to explorer even if price data unavailable
+
+### 4.3 Error State Improvements
+**File: `src/pages/TokenDetail.tsx`**
+
+Instead of "Token Not Found":
+- Show partial data if available (address, basic info)
+- Offer "Try other chains" button
+- Link directly to block explorer
+- Show recent search history for quick navigation
 
 ---
 
 ## Files to Create
 
-| File Path | Purpose |
-|-----------|---------|
-| `src/lib/chains.ts` | Centralized chain configuration |
-| `src/contexts/ChainContext.tsx` | Global chain selection context |
-| `src/components/ui/AnimatedNumber.tsx` | Animated number display component |
-| `src/components/dashboard/XLayerSpotlight.tsx` | X Layer highlight widget |
+| File | Purpose |
+|------|---------|
+| None | All changes are modifications |
 
 ## Files to Modify
 
-| File Path | Changes |
-|-----------|---------|
-| `src/components/ui/AnimatedCard.tsx` | Enhance CountUp with value parsing |
-| `src/components/dashboard/StatCard.tsx` | Integrate AnimatedNumber |
-| `src/components/ChainSelector.tsx` | Add logos, featured badge, grouping |
-| `src/hooks/useTokenData.ts` | Multi-chain token fetching |
-| `src/hooks/useDefiData.ts` | Parameterize chain in data hooks |
-| `src/pages/Dashboard.tsx` | Add chain context, animated stats |
-| `src/pages/Tokens.tsx` | Chain filter, multi-chain display |
-| `src/pages/TokenRanking.tsx` | X Layer highlight in selector |
-| `src/lib/api/coingecko.ts` | Multi-chain community tokens |
-| `src/App.tsx` | Wrap app in ChainContext provider |
+| File | Changes |
+|------|---------|
+| `src/index.css` | Add matrix theme variables with neon green |
+| `src/components/ThemeToggle.tsx` | Support 3 themes, default to matrix |
+| `src/components/layout/Layout.tsx` | Default theme initialization |
+| `src/components/layout/MobileMoreDrawer.tsx` | Theme cycle button |
+| `src/hooks/useMultiChainTokens.ts` | Dynamic chains, better search, resilience |
+| `src/components/TokenSearchInput.tsx` | Debounce, error handling |
+| `src/pages/Tokens.tsx` | Fallback states, retry logic |
+| `src/pages/TokenDetail.tsx` | Better error handling, chain fallback |
+| `src/lib/api/okx.ts` | Verify search endpoint integration |
 
 ---
 
 ## Technical Implementation Details
 
-### CountUp Animation Logic
+### Matrix Theme Color Palette
+```
+Background: #000000 (true black)
+Foreground: #00ff7f (spring green text)
+Primary: #00e676 (matrix green)
+Muted: #0a1a0a (very dark green tint)
+Card: #050505 (near black)
+Border: #0f2f0f (dark green border)
+X Layer Badge: #dc143c (crimson - unchanged)
+```
+
+### Rate Limit Mitigation Strategy
 ```typescript
-// Parse formatted currency: "$1.23B" → { prefix: "$", value: 1.23, suffix: "B" }
-function parseFormattedNumber(str: string) {
-  const match = str.match(/^([^0-9.-]*)(-?[\d,]+\.?\d*)(.*)$/);
-  return {
-    prefix: match?.[1] || '',
-    value: parseFloat(match?.[2]?.replace(/,/g, '') || '0'),
-    suffix: match?.[3] || '',
-  };
+// Sequential chain fetching with delay
+async function fetchAllChainTokens(chains: string[]) {
+  const results = [];
+  for (const chain of chains) {
+    try {
+      const data = await fetchOkxTokenRanking(chain, 'volume24h', 'desc', 15);
+      results.push(...data);
+      await delay(100); // 100ms between requests
+    } catch (e) {
+      console.warn(`Chain ${chain} failed, skipping`);
+    }
+  }
+  return results;
 }
 ```
 
-### Chain Context Usage
+### Search Debounce Pattern
 ```typescript
-const { selectedChain, setSelectedChain, isXLayer } = useChainContext();
-
-// In components:
-<ChainSelector 
-  value={selectedChain} 
-  onChange={setSelectedChain}
-  highlightChain="xlayer"
-/>
-```
-
-### Data Hook Chain Parameter
-```typescript
-// Before:
-export function useXLayerProtocols() { ... }
-
-// After:
-export function useProtocols(chainId?: string) {
-  const { selectedChain } = useChainContext();
-  const chain = chainId || selectedChain;
-  // Fetch for specific chain or aggregate
-}
+const debouncedQuery = useDebounce(query, 300);
+const { data: results } = useTokenSearch(debouncedQuery, chainIndex, debouncedQuery.length >= 2);
 ```
 
 ---
 
 ## Expected Outcomes
 
-1. **Animated Numbers**: All dashboard stat values animate smoothly on load and data updates
-2. **Multi-Chain Support**: Users can explore tokens, protocols, and stats across 10+ chains
-3. **X Layer Focus**: X Layer remains prominently featured with visual distinction
-4. **Consistent UX**: Chain selection persists across pages and sessions
-5. **Performance**: Lazy loading of chain-specific data to avoid over-fetching
+1. **Matrix Theme Default**: New users see premium OLED + neon green aesthetic immediately
+2. **Working Search**: Token search by name, symbol, and address works reliably
+3. **Stable Token Lists**: Tokens display even during OKX rate limiting
+4. **Reliable Details**: Token detail pages work for any valid contract address
+5. **X Layer Highlight**: X Layer entities retain crimson distinction in all themes
