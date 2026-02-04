@@ -1,16 +1,22 @@
-// Multi-chain token data hooks using OKX API
+// Multi-chain token data hooks using OKX API with improved resilience
 import { useQuery } from "@tanstack/react-query";
 import { 
   fetchOkxTokenRanking, 
   fetchOkxTokenBasicInfo,
   fetchOkxTokenPriceInfo,
+  fetchOkxTokenSearch,
+  fetchOkxSupportedChains,
   OkxTokenRankingItem,
   OkxTokenBasicInfo,
 } from "@/lib/api/okx";
 import { SUPPORTED_CHAINS, ALL_CHAINS_ID } from "@/lib/chains";
 
-// Top chains for "All Chains" aggregate view
-const AGGREGATE_CHAINS = ['196', '1', '56', '42161', '8453', '10', '137'];
+// Fallback chains if dynamic fetch fails
+const FALLBACK_CHAINS = ['196', '1', '56', '42161', '8453', '10', '137'];
+
+// Cache for successful token lookups
+const tokenCache = new Map<string, { chainIndex: string; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export interface MultiChainToken {
   id: string;
@@ -49,6 +55,70 @@ function normalizeOkxToken(token: OkxTokenRankingItem): MultiChainToken {
 }
 
 /**
+ * Hook to get OKX supported chains dynamically
+ */
+export function useOkxSupportedChains() {
+  return useQuery({
+    queryKey: ['okx-supported-chains'],
+    queryFn: async () => {
+      const chains = await fetchOkxSupportedChains();
+      if (chains.length > 0) {
+        return chains.map(c => c.chainIndex);
+      }
+      return FALLBACK_CHAINS;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Helper to delay between API calls
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Fetch tokens from multiple chains with rate limit handling
+ */
+async function fetchMultiChainTokens(
+  chains: string[],
+  sortBy: 'volume24h' | 'marketCap' | 'change24h',
+  limitPerChain: number
+): Promise<MultiChainToken[]> {
+  const allTokens: MultiChainToken[] = [];
+  
+  // Fetch in smaller batches to avoid rate limits
+  const batchSize = 3;
+  for (let i = 0; i < chains.length; i += batchSize) {
+    const batch = chains.slice(i, i + batchSize);
+    
+    const promises = batch.map(chain => 
+      fetchOkxTokenRanking(chain, sortBy, 'desc', limitPerChain)
+        .catch(err => {
+          console.warn(`Chain ${chain} fetch failed:`, err);
+          return [];
+        })
+    );
+    
+    const results = await Promise.all(promises);
+    
+    results.forEach((data) => {
+      if (data && data.length > 0) {
+        const normalized = data.map(normalizeOkxToken);
+        allTokens.push(...normalized);
+      }
+    });
+    
+    // Small delay between batches to avoid rate limits
+    if (i + batchSize < chains.length) {
+      await delay(100);
+    }
+  }
+  
+  return allTokens;
+}
+
+/**
  * Hook to fetch token list for a specific chain or all chains
  */
 export function useMultiChainTokens(
@@ -57,25 +127,17 @@ export function useMultiChainTokens(
   limit: number = 50
 ) {
   const isAllChains = chainIndex === ALL_CHAINS_ID;
+  const { data: dynamicChains } = useOkxSupportedChains();
   
   return useQuery<MultiChainToken[]>({
-    queryKey: ['multi-chain-tokens', chainIndex, sortBy, limit],
+    queryKey: ['multi-chain-tokens', chainIndex, sortBy, limit, dynamicChains],
     queryFn: async () => {
       if (isAllChains) {
-        // Fetch from multiple chains in parallel
-        const promises = AGGREGATE_CHAINS.map(chain => 
-          fetchOkxTokenRanking(chain, sortBy, 'desc', Math.ceil(limit / AGGREGATE_CHAINS.length))
-        );
+        // Use dynamic chains or fallback
+        const chainsToQuery = dynamicChains || FALLBACK_CHAINS;
+        const tokensPerChain = Math.ceil(limit / chainsToQuery.length);
         
-        const results = await Promise.allSettled(promises);
-        const allTokens: MultiChainToken[] = [];
-        
-        results.forEach((result) => {
-          if (result.status === 'fulfilled' && result.value) {
-            const normalized = result.value.map(normalizeOkxToken);
-            allTokens.push(...normalized);
-          }
-        });
+        const allTokens = await fetchMultiChainTokens(chainsToQuery, sortBy, tokensPerChain);
         
         // Sort combined results
         if (sortBy === 'volume24h') {
@@ -93,90 +155,94 @@ export function useMultiChainTokens(
         return data.map(normalizeOkxToken);
       }
     },
-    staleTime: 60 * 1000, // 1 minute
-    refetchInterval: 60 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes - increased for stability
+    refetchInterval: 2 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 }
 
 /**
- * Hook to search tokens by name or address across chains
- * Uses token basic info endpoint which works with contract addresses
+ * Hook to search tokens by name, symbol, or address across chains
+ * Uses OKX search endpoint as primary, with fallback to ranking data
  */
 export function useTokenSearch(
   query: string,
   chainIndex?: string,
   enabled: boolean = true
 ) {
-  const isAddressSearch = /^0x[a-fA-F0-9]+$/i.test(query);
+  // Detect if query is an address (supports various formats)
+  const isAddressSearch = /^(0x)?[a-fA-F0-9]{40,}$/i.test(query.trim());
+  const normalizedQuery = query.trim();
+  
+  const { data: dynamicChains } = useOkxSupportedChains();
   const chainsToSearch = chainIndex && chainIndex !== ALL_CHAINS_ID 
     ? [chainIndex] 
-    : AGGREGATE_CHAINS;
+    : (dynamicChains || FALLBACK_CHAINS);
   
   return useQuery<MultiChainToken[]>({
-    queryKey: ['token-search', query, chainIndex],
+    queryKey: ['token-search', normalizedQuery, chainIndex, chainsToSearch],
     queryFn: async () => {
-      if (!query || query.length < 2) return [];
+      if (!normalizedQuery || normalizedQuery.length < 2) return [];
       
-      // If it looks like an address, search by contract address directly
+      // If it looks like an address, search by contract address
       if (isAddressSearch) {
-        // Try to get token info from multiple chains in parallel
-        const promises = chainsToSearch.map(async (chain) => {
-          const basicInfo = await fetchOkxTokenBasicInfo(chain, query);
-          const priceInfo = await fetchOkxTokenPriceInfo(chain, query);
-          
-          if (basicInfo) {
-            const chainConfig = SUPPORTED_CHAINS.find(c => c.index === chain);
-            return {
-              id: `${chain}-${query}`,
-              chainIndex: chain,
-              chainName: chainConfig?.name || `Chain ${chain}`,
-              contractAddress: basicInfo.tokenContractAddress || query,
-              symbol: basicInfo.tokenSymbol,
-              name: basicInfo.tokenName || basicInfo.tokenSymbol,
-              logo: basicInfo.tokenLogo,
-              price: priceInfo ? parseFloat(priceInfo.price) || 0 : 0,
-              priceChange24h: priceInfo ? parseFloat(priceInfo.priceChange24h || '0') || 0 : 0,
-              volume24h: priceInfo ? parseFloat(priceInfo.volume24h || '0') || 0 : 0,
-              liquidity: priceInfo ? parseFloat(priceInfo.liquidity || '0') || 0 : 0,
-              marketCap: priceInfo ? parseFloat(priceInfo.marketCap || '0') || 0 : 0,
-              holders: priceInfo ? parseInt(priceInfo.holders || '0') || 0 : 0,
-            } as MultiChainToken;
-          }
-          return null;
-        });
+        const address = normalizedQuery.startsWith('0x') ? normalizedQuery : `0x${normalizedQuery}`;
         
-        const results = await Promise.allSettled(promises);
-        const tokens: MultiChainToken[] = [];
+        // Check cache first
+        const cached = tokenCache.get(address.toLowerCase());
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+          // Prioritize cached chain
+          const chainsOrdered = [cached.chainIndex, ...chainsToSearch.filter(c => c !== cached.chainIndex)];
+          return searchAddressOnChains(address, chainsOrdered.slice(0, 5));
+        }
         
-        results.forEach((result) => {
-          if (result.status === 'fulfilled' && result.value) {
-            tokens.push(result.value);
-          }
-        });
-        
-        return tokens;
+        return searchAddressOnChains(address, chainsToSearch);
       }
       
-      // For name/symbol search, use ranking data and filter
-      const lowerQuery = query.toLowerCase();
-      const promises = chainsToSearch.map(chain => 
-        fetchOkxTokenRanking(chain, 'volume24h', 'desc', 50)
-      );
-      
-      const results = await Promise.allSettled(promises);
-      const matchingTokens: MultiChainToken[] = [];
-      
-      results.forEach((result) => {
-        if (result.status === 'fulfilled' && result.value) {
-          const matches = result.value
-            .filter(token => 
-              token.tokenSymbol.toLowerCase().includes(lowerQuery) ||
-              (token.tokenName && token.tokenName.toLowerCase().includes(lowerQuery))
-            )
-            .map(normalizeOkxToken);
-          matchingTokens.push(...matches);
+      // Try OKX search endpoint first for name/symbol search
+      try {
+        const searchResults = await fetchOkxTokenSearch(normalizedQuery, chainIndex);
+        if (searchResults.length > 0) {
+          // Convert search results to our format
+          const tokens: MultiChainToken[] = await Promise.all(
+            searchResults.slice(0, 10).map(async (result) => {
+              const chain = SUPPORTED_CHAINS.find(c => c.index === result.chainIndex);
+              const priceInfo = await fetchOkxTokenPriceInfo(result.chainIndex, result.tokenContractAddress)
+                .catch(() => null);
+              
+              return {
+                id: `${result.chainIndex}-${result.tokenContractAddress}`,
+                chainIndex: result.chainIndex,
+                chainName: chain?.name || `Chain ${result.chainIndex}`,
+                contractAddress: result.tokenContractAddress,
+                symbol: result.tokenSymbol,
+                name: result.tokenName || result.tokenSymbol,
+                logo: result.tokenLogo,
+                price: priceInfo ? parseFloat(priceInfo.price) || 0 : 0,
+                priceChange24h: priceInfo ? parseFloat(priceInfo.priceChange24h || '0') : 0,
+                volume24h: priceInfo ? parseFloat(priceInfo.volume24h || '0') : 0,
+                liquidity: priceInfo ? parseFloat(priceInfo.liquidity || '0') : 0,
+                marketCap: priceInfo ? parseFloat(priceInfo.marketCap || '0') : 0,
+                holders: priceInfo ? parseInt(priceInfo.holders || '0') : 0,
+              };
+            })
+          );
+          
+          return tokens.filter(t => t.symbol); // Filter out any failed lookups
         }
-      });
+      } catch (err) {
+        console.warn('OKX search endpoint failed, falling back to ranking filter:', err);
+      }
+      
+      // Fallback: filter from ranking data
+      const lowerQuery = normalizedQuery.toLowerCase();
+      const allTokens = await fetchMultiChainTokens(chainsToSearch.slice(0, 5), 'volume24h', 50);
+      
+      const matchingTokens = allTokens.filter(token => 
+        token.symbol.toLowerCase().includes(lowerQuery) ||
+        token.name.toLowerCase().includes(lowerQuery)
+      );
       
       // Sort by relevance (exact matches first, then by volume)
       matchingTokens.sort((a, b) => {
@@ -189,54 +255,105 @@ export function useTokenSearch(
       
       return matchingTokens.slice(0, 20);
     },
-    enabled: enabled && query.length >= 2,
+    enabled: enabled && normalizedQuery.length >= 2,
     staleTime: 30 * 1000,
+    retry: 1,
   });
+}
+
+/**
+ * Search for a token address across multiple chains
+ */
+async function searchAddressOnChains(address: string, chains: string[]): Promise<MultiChainToken[]> {
+  const tokens: MultiChainToken[] = [];
+  
+  // Try chains in parallel with small batches
+  const batchSize = 4;
+  for (let i = 0; i < chains.length; i += batchSize) {
+    const batch = chains.slice(i, i + batchSize);
+    
+    const results = await Promise.all(
+      batch.map(async (chain) => {
+        try {
+          const [basicInfo, priceInfo] = await Promise.all([
+            fetchOkxTokenBasicInfo(chain, address),
+            fetchOkxTokenPriceInfo(chain, address),
+          ]);
+          
+          if (basicInfo || priceInfo) {
+            const chainConfig = SUPPORTED_CHAINS.find(c => c.index === chain);
+            
+            // Cache successful lookup
+            tokenCache.set(address.toLowerCase(), { chainIndex: chain, timestamp: Date.now() });
+            
+            return {
+              id: `${chain}-${address}`,
+              chainIndex: chain,
+              chainName: chainConfig?.name || `Chain ${chain}`,
+              contractAddress: basicInfo?.tokenContractAddress || address,
+              symbol: basicInfo?.tokenSymbol || priceInfo?.tokenSymbol || '???',
+              name: basicInfo?.tokenName || priceInfo?.tokenName || 'Unknown Token',
+              logo: basicInfo?.tokenLogo || priceInfo?.tokenLogo,
+              price: priceInfo ? parseFloat(priceInfo.price) || 0 : 0,
+              priceChange24h: priceInfo ? parseFloat(priceInfo.priceChange24h || '0') : 0,
+              volume24h: priceInfo ? parseFloat(priceInfo.volume24h || '0') : 0,
+              liquidity: priceInfo ? parseFloat(priceInfo.liquidity || '0') : 0,
+              marketCap: priceInfo ? parseFloat(priceInfo.marketCap || '0') : 0,
+              holders: priceInfo ? parseInt(priceInfo.holders || '0') : 0,
+            } as MultiChainToken;
+          }
+        } catch {
+          // Ignore errors for individual chains
+        }
+        return null;
+      })
+    );
+    
+    results.forEach(r => {
+      if (r) tokens.push(r);
+    });
+    
+    // If we found tokens, we can stop early
+    if (tokens.length > 0) break;
+  }
+  
+  return tokens;
 }
 
 /**
  * Hook to get aggregated stats across all chains
  */
 export function useAllChainsStats() {
+  const { data: dynamicChains } = useOkxSupportedChains();
+  
   return useQuery({
-    queryKey: ['all-chains-stats'],
+    queryKey: ['all-chains-stats', dynamicChains],
     queryFn: async () => {
-      const promises = AGGREGATE_CHAINS.map(chain => 
-        fetchOkxTokenRanking(chain, 'volume24h', 'desc', 10)
-      );
-      
-      const results = await Promise.allSettled(promises);
+      const chains = dynamicChains || FALLBACK_CHAINS;
+      const allTokens = await fetchMultiChainTokens(chains, 'volume24h', 10);
       
       let totalVolume = 0;
       let totalMarketCap = 0;
-      let tokenCount = 0;
       let topGainer: MultiChainToken | null = null;
       let topLoser: MultiChainToken | null = null;
       
-      results.forEach((result) => {
-        if (result.status === 'fulfilled' && result.value) {
-          result.value.forEach(token => {
-            totalVolume += parseFloat(token.volume24h || '0') || 0;
-            totalMarketCap += parseFloat(token.marketCap || '0') || 0;
-            tokenCount++;
-            
-            const normalized = normalizeOkxToken(token);
-            
-            if (!topGainer || normalized.priceChange24h > topGainer.priceChange24h) {
-              topGainer = normalized;
-            }
-            if (!topLoser || normalized.priceChange24h < topLoser.priceChange24h) {
-              topLoser = normalized;
-            }
-          });
+      allTokens.forEach(token => {
+        totalVolume += token.volume24h;
+        totalMarketCap += token.marketCap;
+        
+        if (!topGainer || token.priceChange24h > topGainer.priceChange24h) {
+          topGainer = token;
+        }
+        if (!topLoser || token.priceChange24h < topLoser.priceChange24h) {
+          topLoser = token;
         }
       });
       
       return {
         totalVolume,
         totalMarketCap,
-        tokenCount,
-        chainCount: AGGREGATE_CHAINS.length,
+        tokenCount: allTokens.length,
+        chainCount: chains.length,
         topGainer,
         topLoser,
       };
@@ -248,23 +365,57 @@ export function useAllChainsStats() {
 
 /**
  * Hook to get token details by contract address (searches across chains)
+ * With improved fallback and caching
  */
-export function useTokenByAddress(contractAddress: string | null | undefined) {
+export function useTokenByAddress(
+  contractAddress: string | null | undefined,
+  preferredChain?: string
+) {
+  const { data: dynamicChains } = useOkxSupportedChains();
+  
   return useQuery({
-    queryKey: ['token-by-address', contractAddress],
+    queryKey: ['token-by-address', contractAddress, preferredChain, dynamicChains],
     queryFn: async () => {
       if (!contractAddress) return null;
       
-      // Try all supported chains to find this token
-      const promises = AGGREGATE_CHAINS.map(async (chainIndex) => {
+      // Normalize address
+      const address = contractAddress.startsWith('0x') ? contractAddress : `0x${contractAddress}`;
+      
+      // Build chain priority list
+      const chains: string[] = [];
+      
+      // 1. Preferred chain from URL param
+      if (preferredChain) chains.push(preferredChain);
+      
+      // 2. Check cache
+      const cached = tokenCache.get(address.toLowerCase());
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        if (!chains.includes(cached.chainIndex)) {
+          chains.push(cached.chainIndex);
+        }
+      }
+      
+      // 3. X Layer as featured chain
+      if (!chains.includes('196')) chains.push('196');
+      
+      // 4. Dynamic chains
+      const otherChains = (dynamicChains || FALLBACK_CHAINS).filter(c => !chains.includes(c));
+      chains.push(...otherChains);
+      
+      // Try to find the token
+      for (const chainIndex of chains.slice(0, 10)) {
         try {
           const [basicInfo, priceInfo] = await Promise.all([
-            fetchOkxTokenBasicInfo(chainIndex, contractAddress),
-            fetchOkxTokenPriceInfo(chainIndex, contractAddress),
+            fetchOkxTokenBasicInfo(chainIndex, address),
+            fetchOkxTokenPriceInfo(chainIndex, address),
           ]);
           
           if (basicInfo || priceInfo) {
             const chain = SUPPORTED_CHAINS.find(c => c.index === chainIndex);
+            
+            // Cache successful lookup
+            tokenCache.set(address.toLowerCase(), { chainIndex, timestamp: Date.now() });
+            
             return {
               chainIndex,
               chainName: chain?.name || `Chain ${chainIndex}`,
@@ -273,24 +424,14 @@ export function useTokenByAddress(contractAddress: string | null | undefined) {
             };
           }
         } catch {
-          // Ignore errors for individual chains
-        }
-        return null;
-      });
-      
-      const results = await Promise.allSettled(promises);
-      
-      // Return the first chain that has this token
-      for (const result of results) {
-        if (result.status === 'fulfilled' && result.value) {
-          return result.value;
+          // Continue to next chain
         }
       }
       
       return null;
     },
-    enabled: !!contractAddress && contractAddress.startsWith('0x'),
+    enabled: !!contractAddress && contractAddress.length >= 10,
     staleTime: 30 * 1000,
-    retry: 1,
+    retry: 2,
   });
 }

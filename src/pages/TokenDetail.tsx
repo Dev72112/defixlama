@@ -49,14 +49,17 @@ export default function TokenDetail() {
   const [searchParams] = useSearchParams();
   const tokenAddress = id || "";
   
-  // Get chain from URL param or auto-detect
+  // Get chain from URL param
   const chainParam = searchParams.get("chain");
   
-  // Auto-detect token across chains
-  const { data: tokenMatch, isLoading: isSearching } = useTokenByAddress(tokenAddress);
+  // Auto-detect token across chains with preferred chain from URL
+  const { data: tokenMatch, isLoading: isSearching, error: searchError } = useTokenByAddress(
+    tokenAddress, 
+    chainParam || undefined
+  );
   
-  // Use detected chain or URL param
-  const chainIndex = chainParam || tokenMatch?.chainIndex || "196"; // Default to X Layer
+  // Use detected chain or URL param, fallback to X Layer
+  const chainIndex = tokenMatch?.chainIndex || chainParam || "196";
   const chainConfig = getChainByIndex(chainIndex);
   const isXLayer = isXLayerChain(chainIndex);
   
@@ -152,10 +155,23 @@ export default function TokenDetail() {
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <Activity className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-xl font-bold text-foreground mb-2">Token Not Found</h2>
-          <p className="text-muted-foreground mb-4 max-w-md">
-            The token with address "{tokenAddress.slice(0, 10)}..." could not be found on any supported chain.
+          <p className="text-muted-foreground mb-2 max-w-md">
+            The token with address "{tokenAddress.slice(0, 10)}..." could not be found.
           </p>
-          <div className="flex gap-3">
+          {searchError && (
+            <p className="text-xs text-destructive mb-4">
+              {(searchError as Error)?.message || "API error occurred"}
+            </p>
+          )}
+          <div className="text-sm text-muted-foreground mb-6 space-y-1">
+            <p>This could be because:</p>
+            <ul className="list-disc list-inside text-left">
+              <li>The token is on a chain not yet indexed</li>
+              <li>The contract address is incorrect</li>
+              <li>The token has very low liquidity</li>
+            </ul>
+          </div>
+          <div className="flex flex-wrap gap-3 justify-center">
             <Link to="/tokens">
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -172,6 +188,21 @@ export default function TokenDetail() {
                 View on Explorer
               </Button>
             </a>
+          </div>
+          {/* Quick chain links */}
+          <div className="mt-6 pt-6 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-3">Try viewing on:</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {SUPPORTED_CHAINS.slice(0, 6).map((chain) => (
+                <Link
+                  key={chain.index}
+                  to={`/tokens/${tokenAddress}?chain=${chain.index}`}
+                  className="text-xs text-primary/70 hover:text-primary px-2 py-1 rounded border border-border hover:border-primary/40 transition-colors"
+                >
+                  {chain.name}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </Layout>

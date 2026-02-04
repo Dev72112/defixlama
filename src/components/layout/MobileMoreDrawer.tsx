@@ -13,11 +13,11 @@ import {
   Globe,
   Moon,
   Sun,
+  Sparkles,
   ChevronRight,
   Activity,
   RefreshCw,
   Search,
-  BarChart3,
   Wallet,
   ScrollText
 } from "lucide-react";
@@ -28,12 +28,13 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { ThemeMode } from "@/components/ThemeToggle";
 
 interface MobileMoreDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onThemeToggle: () => void;
-  isDark: boolean;
+  currentTheme: ThemeMode;
 }
 
 // Grouped menu structure
@@ -66,7 +67,13 @@ const menuGroups = [
   },
 ];
 
-export function MobileMoreDrawer({ isOpen, onClose, onThemeToggle, isDark }: MobileMoreDrawerProps) {
+const THEME_CONFIG = {
+  bright: { icon: Sun, label: "Light", next: "dark" as ThemeMode },
+  dark: { icon: Moon, label: "Dark", next: "matrix" as ThemeMode },
+  matrix: { icon: Sparkles, label: "Matrix", next: "bright" as ThemeMode },
+};
+
+export function MobileMoreDrawer({ isOpen, onClose, onThemeToggle, currentTheme }: MobileMoreDrawerProps) {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
@@ -88,6 +95,9 @@ export function MobileMoreDrawer({ isOpen, onClose, onThemeToggle, isDark }: Mob
         ),
       })).filter(group => group.items.length > 0)
     : menuGroups;
+
+  const themeConfig = THEME_CONFIG[currentTheme];
+  const ThemeIcon = themeConfig.icon;
 
   if (!isOpen) return null;
 
@@ -158,20 +168,17 @@ export function MobileMoreDrawer({ isOpen, onClose, onThemeToggle, isDark }: Mob
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 h-10"
+              className={cn(
+                "flex-1 h-10",
+                currentTheme === "matrix" && "border-primary/40 bg-primary/10"
+              )}
               onClick={onThemeToggle}
             >
-              {isDark ? (
-                <>
-                  <Sun className="h-4 w-4 mr-2" />
-                  Light
-                </>
-              ) : (
-                <>
-                  <Moon className="h-4 w-4 mr-2" />
-                  Dark
-                </>
-              )}
+              <ThemeIcon className={cn(
+                "h-4 w-4 mr-2",
+                currentTheme === "matrix" && "text-primary"
+              )} />
+              {themeConfig.label}
             </Button>
           </div>
         </div>
