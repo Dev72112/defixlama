@@ -77,6 +77,22 @@ export function useOkxSupportedChains() {
  */
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Shared request queue to prevent overwhelming the API
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 200; // 200ms between requests
+
+async function throttledRequest<T>(fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    await delay(MIN_REQUEST_INTERVAL - timeSinceLastRequest);
+  }
+  
+  lastRequestTime = Date.now();
+  return fn();
+}
+
 /**
  * Fetch tokens from multiple chains with rate limit handling
  */
@@ -87,31 +103,19 @@ async function fetchMultiChainTokens(
 ): Promise<MultiChainToken[]> {
   const allTokens: MultiChainToken[] = [];
   
-  // Fetch in smaller batches to avoid rate limits
-  const batchSize = 3;
-  for (let i = 0; i < chains.length; i += batchSize) {
-    const batch = chains.slice(i, i + batchSize);
-    
-    const promises = batch.map(chain => 
-      fetchOkxTokenRanking(chain, sortBy, 'desc', limitPerChain)
-        .catch(err => {
-          console.warn(`Chain ${chain} fetch failed:`, err);
-          return [];
-        })
-    );
-    
-    const results = await Promise.all(promises);
-    
-    results.forEach((data) => {
+  // Fetch sequentially to avoid rate limits
+  for (const chain of chains) {
+    try {
+      const data = await throttledRequest(() => 
+        fetchOkxTokenRanking(chain, sortBy, 'desc', limitPerChain)
+      );
+      
       if (data && data.length > 0) {
         const normalized = data.map(normalizeOkxToken);
         allTokens.push(...normalized);
       }
-    });
-    
-    // Small delay between batches to avoid rate limits
-    if (i + batchSize < chains.length) {
-      await delay(100);
+    } catch (err) {
+      console.warn(`Chain ${chain} fetch failed:`, err);
     }
   }
   
