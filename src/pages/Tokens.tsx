@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Wallet, TrendingUp, Coins, Activity, ExternalLink, ChevronRight, GitCompare, Download, Globe } from "lucide-react";
+import { Wallet, TrendingUp, Coins, Activity, ExternalLink, ChevronRight, GitCompare, Download, Globe, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
@@ -12,7 +12,6 @@ import { PriceComparison } from "@/components/PriceComparison";
 import { WatchlistButton } from "@/components/WatchlistButton";
 import { exportToCSV } from "@/lib/export";
 import { PriceDisplay, ChangeDisplay } from "@/components/PriceDisplay";
-import { ErrorState } from "@/components/ErrorState";
 import { ChainSelector } from "@/components/ChainSelector";
 import { XLayerBadge } from "@/components/dashboard/XLayerSpotlight";
 import { TokenSearchInput } from "@/components/TokenSearchInput";
@@ -239,17 +238,43 @@ export default function Tokens() {
               ) : isError ? (
                 <tr>
                   <td colSpan={isAllChains ? 10 : 9} className="py-8">
-                    <ErrorState 
-                      error={error as Error}
-                      onRetry={() => refetch()}
-                      compact
-                    />
+                    <div className="flex flex-col items-center justify-center text-center px-4">
+                      <AlertCircle className="h-10 w-10 text-amber-500 mb-3" />
+                      <p className="font-medium text-foreground mb-1">Data temporarily unavailable</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        The OKX API is experiencing issues. Please try again in a moment.
+                      </p>
+                      <Button onClick={() => refetch()} variant="outline" size="sm">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Retry
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ) : tokens?.length === 0 ? (
                 <tr>
-                  <td colSpan={isAllChains ? 10 : 9} className="py-12 text-center text-muted-foreground">
-                    No tokens found for this chain
+                  <td colSpan={isAllChains ? 10 : 9} className="py-12">
+                    <div className="flex flex-col items-center justify-center text-center px-4">
+                      <Coins className="h-10 w-10 text-muted-foreground mb-3" />
+                      <p className="font-medium text-foreground mb-1">No tokens found</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {isAllChains 
+                          ? "Unable to load tokens from any chain. This may be a temporary issue."
+                          : `No tokens found for ${getChainName(selectedChain)}. Try selecting a different chain.`}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button onClick={() => refetch()} variant="outline" size="sm">
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Retry
+                        </Button>
+                        {!isAllChains && (
+                          <Button onClick={() => setSelectedChain(ALL_CHAINS_ID)} variant="secondary" size="sm">
+                            <Globe className="h-4 w-4 mr-2" />
+                            View All Chains
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : tokens?.map((token, index) => {

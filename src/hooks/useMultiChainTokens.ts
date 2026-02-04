@@ -1,4 +1,4 @@
-// Multi-chain token data hooks using OKX API with improved resilience
+// Multi-chain token data hooks using OKX API with DefiLlama fallback and localStorage caching
 import { useQuery } from "@tanstack/react-query";
 import { 
   fetchOkxTokenRanking, 
@@ -7,8 +7,8 @@ import {
   fetchOkxTokenSearch,
   fetchOkxSupportedChains,
   OkxTokenRankingItem,
-  OkxTokenBasicInfo,
 } from "@/lib/api/okx";
+import { fetchDefiLlamaTokenPrices, fetchTopTokensByChain } from "@/lib/api/defillama";
 import { SUPPORTED_CHAINS, ALL_CHAINS_ID } from "@/lib/chains";
 
 // Fallback chains if dynamic fetch fails
@@ -17,6 +17,38 @@ const FALLBACK_CHAINS = ['196', '1', '56', '42161', '8453', '10', '137'];
 // Cache for successful token lookups
 const tokenCache = new Map<string, { chainIndex: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// LocalStorage cache keys
+const LS_CACHE_PREFIX = 'tokens-cache-';
+const LS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes for localStorage
+
+// Save to localStorage cache
+function saveToLocalStorage(key: string, data: MultiChainToken[]) {
+  try {
+    localStorage.setItem(LS_CACHE_PREFIX + key, JSON.stringify({
+      data,
+      timestamp: Date.now(),
+    }));
+  } catch (e) {
+    // Ignore quota errors
+  }
+}
+
+// Load from localStorage cache
+function loadFromLocalStorage(key: string): { data: MultiChainToken[]; timestamp: number } | null {
+  try {
+    const cached = localStorage.getItem(LS_CACHE_PREFIX + key);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < LS_CACHE_TTL) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    // Ignore parse errors
+  }
+  return null;
+}
 
 export interface MultiChainToken {
   id: string;
@@ -32,6 +64,7 @@ export interface MultiChainToken {
   liquidity: number;
   marketCap: number;
   holders: number;
+  source?: 'okx' | 'defillama';
 }
 
 // Convert OKX token to our unified format
@@ -51,6 +84,7 @@ function normalizeOkxToken(token: OkxTokenRankingItem): MultiChainToken {
     liquidity: parseFloat(token.liquidity || '0') || 0,
     marketCap: parseFloat(token.marketCap || '0') || 0,
     holders: parseInt(token.holders || '0') || 0,
+    source: 'okx',
   };
 }
 
@@ -79,7 +113,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Shared request queue to prevent overwhelming the API
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 200; // 200ms between requests
+const MIN_REQUEST_INTERVAL = 250; // 250ms between requests (reduced rate)
 
 async function throttledRequest<T>(fn: () => Promise<T>): Promise<T> {
   const now = Date.now();
@@ -94,7 +128,7 @@ async function throttledRequest<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Fetch tokens from multiple chains with rate limit handling
+ * Fetch tokens from multiple chains with rate limit handling and DefiLlama fallback
  */
 async function fetchMultiChainTokens(
   chains: string[],
@@ -123,7 +157,39 @@ async function fetchMultiChainTokens(
 }
 
 /**
+ * Fetch tokens with DefiLlama fallback when OKX fails
+ */
+async function fetchTokensWithFallback(
+  chainIndex: string,
+  sortBy: 'volume24h' | 'marketCap' | 'change24h',
+  limit: number
+): Promise<MultiChainToken[]> {
+  // Try OKX first
+  try {
+    const data = await fetchOkxTokenRanking(chainIndex, sortBy, 'desc', limit);
+    if (data && data.length > 0) {
+      return data.map(normalizeOkxToken);
+    }
+  } catch (err) {
+    console.warn(`OKX fetch failed for chain ${chainIndex}:`, err);
+  }
+  
+  // Fallback to DefiLlama
+  try {
+    const defiLlamaTokens = await fetchTopTokensByChain(chainIndex, limit);
+    if (defiLlamaTokens.length > 0) {
+      return defiLlamaTokens;
+    }
+  } catch (err) {
+    console.warn(`DefiLlama fallback failed for chain ${chainIndex}:`, err);
+  }
+  
+  return [];
+}
+
+/**
  * Hook to fetch token list for a specific chain or all chains
+ * With localStorage caching and DefiLlama fallback
  */
 export function useMultiChainTokens(
   chainIndex: string,
@@ -132,37 +198,63 @@ export function useMultiChainTokens(
 ) {
   const isAllChains = chainIndex === ALL_CHAINS_ID;
   const { data: dynamicChains } = useOkxSupportedChains();
+  const cacheKey = `${chainIndex}-${sortBy}-${limit}`;
   
   return useQuery<MultiChainToken[]>({
     queryKey: ['multi-chain-tokens', chainIndex, sortBy, limit, dynamicChains],
     queryFn: async () => {
+      let tokens: MultiChainToken[] = [];
+      
       if (isAllChains) {
         // Use dynamic chains or fallback
         const chainsToQuery = dynamicChains || FALLBACK_CHAINS;
         const tokensPerChain = Math.ceil(limit / chainsToQuery.length);
         
-        const allTokens = await fetchMultiChainTokens(chainsToQuery, sortBy, tokensPerChain);
+        tokens = await fetchMultiChainTokens(chainsToQuery.slice(0, 7), sortBy, tokensPerChain);
         
-        // Sort combined results
+        // If OKX failed, try DefiLlama
+        if (tokens.length === 0) {
+          const defiLlamaTokens = await fetchTopTokensByChain('all', limit);
+          if (defiLlamaTokens.length > 0) {
+            tokens = defiLlamaTokens;
+          }
+        }
+      } else {
+        // Single chain fetch with fallback
+        tokens = await fetchTokensWithFallback(chainIndex, sortBy, limit);
+      }
+      
+      // Sort combined results
+      if (tokens.length > 0) {
         if (sortBy === 'volume24h') {
-          allTokens.sort((a, b) => b.volume24h - a.volume24h);
+          tokens.sort((a, b) => b.volume24h - a.volume24h);
         } else if (sortBy === 'marketCap') {
-          allTokens.sort((a, b) => b.marketCap - a.marketCap);
+          tokens.sort((a, b) => b.marketCap - a.marketCap);
         } else if (sortBy === 'change24h') {
-          allTokens.sort((a, b) => b.priceChange24h - a.priceChange24h);
+          tokens.sort((a, b) => b.priceChange24h - a.priceChange24h);
         }
         
-        return allTokens.slice(0, limit);
-      } else {
-        // Single chain fetch
-        const data = await fetchOkxTokenRanking(chainIndex, sortBy, 'desc', limit);
-        return data.map(normalizeOkxToken);
+        const result = tokens.slice(0, limit);
+        
+        // Save to localStorage for future fallback
+        saveToLocalStorage(cacheKey, result);
+        
+        return result;
       }
+      
+      // If all API calls failed, try localStorage cache
+      const cached = loadFromLocalStorage(cacheKey);
+      if (cached && cached.data.length > 0) {
+        console.log('Using cached token data');
+        return cached.data;
+      }
+      
+      return [];
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes - increased for stability
-    refetchInterval: 2 * 60 * 1000,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    staleTime: 5 * 60 * 1000, // 5 minutes - increased for stability
+    refetchInterval: 5 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 15000),
   });
 }
 

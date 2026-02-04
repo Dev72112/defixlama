@@ -32,6 +32,8 @@ import { useXLayerProtocols, useXLayerDexVolumes, useChainsTVL } from "@/hooks/u
 import { useTokenPrices } from "@/hooks/useTokenData";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { useTokenSearch, MultiChainToken } from "@/hooks/useMultiChainTokens";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SearchResult {
   id: string;
@@ -75,10 +77,20 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Debounce search query for API calls
+  const debouncedQuery = useDebounce(query, 300);
+
   const { data: protocols } = useXLayerProtocols();
   const { data: dexes } = useXLayerDexVolumes();
   const { data: chains } = useChainsTVL();
   const { data: tokens } = useTokenPrices();
+  
+  // Use multi-chain token search for better results
+  const { data: searchedTokens, isLoading: isSearchingTokens } = useTokenSearch(
+    debouncedQuery,
+    undefined, // Search all chains
+    debouncedQuery.length >= 2
+  );
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -150,22 +162,35 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
       }
     });
 
-    // Search tokens
-    tokens?.slice(0, 5).forEach((t) => {
-      if (
-        t.symbol.toLowerCase().includes(q) ||
-        t.name.toLowerCase().includes(q)
-      ) {
-        const tokenId = t.contract || t.symbol.toLowerCase();
+    // Search tokens - prefer multi-chain search results
+    if (searchedTokens && searchedTokens.length > 0) {
+      searchedTokens.slice(0, 8).forEach((t: MultiChainToken) => {
         matches.push({
-          id: tokenId,
+          id: t.contractAddress,
           name: t.name,
           symbol: t.symbol,
           type: "token",
-          url: `/tokens/${tokenId}`,
+          url: `/tokens/${t.contractAddress}?chain=${t.chainIndex}`,
         });
-      }
-    });
+      });
+    } else {
+      // Fallback to old token data
+      tokens?.slice(0, 5).forEach((t) => {
+        if (
+          t.symbol.toLowerCase().includes(q) ||
+          t.name.toLowerCase().includes(q)
+        ) {
+          const tokenId = t.contract || t.symbol.toLowerCase();
+          matches.push({
+            id: tokenId,
+            name: t.name,
+            symbol: t.symbol,
+            type: "token",
+            url: `/tokens/${tokenId}`,
+          });
+        }
+      });
+    }
 
     // Search protocols
     protocols?.slice(0, 100).forEach((p) => {
@@ -212,7 +237,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     });
 
     return matches.slice(0, 12);
-  }, [query, tokens, protocols, dexes, chains, actions]);
+  }, [query, tokens, searchedTokens, protocols, dexes, chains, actions]);
 
   useEffect(() => {
     if (open) {
