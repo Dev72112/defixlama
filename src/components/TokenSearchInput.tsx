@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, X, Loader2, ExternalLink } from "lucide-react";
+import { Search, X, Loader2, ExternalLink, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTokenSearch, MultiChainToken } from "@/hooks/useMultiChainTokens";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { isXLayerChain, getChainExplorerUrlByIndex } from "@/lib/chains";
@@ -29,7 +30,14 @@ export function TokenSearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  const { data: results, isLoading } = useTokenSearch(query, chainIndex, query.length >= 2);
+  // Debounce query to prevent rapid API calls
+  const debouncedQuery = useDebounce(query, 300);
+  
+  const { data: results, isLoading, isError, error } = useTokenSearch(
+    debouncedQuery, 
+    chainIndex, 
+    debouncedQuery.length >= 2
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -58,7 +66,18 @@ export function TokenSearchInput({
     setIsOpen(false);
   };
 
-  const isAddressQuery = /^0x[a-fA-F0-9]+$/i.test(query);
+  // Detect if query looks like an address (supports various formats)
+  const isAddressQuery = /^(0x)?[a-fA-F0-9]{10,}$/i.test(query.trim());
+  
+  // Direct navigation for address queries
+  const handleDirectNavigation = () => {
+    if (isAddressQuery) {
+      const address = query.trim().startsWith('0x') ? query.trim() : `0x${query.trim()}`;
+      navigate(`/tokens/${address}${chainIndex ? `?chain=${chainIndex}` : ''}`);
+      setQuery("");
+      setIsOpen(false);
+    }
+  };
 
   return (
     <div className={cn("relative", className)}>
@@ -70,9 +89,16 @@ export function TokenSearchInput({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            setIsOpen(e.target.value.length >= 2);
+            if (e.target.value.length >= 2) {
+              setIsOpen(true);
+            }
           }}
-          onFocus={() => query.length >= 2 && setIsOpen(true)}
+          onFocus={() => debouncedQuery.length >= 2 && setIsOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && isAddressQuery) {
+              handleDirectNavigation();
+            }
+          }}
           className="pl-10 pr-10"
         />
         {query && (
@@ -91,7 +117,7 @@ export function TokenSearchInput({
       </div>
 
       {/* Search Results Dropdown */}
-      {isOpen && (
+      {isOpen && debouncedQuery.length >= 2 && (
         <div 
           ref={dropdownRef}
           className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-[400px] overflow-auto"
@@ -100,8 +126,26 @@ export function TokenSearchInput({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               <span className="ml-2 text-sm text-muted-foreground">
-                {isAddressQuery ? "Looking up address..." : "Searching..."}
+                {isAddressQuery ? "Looking up address across chains..." : "Searching..."}
               </span>
+            </div>
+          ) : isError ? (
+            <div className="py-6 text-center">
+              <p className="text-sm text-destructive mb-2">Search failed</p>
+              <p className="text-xs text-muted-foreground">
+                {(error as Error)?.message || "API temporarily unavailable"}
+              </p>
+              {isAddressQuery && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={handleDirectNavigation}
+                >
+                  <ArrowRight className="h-3 w-3 mr-2" />
+                  Go to token page directly
+                </Button>
+              )}
             </div>
           ) : results && results.length > 0 ? (
             <ul className="py-1">
@@ -164,14 +208,24 @@ export function TokenSearchInput({
                 );
               })}
             </ul>
-          ) : query.length >= 2 ? (
+          ) : (
             <div className="py-8 text-center text-muted-foreground">
-              <p className="text-sm">No tokens found for "{query}"</p>
+              <p className="text-sm">No tokens found for "{debouncedQuery}"</p>
               {isAddressQuery && (
-                <p className="text-xs mt-1">Try pasting the full contract address</p>
+                <div className="mt-3">
+                  <p className="text-xs mb-2">This might be a valid contract address</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDirectNavigation}
+                  >
+                    <ArrowRight className="h-3 w-3 mr-2" />
+                    View token details
+                  </Button>
+                </div>
               )}
             </div>
-          ) : null}
+          )}
         </div>
       )}
     </div>

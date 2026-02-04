@@ -8,6 +8,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useTheme, ThemeMode } from "@/components/ThemeToggle";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,22 +17,20 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
   const [sidebarCollapsed] = useLocalStorage("sidebar-collapsed", false);
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { theme, toggleTheme, isDark } = useTheme();
 
-  // Check theme on mount - default to dark
+  // Initialize theme on mount - matrix is the default for new users
   useEffect(() => {
-    const theme = document.documentElement.getAttribute('data-theme');
-    setIsDark(theme !== 'bright'); // Default dark if not explicitly bright
+    const storedTheme = localStorage.getItem('xlayer-theme');
+    if (!storedTheme) {
+      // New user - set matrix as default
+      document.documentElement.setAttribute('data-theme', 'matrix');
+      localStorage.setItem('xlayer-theme', 'matrix');
+    }
   }, []);
-
-  const handleThemeToggle = () => {
-    const newTheme = isDark ? 'bright' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    setIsDark(!isDark);
-  };
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries();
@@ -92,8 +91,8 @@ export function Layout({ children }: LayoutProps) {
       <MobileMoreDrawer 
         isOpen={moreDrawerOpen} 
         onClose={() => setMoreDrawerOpen(false)}
-        onThemeToggle={handleThemeToggle}
-        isDark={isDark}
+        onThemeToggle={toggleTheme}
+        currentTheme={theme}
       />
     </div>
   );
