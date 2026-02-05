@@ -75,8 +75,8 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         xlayer: {
-          crimson: "hsl(var(--xlayer-crimson))",
-          "crimson-dim": "hsl(var(--xlayer-crimson-dim))",
+          green: "hsl(var(--xlayer-green))",
+          "green-dim": "hsl(var(--xlayer-green-dim))",
           blue: "hsl(var(--xlayer-blue))",
           purple: "hsl(var(--xlayer-purple))",
           gold: "hsl(var(--xlayer-gold))",
@@ -93,11 +93,6 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-      },
-      spacing: {
-        'safe-bottom': 'env(safe-area-inset-bottom)',
-        'safe-top': 'env(safe-area-inset-top)',
-        'nav-height': '64px',
       },
       keyframes: {
         "accordion-down": {
@@ -123,14 +118,6 @@ export default {
         "slide-in-left": {
           from: { opacity: "0", transform: "translateX(-20px)" },
           to: { opacity: "1", transform: "translateX(0)" },
-        },
-        "slide-up": {
-          from: { transform: "translateY(100%)" },
-          to: { transform: "translateY(0)" },
-        },
-        "slide-down": {
-          from: { transform: "translateY(0)" },
-          to: { transform: "translateY(100%)" },
         },
         "scale-in": {
           from: { opacity: "0", transform: "scale(0.95)" },
@@ -160,8 +147,6 @@ export default {
         "fade-out": "fade-out 0.3s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "slide-in-left": "slide-in-left 0.3s ease-out",
-        "slide-up": "slide-up 0.3s ease-out",
-        "slide-down": "slide-down 0.3s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
         "scale-out": "scale-out 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s infinite",
@@ -170,7 +155,7 @@ export default {
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-primary": "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--xlayer-crimson-dim)) 100%)",
+        "gradient-primary": "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--xlayer-blue)) 100%)",
         "gradient-card": "linear-gradient(180deg, hsl(var(--card)) 0%, hsl(220 18% 5%) 100%)",
         "gradient-subtle": "linear-gradient(180deg, transparent 0%, hsl(var(--muted) / 0.3) 100%)",
       },

@@ -1,14 +1,10 @@
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { MobileNavigation } from "./MobileNavigation";
-import { MobileMoreDrawer } from "./MobileMoreDrawer";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { useTheme, ThemeMode } from "@/components/ThemeToggle";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,29 +12,15 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
-  const [sidebarCollapsed] = useLocalStorage("sidebar-collapsed", false);
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const { theme, toggleTheme, isDark } = useTheme();
-
-  // Initialize theme on mount - matrix is the default for new users
-  useEffect(() => {
-    const storedTheme = localStorage.getItem('xlayer-theme');
-    if (!storedTheme) {
-      // New user - set matrix as default
-      document.documentElement.setAttribute('data-theme', 'matrix');
-      localStorage.setItem('xlayer-theme', 'matrix');
-    }
-  }, []);
 
   const handleRefresh = useCallback(async () => {
+    // Invalidate all queries to refetch data
     await queryClient.invalidateQueries();
+    // Small delay for visual feedback
     await new Promise((resolve) => setTimeout(resolve, 500));
   }, [queryClient]);
-
-  // Calculate sidebar width for main content offset
-  const sidebarWidth = sidebarCollapsed ? "64px" : "260px";
 
   return (
     <div className="min-h-screen bg-background w-full max-w-[100vw] overflow-x-hidden">
@@ -47,8 +29,8 @@ export function Layout({ children }: LayoutProps) {
         <Sidebar />
       </div>
 
-      {/* Mobile sidebar overlay (legacy, kept for tablet) */}
-      {sidebarOpen && !isMobile && (
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
@@ -63,37 +45,16 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div 
-        className={cn(
-          "w-full max-w-[100vw] overflow-x-hidden transition-all duration-300",
-          isMobile && "pb-[calc(64px+env(safe-area-inset-bottom))]"
-        )}
-        style={{ 
-          paddingLeft: !isMobile ? sidebarWidth : undefined 
-        }}
-      >
+      <div className="lg:pl-[220px] w-full max-w-[100vw] overflow-x-hidden">
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         {isMobile ? (
           <PullToRefresh onRefresh={handleRefresh}>
-            <main className="p-4 w-full max-w-full overflow-x-hidden">{children}</main>
+            <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
           </PullToRefresh>
         ) : (
           <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
         )}
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      {isMobile && (
-        <MobileNavigation onMoreClick={() => setMoreDrawerOpen(true)} />
-      )}
-
-      {/* Mobile More Drawer */}
-      <MobileMoreDrawer 
-        isOpen={moreDrawerOpen} 
-        onClose={() => setMoreDrawerOpen(false)}
-        onThemeToggle={toggleTheme}
-        currentTheme={theme}
-      />
     </div>
   );
 }
