@@ -1,149 +1,169 @@
 
-# Next Steps: Improving Resilience and UX
+# Theme Polish + API Resilience Improvements
 
-## Summary
+## Issues Identified
 
-The current implementation is solid, but the OKX API's intermittent availability is causing empty states. This plan focuses on improving resilience with fallback data sources and better UX during API outages.
+### Theme Issues
+Looking at xlamaexchange.com vs our current Matrix theme, I see significant visual differences:
+
+**xlamaexchange.com features:**
+- Clean OLED black background (#0a0a0a or pure black)
+- Vibrant neon green primary color (brighter, more saturated)
+- Subtle card backgrounds with very slight green tint
+- Modern rounded corners with thin borders
+- Clean, minimal card designs
+- Green glow effects on buttons and interactive elements
+- High contrast text
+
+**Our current Matrix theme issues:**
+- Green tint on foreground text (makes it look "gloomy")
+- Card backgrounds have too much green tint
+- Borders are too green, making it look muddy
+- Overall visual appears washed out and not premium
+
+### API Issues
+OKX API is currently returning:
+- Error `50050`: "The Open API service is currently unavailable"
+- 404 HTML responses instead of JSON
+- Rate limiting `50011` errors
+
+The token detail page shows "Token Not Found" because the API calls fail.
 
 ---
 
-## Part 1: Add DefiLlama as Fallback Data Source
+## Part 1: Matrix Theme Visual Polish
 
-Currently the token list relies 100% on OKX API. When it's unavailable, users see "No tokens found". We should add DefiLlama as a secondary data source.
+### 1.1 Update CSS Variables
+**File: `src/index.css`**
 
-### 1.1 Create Hybrid Token Hook
-**File: `src/hooks/useMultiChainTokens.ts`**
+Key changes to match xlamaexchange.com aesthetic:
 
-Modify the hook to:
-1. Try OKX API first (current behavior)
-2. If OKX returns empty/error, fall back to DefiLlama's token list
-3. Merge data from both sources when possible
-
-```typescript
-// Pseudocode
-async function fetchWithFallback(chain) {
-  const okxData = await fetchOkxTokenRanking(chain);
-  if (okxData.length > 0) return okxData;
+```css
+[data-theme="matrix"] {
+  /* Pure OLED black background */
+  --background: 0 0% 0%;
   
-  // Fallback to DefiLlama prices
-  const defiLlamaData = await fetchDefiLlamaTokens(chain);
-  return defiLlamaData;
+  /* White/off-white foreground (NOT green) for readability */
+  --foreground: 0 0% 93%;
+  
+  /* Brighter, more saturated neon green */
+  --primary: 142 90% 50%;
+  
+  /* Near-black cards (NOT green tinted) */
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 93%;
+  
+  /* Neutral muted colors */
+  --muted: 0 0% 8%;
+  --muted-foreground: 0 0% 55%;
+  
+  /* Secondary with minimal green */
+  --secondary: 0 0% 7%;
+  --secondary-foreground: 0 0% 75%;
+  
+  /* Subtle green borders (NOT overpowering) */
+  --border: 142 20% 15%;
+  
+  /* Keep popover neutral */
+  --popover: 0 0% 5%;
+  --popover-foreground: 0 0% 93%;
 }
 ```
 
-### 1.2 Add DefiLlama Token Fetching
-**File: `src/lib/api/defillama.ts`**
+### 1.2 Add Green Glow Effects
+**File: `src/index.css`**
 
-Add functions to fetch token data from DefiLlama's coins API:
-- `fetchDefiLlamaTokenPrices(chain, addresses)`
-- `fetchDefiLlamaTopTokens(chain)`
+Add matrix-specific glow classes:
+```css
+[data-theme="matrix"] .card-interactive:hover {
+  box-shadow: 0 0 20px hsl(142 90% 50% / 0.15);
+}
 
-DefiLlama endpoints:
-- `https://coins.llama.fi/prices/current/{chain}:{address}`
-- `https://coins.llama.fi/coins/{chain}` (for discovery)
+[data-theme="matrix"] .glow-primary {
+  box-shadow: 0 0 25px hsl(142 90% 50% / 0.3);
+}
 
----
+[data-theme="matrix"] button[data-variant="default"]:hover {
+  box-shadow: 0 0 15px hsl(142 90% 50% / 0.4);
+}
+```
 
-## Part 2: Improve Error States and Loading UX
+### 1.3 Update Card Component
+**File: `src/components/ui/card.tsx`**
 
-### 2.1 Better Empty State on Tokens Page
-**File: `src/pages/Tokens.tsx`**
-
-Instead of "No tokens found", show:
-- A clear message explaining the API is temporarily unavailable
-- Last successful data timestamp if cached
-- Manual refresh button
-- Links to view tokens on other explorers
-
-### 2.2 Add Retry with Exponential Backoff
-**File: `src/hooks/useMultiChainTokens.ts`**
-
-Improve React Query retry logic:
-- Retry 3 times with exponential backoff (1s, 2s, 4s)
-- Show retry count to user
-- Allow manual retry
-
-### 2.3 Cache Last Successful Response
-**File: `src/hooks/useMultiChainTokens.ts`**
-
-Store successful API responses in localStorage:
-- Key: `tokens-cache-{chainId}`
-- Value: `{ data, timestamp }`
-- Show stale data with "Last updated X ago" badge
+Ensure cards look good in Matrix theme with subtle border glow on hover.
 
 ---
 
-## Part 3: Fix Global Search Integration
+## Part 2: Token Detail Page Resilience
 
-### 3.1 Update GlobalSearch Component
-**File: `src/components/GlobalSearch.tsx`**
-
-The global search (Cmd+K) should:
-- Use the same `useTokenSearch` hook as TokenSearchInput
-- Add fallback to local cached tokens when API fails
-- Search through protocols, DEXs, and chains (DefiLlama data) as alternatives
-
-### 3.2 Improve Search Resilience
+### 2.1 Add DefiLlama Price Fallback
 **File: `src/hooks/useMultiChainTokens.ts`**
 
-For `useTokenSearch`:
-- If OKX search fails, filter from cached ranking data
-- Add local token list from Supabase `token_listings` table as fallback
-- Prioritize showing cached results over empty state
+When `useTokenByAddress` fails to find the token via OKX, fallback to DefiLlama:
+- Try to fetch price from `coins.llama.fi/prices/current/{chain}:{address}`
+- Return partial data (price, name from chain mapping)
 
----
-
-## Part 4: Token Detail Page Improvements
-
-### 4.1 Graceful Degradation
+### 2.2 Improve Token Detail Error State
 **File: `src/pages/TokenDetail.tsx`**
 
-When OKX data is unavailable:
-1. Try to get basic price from DefiLlama (`coins.llama.fi`)
-2. Show partial data (address, chain, explorer links)
-3. Hide chart/holders tabs when data unavailable
-4. Show "Data temporarily unavailable" with retry option
+When OKX data unavailable but we have the address:
+- Show partial info (address, chain badge, explorer link)
+- Display "Price data temporarily unavailable" message
+- Hide chart/holders/trades tabs when no data
+- Show a "Refresh" button that re-fetches
 
-### 4.2 Add Price Fallback
-**File: `src/hooks/useOkxData.ts`**
+### 2.3 Add Chain-Specific DefiLlama Mapping
+**File: `src/lib/api/defillama.ts`**
 
-Create fallback price fetch:
+Add mapping for chain IDs to DefiLlama chain names:
 ```typescript
-async function getTokenPrice(chain, address) {
-  // Try OKX first
-  const okxPrice = await fetchOkxTokenPriceInfo(chain, address);
-  if (okxPrice) return okxPrice;
-  
-  // Fallback to DefiLlama
-  const llamaPrice = await fetchDefiLlamaPrice(chain, address);
-  return llamaPrice;
-}
+const CHAIN_ID_TO_LLAMA: Record<string, string> = {
+  '196': 'xlayer',
+  '1': 'ethereum',
+  '56': 'bsc',
+  '42161': 'arbitrum',
+  '8453': 'base',
+  '10': 'optimism',
+  '137': 'polygon',
+};
 ```
 
 ---
 
-## Part 5: Reduce API Load
+## Part 3: Edge Function Improvements
 
-### 5.1 Increase Cache TTL
-**File: `src/hooks/useMultiChainTokens.ts`**
+### 3.1 Better API Unavailable Handling
+**File: `supabase/functions/okx-proxy/index.ts`**
 
-Current: 2 minutes
-Proposed: 5 minutes for ranking data
+Improve handling of `50050` errors:
+- Return a clear structured response
+- Include `isApiUnavailable: true` flag
+- Cache this state briefly to prevent repeated failing calls
 
-This reduces API calls by 60% while maintaining reasonable freshness.
+### 3.2 Stale Cache Priority
+When OKX API returns `50050`:
+- Extend stale cache TTL to 30 minutes
+- Serve stale data with warning header
+- Log for monitoring
 
-### 5.2 Lazy Load Chains
-**File: `src/hooks/useMultiChainTokens.ts`**
+---
 
-For "All Chains" view:
-- Start with X Layer only (featured chain)
-- Load additional chains on scroll or after initial render
-- Show "Loading more chains..." indicator
+## Part 4: Tokens Page Improvements
 
-### 5.3 Prefetch Popular Chains
+### 4.1 Show API Status Banner
 **File: `src/pages/Tokens.tsx`**
 
-On page load, prefetch top 3 chains (X Layer, Ethereum, Arbitrum) to improve perceived performance.
+When API is unavailable:
+- Show a subtle banner: "Live data temporarily unavailable. Showing cached data."
+- Display last update timestamp
+- Keep showing cached/fallback tokens
+
+### 4.2 Improve Empty State
+Better messaging when no tokens available:
+- "Token data is currently being refreshed"
+- Auto-retry mechanism
+- Link to DefiLlama as alternative
 
 ---
 
@@ -151,29 +171,34 @@ On page load, prefetch top 3 chains (X Layer, Ethereum, Arbitrum) to improve per
 
 | File | Changes |
 |------|---------|
-| `src/hooks/useMultiChainTokens.ts` | Add fallback logic, increase cache TTL, localStorage caching |
-| `src/lib/api/defillama.ts` | Add token price/discovery endpoints |
-| `src/pages/Tokens.tsx` | Better empty states, retry UI |
-| `src/pages/TokenDetail.tsx` | Graceful degradation, price fallbacks |
-| `src/components/GlobalSearch.tsx` | Use cached data as fallback |
-| `src/hooks/useOkxData.ts` | Add price fallback to DefiLlama |
+| `src/index.css` | Update Matrix theme colors - neutral foreground, brighter green primary, subtle borders |
+| `src/hooks/useMultiChainTokens.ts` | Add DefiLlama fallback for token lookup |
+| `src/lib/api/defillama.ts` | Add chain ID to DefiLlama name mapping, single token price fetch |
+| `src/pages/TokenDetail.tsx` | Graceful degradation when OKX unavailable |
+| `src/pages/Tokens.tsx` | API status banner, better empty states |
+| `supabase/functions/okx-proxy/index.ts` | Better 50050 handling, extended stale cache |
 
 ---
 
-## Implementation Order
+## Visual Comparison
 
-1. **Part 5** - Reduce API load first (quick win)
-2. **Part 2** - Improve error states (better UX immediately)
-3. **Part 1** - Add DefiLlama fallback (resilience)
-4. **Part 3** - Fix global search (feature completion)
-5. **Part 4** - Token detail improvements (polish)
+**Current Matrix (issues):**
+- Green-tinted text = hard to read
+- Green cards = looks muddy
+- Low contrast = "gloomy"
+
+**Proposed Matrix (matches xlamaexchange):**
+- White/neutral text = clean, readable
+- Near-black cards = premium OLED look
+- Bright green accents = vibrant, modern
+- Subtle green borders = elegant
+- Green glow effects = interactive feedback
 
 ---
 
 ## Expected Outcomes
 
-1. **Token list always shows data** - Either live OKX data or cached/DefiLlama fallback
-2. **Better error messaging** - Users understand when API is down
-3. **Reduced API load** - Fewer rate limit errors
-4. **Global search works** - Uses cached data when API unavailable
-5. **Token details gracefully degrade** - Show what's available, hide what isn't
+1. **Matrix theme looks premium** - Matches xlamaexchange.com aesthetic
+2. **Token pages work even with API issues** - DefiLlama fallback provides price data
+3. **Better user feedback** - Clear messaging when data is unavailable
+4. **More resilient architecture** - Stale cache, multiple fallbacks
