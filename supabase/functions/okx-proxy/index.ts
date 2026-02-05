@@ -214,6 +214,9 @@ serve(async (req) => {
       return { freshMs: 15_000, staleMs: 60_000 };
     };
 
+    // Extended stale TTL for API unavailable scenarios
+    const extendedStaleTtl = 30 * 60_000; // 30 minutes
+
     const promise = (async (): Promise<Response> => {
       try {
         // Compute signature (sign the path + query for GET)
@@ -263,9 +266,22 @@ serve(async (req) => {
               console.log(`OKX API Response: ${upstreamStatus}, code: ${data?.code}`);
 
               // Handle geo-restriction (53015), auth errors (401), or 404 - try next base URL
-              if (upstreamStatus === 401 || upstreamStatus === 404 || data?.code === '53015' || data?.code === '404') {
+              if (upstreamStatus === 401 || upstreamStatus === 404 || data?.code === '53015' || data?.code === '404' || data?.code === '50050') {
                 console.log(`Error ${upstreamStatus}/${data?.code} from ${baseUrl}, trying next...`);
                 lastError = { status: upstreamStatus, code: data?.code || String(upstreamStatus), msg: data?.msg || 'Not Found' };
+                
+                // For 50050 (API unavailable), serve stale cache immediately if available
+                if (data?.code === '50050') {
+                  const stale = responseCache.get(cacheKey);
+                  if (stale) {
+                    // Extend stale TTL for unavailable API
+                    stale.staleUntil = now + extendedStaleTtl;
+                    return new Response(JSON.stringify(stale.data), {
+                      status: 200,
+                      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE-API-UNAVAILABLE', 'X-API-Status': 'unavailable' },
+                    });
+                  }
+                }
                 continue; // Try next base URL
               }
 
@@ -320,15 +336,28 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE-FALLBACK' },
           });
         }
+        
+        // Even if stale cache expired, extend it during API unavailability
+        if (stale && lastError?.code === '50050') {
+          stale.staleUntil = now + extendedStaleTtl;
+          const responseData = typeof stale.data === 'object' && stale.data !== null 
+            ? { ...(stale.data as object), isApiUnavailable: true }
+            : { data: stale.data, isApiUnavailable: true };
+          return new Response(JSON.stringify(responseData), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'STALE-EXTENDED', 'X-API-Status': 'unavailable' },
+          });
+        }
 
         // Return appropriate error
         if (lastError) {
           return new Response(
             JSON.stringify({
-              error: 'OKX API geo-restricted',
+              error: lastError.code === '50050' ? 'OKX API temporarily unavailable' : 'OKX API geo-restricted',
               code: lastError.code,
               msg: lastError.msg,
               data: [],
+              isApiUnavailable: lastError.code === '50050',
             }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );

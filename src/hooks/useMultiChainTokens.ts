@@ -8,7 +8,7 @@ import {
   fetchOkxSupportedChains,
   OkxTokenRankingItem,
 } from "@/lib/api/okx";
-import { fetchDefiLlamaTokenPrices, fetchTopTokensByChain } from "@/lib/api/defillama";
+import { fetchDefiLlamaTokenPrices, fetchTopTokensByChain, fetchSingleTokenPrice } from "@/lib/api/defillama";
 import { SUPPORTED_CHAINS, ALL_CHAINS_ID } from "@/lib/chains";
 
 // Fallback chains if dynamic fetch fails
@@ -524,6 +524,29 @@ export function useTokenByAddress(
         }
       }
       
+      // Fallback to DefiLlama for price data
+      const preferredChainForFallback = preferredChain || '196';
+      try {
+        const llamaPrice = await fetchSingleTokenPrice(preferredChainForFallback, address);
+        if (llamaPrice) {
+          const chain = SUPPORTED_CHAINS.find(c => c.index === preferredChainForFallback);
+          return {
+            chainIndex: preferredChainForFallback,
+            chainName: chain?.name || `Chain ${preferredChainForFallback}`,
+            basicInfo: null,
+            priceInfo: {
+              tokenSymbol: '???',
+              tokenName: 'Unknown Token',
+              price: String(llamaPrice.price),
+              priceChange24h: String(llamaPrice.priceChange24h || 0),
+            } as any,
+            source: 'defillama' as const,
+          };
+        }
+      } catch {
+        // DefiLlama fallback also failed
+      }
+
       return null;
     },
     enabled: !!contractAddress && contractAddress.length >= 10,

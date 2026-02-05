@@ -411,6 +411,57 @@ export async function fetchDefiLlamaTokenPrices(
   }
 }
 
+// Chain ID to DefiLlama chain name mapping
+export const CHAIN_ID_TO_LLAMA: Record<string, string> = {
+  '1': 'ethereum',
+  '56': 'bsc',
+  '137': 'polygon',
+  '42161': 'arbitrum',
+  '10': 'optimism',
+  '8453': 'base',
+  '196': 'xlayer',
+  '324': 'zksync',
+  '43114': 'avax',
+  '250': 'fantom',
+  '534352': 'scroll',
+  '59144': 'linea',
+  '1101': 'polygon_zkevm',
+  '5000': 'mantle',
+};
+
+// Fetch single token price (simpler API for token detail pages)
+export async function fetchSingleTokenPrice(
+  chainIndex: string,
+  address: string
+): Promise<{ price: number; priceChange24h?: number; symbol?: string } | null> {
+  try {
+    const chainName = CHAIN_ID_TO_LLAMA[chainIndex];
+    if (!chainName) return null;
+    
+    const tokenKey = `${chainName}:${address}`;
+    const response = await fetch(
+      `${DEFILLAMA_COINS_URL}/prices/current/${encodeURIComponent(tokenKey)}?searchWidth=4h`
+    );
+    
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    const coinData = data.coins?.[tokenKey];
+    
+    if (coinData?.price) {
+      return {
+        price: coinData.price,
+        priceChange24h: coinData.change24h,
+        symbol: coinData.symbol,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching single token price:", error);
+    return null;
+  }
+}
+
 // Fetch top tokens by chain using DefiLlama
 export interface DefiLlamaToken {
   id: string;
