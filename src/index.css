@@ -188,6 +188,82 @@
     --sidebar-border: 220 14% 14%;
     --sidebar-ring: 163 60% 50%;
   }
+
+  /* Matrix Theme - True Black OLED with Neon Green */
+  [data-theme="matrix"] {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 93%;
+
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 93%;
+
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 93%;
+
+    --primary: 142 90% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 85%;
+
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 142 80% 45%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 142 90% 50%;
+    --success-foreground: 0 0% 0%;
+
+    --warning: 45 100% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 142 90% 50%;
+
+    --radius: 0.5rem;
+
+    /* Chart colors - neon palette */
+    --chart-1: 142 90% 50%;
+    --chart-2: 180 100% 50%;
+    --chart-3: 45 100% 50%;
+    --chart-4: 280 100% 65%;
+    --chart-5: 0 100% 60%;
+
+    /* Custom XLayer colors - crimson for X Layer distinction */
+    --xlayer-green: 142 90% 50%;
+    --xlayer-green-dim: 142 60% 35%;
+    --xlayer-blue: 180 100% 50%;
+    --xlayer-purple: 280 100% 65%;
+    --xlayer-gold: 45 100% 50%;
+    --xlayer-crimson: 348 83% 47%;
+    
+    /* Gradients - Matrix style */
+    --gradient-primary: linear-gradient(135deg, hsl(142 90% 50%) 0%, hsl(180 100% 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 2%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(142 90% 50% / 0.2) 0%, transparent 70%);
+
+    /* Shadows - neon glow effects */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.5);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.5), 0 2px 4px -2px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.6), 0 4px 6px -4px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 25px hsl(142 90% 50% / 0.4);
+    --shadow-neon: 0 0 10px hsl(142 90% 50% / 0.5), 0 0 30px hsl(142 90% 50% / 0.3);
+
+    /* Sidebar - true black */
+    --sidebar-background: 0 0% 2%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 142 90% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 142 90% 50%;
+  }
 }
 
 @layer base {
@@ -290,6 +366,54 @@
 
   .glow-primary-strong {
     box-shadow: 0 0 40px hsl(var(--primary) / 0.5);
+  }
+
+  /* Matrix theme neon glow effects */
+  [data-theme="matrix"] .glow-neon {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.3);
+  }
+
+  [data-theme="matrix"] .glow-neon-hover:hover {
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.6), 0 0 40px hsl(var(--primary) / 0.4);
+  }
+
+  [data-theme="matrix"] .border-glow {
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.2);
+  }
+
+  /* Matrix theme button enhancements */
+  [data-theme="matrix"] .btn-matrix {
+    @apply relative overflow-hidden;
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+    transition: box-shadow 0.3s ease;
+  }
+
+  [data-theme="matrix"] .btn-matrix:hover {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3);
+  }
+
+  /* Matrix theme card enhancements */
+  [data-theme="matrix"] .card-matrix {
+    @apply border-border/50;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  [data-theme="matrix"] .card-matrix:hover {
+    border-color: hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.15);
+  }
+
+  /* X Layer crimson highlight for Matrix theme */
+  [data-theme="matrix"] .xlayer-highlight {
+    border-color: hsl(348 83% 47% / 0.5);
+    box-shadow: 0 0 15px hsl(348 83% 47% / 0.2);
+  }
+
+  [data-theme="matrix"] .xlayer-badge {
+    background: hsl(348 83% 47% / 0.15);
+    color: hsl(348 83% 60%);
+    border: 1px solid hsl(348 83% 47% / 0.3);
   }
 
   /* Card variants */

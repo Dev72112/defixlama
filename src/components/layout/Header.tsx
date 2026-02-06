@@ -11,6 +11,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
+import { ChainSelector } from "@/components/ChainSelector";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -59,6 +60,9 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Chain Selector */}
+          <ChainSelector compact className="hidden sm:flex" />
+
           {/* Live indicator */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-xs font-medium badge-pulse">
             <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
@@ -94,8 +98,8 @@ export function Header({ onMenuClick }: HeaderProps) {
           {/* Language Switcher */}
           <LanguageSwitcher />
 
-          {/* Theme toggle */}
-          <ThemeToggle />
+          {/* Theme toggle with dropdown */}
+          <ThemeToggle showDropdown />
 
           {/* User menu */}
           <UserMenu />
