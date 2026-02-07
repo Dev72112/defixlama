@@ -37,7 +37,7 @@ export function StatCard({
   }
 
   return (
-    <div className={cn("stat-card card-hover group", className)}>
+    <div className={cn("stat-card card-hover group glow-neon-hover", className)}>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">{title}</p>
