@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProtocolTable } from "@/components/dashboard/ProtocolTable";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useXLayerProtocols, useXLayerTVL, useXLayerTVLHistory } from "@/hooks/useDefiData";
+import { useChainProtocols, useChainTVLData, useChainTVLHistory } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { Database, Layers, TrendingUp, Search, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -17,12 +17,17 @@ import {
 } from "@/components/ui/select";
 import { HistoricalTVLChart } from "@/components/dashboard/HistoricalTVLChart";
 import { ErrorState } from "@/components/ErrorState";
+import { useChain } from "@/contexts/ChainContext";
 
 export default function Protocols() {
   const { t } = useTranslation();
-  const { data: protocols, isLoading: protocolsLoading, isError: protocolsError, error, refetch } = useXLayerProtocols();
-  const { data: tvl, isLoading: tvlLoading } = useXLayerTVL();
-  const { data: tvlHistory, isLoading: tvlHistoryLoading } = useXLayerTVLHistory();
+  const { selectedChain } = useChain();
+  const chainId = selectedChain.id;
+
+  const { data: protocols, isLoading: protocolsLoading, isError: protocolsError, error, refetch } = useChainProtocols(chainId);
+  const { data: tvl, isLoading: tvlLoading } = useChainTVLData(chainId);
+  const tvlHistoryChain = chainId === "all" ? null : selectedChain.slug;
+  const { data: tvlHistory, isLoading: tvlHistoryLoading } = useChainTVLHistory(tvlHistoryChain);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("tvl");
@@ -112,7 +117,9 @@ export default function Protocols() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("protocols.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+              {selectedChain.name} {t("protocols.title")}
+            </h1>
             <p className="text-muted-foreground mt-1">
               {t("protocols.subtitle")}
             </p>
@@ -152,11 +159,13 @@ export default function Protocols() {
         </div>
 
         {/* Historical TVL Chart */}
-        <HistoricalTVLChart 
-          data={tvlHistory || []} 
-          loading={tvlHistoryLoading} 
-          title={t("protocols.tvlHistory")}
-        />
+        {tvlHistoryChain && (
+          <HistoricalTVLChart 
+            data={tvlHistory || []} 
+            loading={tvlHistoryLoading} 
+            title={`${selectedChain.name} TVL History`}
+          />
+        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
