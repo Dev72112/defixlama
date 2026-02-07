@@ -162,18 +162,22 @@ export async function fetchProtocols(): Promise<Protocol[]> {
 
 // Fetch protocols for XLayer
 export async function fetchXLayerProtocols(): Promise<Protocol[]> {
+  return fetchChainProtocols("xlayer");
+}
+
+// Fetch protocols filtered by chain name (or "all" for everything)
+export async function fetchChainProtocols(chain: string): Promise<Protocol[]> {
   try {
     const protocols = await fetchProtocols();
+    if (chain === "all") return protocols;
+    const lower = chain.toLowerCase().replace(/[\s-]/g, "");
     return protocols.filter(
       (p) =>
-        p.chains?.some(
-          (c) => c.toLowerCase() === "xlayer" || c.toLowerCase() === "x layer"
-        ) ||
-        p.chain?.toLowerCase() === "xlayer" ||
-        p.chain?.toLowerCase() === "x layer"
+        p.chains?.some((c) => c.toLowerCase().replace(/[\s-]/g, "") === lower) ||
+        p.chain?.toLowerCase().replace(/[\s-]/g, "") === lower
     );
   } catch (error) {
-    console.error("Error fetching XLayer protocols:", error);
+    console.error(`Error fetching ${chain} protocols:`, error);
     return [];
   }
 }
@@ -206,16 +210,21 @@ export async function fetchChainsTVL(): Promise<ChainData[]> {
 
 // Fetch XLayer TVL
 export async function fetchXLayerTVL(): Promise<ChainData | null> {
+  return fetchChainTVL("xlayer");
+}
+
+// Fetch TVL for a specific chain (or sum all for "all")
+export async function fetchChainTVL(chain: string): Promise<ChainData | null> {
   try {
     const chains = await fetchChainsTVL();
-    return (
-      chains.find(
-        (c) =>
-          c.name.toLowerCase() === "xlayer" || c.name.toLowerCase() === "x layer"
-      ) || null
-    );
+    if (chain === "all") {
+      const totalTvl = chains.reduce((acc, c) => acc + (c.tvl || 0), 0);
+      return { name: "All Chains", tvl: totalTvl };
+    }
+    const lower = chain.toLowerCase().replace(/[\s-]/g, "");
+    return chains.find((c) => c.name.toLowerCase().replace(/[\s-]/g, "") === lower) || null;
   } catch (error) {
-    console.error("Error fetching XLayer TVL:", error);
+    console.error(`Error fetching ${chain} TVL:`, error);
     return null;
   }
 }
@@ -237,79 +246,35 @@ export async function fetchDexVolumes(): Promise<DexVolume[]> {
 
 // Fetch DEX volumes for XLayer
 export async function fetchXLayerDexVolumes(): Promise<DexVolume[]> {
+  return fetchChainDexVolumes("xlayer");
+}
+
+// Fetch DEX volumes filtered by chain (or "all" for everything)
+export async function fetchChainDexVolumes(chain: string): Promise<DexVolume[]> {
   try {
-    // Attempt DEX-specific endpoint first
+    if (chain === "all") {
+      return fetchDexVolumes();
+    }
+    const lower = chain.toLowerCase().replace(/[\s-]/g, "");
+    // Try chain-specific endpoint
     let dexes: DexVolume[] = [];
     try {
-      const response = await fetch("https://api.llama.fi/overview/dexs/xlayer?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyVolume");
+      const response = await fetch(`https://api.llama.fi/overview/dexs/${encodeURIComponent(chain)}?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyVolume`);
       if (response.ok) {
         const data = await response.json();
-        const protocols = data?.protocols;
-        if (Array.isArray(protocols)) {
-          dexes = protocols.map(normalizeDexVolume);
+        if (Array.isArray(data?.protocols)) {
+          dexes = data.protocols.map(normalizeDexVolume);
         }
       }
-    } catch (e) {
-      console.warn("DefiLlama XLayer DEX endpoint failed, falling back to aggregated DEX list");
-    }
-
-    // Fallback: filter from the general DEX list
+    } catch (e) {}
+    // Fallback: filter from all
     if (dexes.length === 0) {
       const allDexes = await fetchDexVolumes();
-      dexes = Array.isArray(allDexes)
-        ? allDexes.filter((d) => d.chains?.some((c) => c.toLowerCase().includes("xlayer")))
-        : [];
+      dexes = allDexes.filter((d) => d.chains?.some((c) => c.toLowerCase().replace(/[\s-]/g, "") === lower));
     }
-
-    // Enrich with any protocols that look like DEXs but are missing from the DEX endpoint
-    try {
-      const protocols = await fetchProtocols();
-      const existingNames = new Set(dexes.map((d) => (d.displayName || d.name || "").toLowerCase()));
-
-      const dexCandidates = protocols.filter((p) => {
-        const name = (p.name || "").toLowerCase();
-        const isDexLike = p.module === "dex" || name.includes("dex") || name.includes("swap");
-        const chains = p.chains || (p.chain ? [p.chain] : []);
-        const onXLayer = Array.isArray(chains) && chains.some((c) => String(c).toLowerCase().includes("xlayer"));
-        return isDexLike && onXLayer;
-      });
-
-      for (const p of dexCandidates) {
-        const key = (p.name || "").toLowerCase();
-        if (existingNames.has(key)) continue;
-        existingNames.add(key);
-        dexes.push(normalizeDexVolume(p));
-      }
-
-      // Also include DEX-like protocols discovered by fetchXLayerProtocols (some may not have chains populated)
-      try {
-        const xlayerProtocols = await fetchXLayerProtocols();
-        for (const p of xlayerProtocols) {
-          const nameLower = (p.name || "").toLowerCase();
-          const isDexLike = p.module === "dex" || nameLower.includes("dex") || nameLower.includes("swap") || nameLower.includes("amm");
-          if (!isDexLike) continue;
-          const key = (p.name || "").toLowerCase();
-          if (existingNames.has(key)) continue;
-          existingNames.add(key);
-          dexes.push(normalizeDexVolume(p));
-        }
-      } catch (e) {
-        // non-fatal
-      }
-    } catch (e) {
-      console.warn("Failed to enrich DEX data from protocols", e);
-    }
-
-    // final dedupe by display/name
-    const seen = new Set<string>();
-    return dexes.filter((d) => {
-      const key = (d.displayName || d.name || "").toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    return dexes;
   } catch (error) {
-    console.error("Error fetching XLayer DEX volumes:", error);
+    console.error(`Error fetching ${chain} DEX volumes:`, error);
     return [];
   }
 }
@@ -330,13 +295,20 @@ export async function fetchYieldPools(): Promise<YieldPool[]> {
 
 // Fetch XLayer yield pools
 export async function fetchXLayerYieldPools(): Promise<YieldPool[]> {
+  return fetchChainYieldPools("xlayer");
+}
+
+// Fetch yield pools filtered by chain (or "all" for everything)
+export async function fetchChainYieldPools(chain: string): Promise<YieldPool[]> {
   try {
     const pools = await fetchYieldPools();
+    if (chain === "all") return pools;
+    const lower = chain.toLowerCase().replace(/[\s-]/g, "");
     return pools.filter(
-      (p) => p.chain.toLowerCase() === "xlayer" || p.chain.toLowerCase() === "x layer"
+      (p) => p.chain.toLowerCase().replace(/[\s-]/g, "") === lower
     );
   } catch (error) {
-    console.error("Error fetching XLayer yield pools:", error);
+    console.error(`Error fetching ${chain} yield pools:`, error);
     return [];
   }
 }

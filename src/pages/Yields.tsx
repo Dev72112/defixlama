@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { YieldTable } from "@/components/dashboard/YieldTable";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useXLayerYieldPools } from "@/hooks/useDefiData";
+import { useChainYieldPools } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { TrendingUp, Droplets, Search, Activity, Percent, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,13 @@ import { YieldDistributionChart } from "@/components/dashboard/YieldDistribution
 import { TopYieldPools } from "@/components/dashboard/TopYieldPools";
 import { exportToCSV } from "@/lib/export";
 import { ErrorState } from "@/components/ErrorState";
+import { useChain } from "@/contexts/ChainContext";
 
 export default function Yields() {
   const { t } = useTranslation();
-  const { data: pools, isLoading, isError, error, refetch } = useXLayerYieldPools();
+  const { selectedChain } = useChain();
+  const chainId = selectedChain.id;
+  const { data: pools, isLoading, isError, error, refetch } = useChainYieldPools(chainId);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("apy");
@@ -95,7 +98,7 @@ export default function Yields() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('yields.title')}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t('yields.title')}</h1>
             <p className="text-muted-foreground mt-1">
               {t('yields.subtitle')}
             </p>

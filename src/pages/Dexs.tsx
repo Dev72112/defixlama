@@ -3,7 +3,7 @@ import { DexTable } from "@/components/dashboard/DexTable";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { VolumeComparisonChart } from "@/components/dashboard/VolumeComparisonChart";
 import { HistoricalVolumeChart } from "@/components/dashboard/HistoricalVolumeChart";
-import { useXLayerDexVolumes } from "@/hooks/useDefiData";
+import { useChainDexVolumes } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeftRight, TrendingUp, Activity, Search, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,10 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ErrorState } from "@/components/ErrorState";
+import { useChain } from "@/contexts/ChainContext";
 
 export default function Dexs() {
   const { t } = useTranslation();
-  const { data: dexes, isLoading, isError, error, refetch } = useXLayerDexVolumes();
+  const { selectedChain } = useChain();
+  const chainId = selectedChain.id;
+  const { data: dexes, isLoading, isError, error, refetch } = useChainDexVolumes(chainId);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("volume24h");
@@ -69,7 +72,7 @@ export default function Dexs() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("dexs.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t("dexs.title")}</h1>
             <p className="text-muted-foreground mt-1">
               {t("dexs.subtitle")}
             </p>

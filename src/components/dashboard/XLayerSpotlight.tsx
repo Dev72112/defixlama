@@ -2,8 +2,8 @@ import { useXLayerProtocols, useXLayerTVL, useXLayerDexVolumes } from "@/hooks/u
 import { formatCurrency } from "@/lib/api/defillama";
 import { ChevronDown, ChevronUp, Star, Layers, ArrowLeftRight, Database } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function XLayerSpotlight() {
   const [expanded, setExpanded] = useState(true);
@@ -24,7 +24,6 @@ export function XLayerSpotlight() {
     <div className="rounded-lg border bg-card overflow-hidden"
       style={{ borderColor: "hsl(348 83% 47% / 0.3)" }}
     >
-      {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex items-center justify-between w-full px-4 py-3 hover:bg-muted/30 transition-colors"
@@ -50,52 +49,65 @@ export function XLayerSpotlight() {
         </div>
       </button>
 
-      {/* Content */}
-      {expanded && (
-        <div className="px-4 pb-4 space-y-3">
-          {/* Metrics */}
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "TVL", value: formatCurrency(totalTVL), icon: Layers, loading: tvl?.isLoading },
-              { label: "24h Volume", value: formatCurrency(totalDexVolume), icon: ArrowLeftRight, loading: dexVolumes?.isLoading },
-              { label: "Protocols", value: String(protocolCount), icon: Database, loading: protocols?.isLoading },
-            ].map((metric) => (
-              <div key={metric.label} className="rounded-lg bg-muted/30 p-2.5 text-center">
-                {metric.loading ? (
-                  <div className="space-y-1.5">
-                    <div className="skeleton h-3 w-12 mx-auto" />
-                    <div className="skeleton h-5 w-16 mx-auto" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{metric.label}</div>
-                    <div className="text-sm font-bold text-foreground tabular-nums mt-0.5">{metric.value}</div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Top Protocols */}
-          {topProtocols.length > 0 && (
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Top Protocols</div>
-              <div className="space-y-1">
-                {topProtocols.map((p) => (
-                  <Link
-                    key={p.slug || p.name}
-                    to={`/protocols/${(p.slug || p.name || '').toLowerCase().replace(/\s+/g, '-')}`}
-                    className="flex items-center justify-between py-1 px-2 rounded hover:bg-muted/30 transition-colors group"
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "TVL", value: formatCurrency(totalTVL), icon: Layers, loading: tvl?.isLoading },
+                  { label: "24h Volume", value: formatCurrency(totalDexVolume), icon: ArrowLeftRight, loading: dexVolumes?.isLoading },
+                  { label: "Protocols", value: String(protocolCount), icon: Database, loading: protocols?.isLoading },
+                ].map((metric, i) => (
+                  <motion.div
+                    key={metric.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05, duration: 0.2 }}
+                    className="rounded-lg bg-muted/30 p-2.5 text-center"
                   >
-                    <span className="text-xs text-foreground group-hover:text-primary transition-colors truncate">{p.name}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">{formatCurrency(p.tvl ?? 0)}</span>
-                  </Link>
+                    {metric.loading ? (
+                      <div className="space-y-1.5">
+                        <div className="skeleton h-3 w-12 mx-auto" />
+                        <div className="skeleton h-5 w-16 mx-auto" />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{metric.label}</div>
+                        <div className="text-sm font-bold text-foreground tabular-nums mt-0.5">{metric.value}</div>
+                      </>
+                    )}
+                  </motion.div>
                 ))}
               </div>
+
+              {topProtocols.length > 0 && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Top Protocols</div>
+                  <div className="space-y-1">
+                    {topProtocols.map((p) => (
+                      <Link
+                        key={p.slug || p.name}
+                        to={`/protocols/${(p.slug || p.name || '').toLowerCase().replace(/\s+/g, '-')}`}
+                        className="flex items-center justify-between py-1 px-2 rounded hover:bg-muted/30 transition-colors group"
+                      >
+                        <span className="text-xs text-foreground group-hover:text-primary transition-colors truncate">{p.name}</span>
+                        <span className="text-xs text-muted-foreground tabular-nums">{formatCurrency(p.tvl ?? 0)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

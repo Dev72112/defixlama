@@ -13,6 +13,10 @@ import {
   fetchProtocolTVLHistory,
   fetchProtocolDetails,
   fetchDexDetails,
+  fetchChainProtocols,
+  fetchChainTVL,
+  fetchChainDexVolumes,
+  fetchChainYieldPools,
   Protocol,
   ChainTVL,
   ChainData,
@@ -255,4 +259,53 @@ export function useDashboardData() {
       dexVolumes.isError ||
       yieldPools.isError,
   };
+}
+
+// ============================================================
+// Chain-aware hooks — pass chainId from useChain() context
+// ============================================================
+
+export function useChainProtocols(chainId: string) {
+  return useQuery<Protocol[]>({
+    queryKey: ["chain-protocols", chainId],
+    queryFn: async () => {
+      const data = await fetchChainProtocols(chainId);
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: LIVE_REFRESH,
+    refetchInterval: LIVE_REFRESH,
+  });
+}
+
+export function useChainTVLData(chainId: string) {
+  return useQuery<ChainData | null>({
+    queryKey: ["chain-tvl", chainId],
+    queryFn: () => fetchChainTVL(chainId),
+    staleTime: LIVE_REFRESH,
+    refetchInterval: LIVE_REFRESH,
+  });
+}
+
+export function useChainDexVolumes(chainId: string) {
+  return useQuery<DexVolume[]>({
+    queryKey: ["chain-dex-volumes", chainId],
+    queryFn: async () => {
+      const data = await fetchChainDexVolumes(chainId);
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: LIVE_REFRESH,
+    refetchInterval: LIVE_REFRESH,
+  });
+}
+
+export function useChainYieldPools(chainId: string) {
+  return useQuery<YieldPool[]>({
+    queryKey: ["chain-yield-pools", chainId],
+    queryFn: async () => {
+      const data = await fetchChainYieldPools(chainId);
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: LIVE_REFRESH,
+    refetchInterval: LIVE_REFRESH,
+  });
 }
