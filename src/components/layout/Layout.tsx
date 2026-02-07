@@ -1,6 +1,7 @@
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { useState, useCallback } from "react";
+import { BottomNav } from "./BottomNav";
+import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,13 +13,20 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("sidebar-collapsed") === "true";
+    } catch { return false; }
+  });
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
+  useEffect(() => {
+    try { localStorage.setItem("sidebar-collapsed", String(sidebarCollapsed)); } catch {}
+  }, [sidebarCollapsed]);
+
   const handleRefresh = useCallback(async () => {
-    // Invalidate all queries to refetch data
     await queryClient.invalidateQueries();
-    // Small delay for visual feedback
     await new Promise((resolve) => setTimeout(resolve, 500));
   }, [queryClient]);
 
@@ -26,7 +34,7 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background w-full max-w-[100vw] overflow-x-hidden">
       {/* Sidebar - hidden on mobile */}
       <div className="hidden lg:block">
-        <Sidebar />
+        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
       {/* Mobile sidebar overlay */}
@@ -45,16 +53,22 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="lg:pl-[220px] w-full max-w-[100vw] overflow-x-hidden">
+      <div className={cn(
+        "w-full max-w-[100vw] overflow-x-hidden transition-all duration-300",
+        sidebarCollapsed ? "lg:pl-16" : "lg:pl-[220px]"
+      )}>
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         {isMobile ? (
           <PullToRefresh onRefresh={handleRefresh}>
-            <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
+            <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden pb-24">{children}</main>
           </PullToRefresh>
         ) : (
           <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
         )}
       </div>
+
+      {/* Bottom Navigation - mobile only */}
+      {isMobile && <BottomNav />}
     </div>
   );
 }

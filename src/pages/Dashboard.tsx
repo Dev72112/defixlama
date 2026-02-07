@@ -16,6 +16,7 @@ import { EcosystemHealth } from "@/components/dashboard/EcosystemHealth";
 import { HistoricalTVLChart } from "@/components/dashboard/HistoricalTVLChart";
 import { HistoricalComparisonChart } from "@/components/dashboard/HistoricalComparisonChart";
 import { PriceAlertsPanel } from "@/components/PriceAlertsPanel";
+import { XLayerSpotlight } from "@/components/dashboard/XLayerSpotlight";
 import { NetworkStatsCard } from "@/components/dashboard/NetworkStatsCard";
 import { StablecoinStats } from "@/components/dashboard/StablecoinStats";
 import { FeesOverview } from "@/components/dashboard/FeesOverview";
@@ -206,6 +207,9 @@ function DashboardContent() {
       <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm overflow-hidden">
         <LivePriceTicker />
       </div>
+
+      {/* X Layer Spotlight */}
+      <XLayerSpotlight />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

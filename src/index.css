@@ -636,6 +636,24 @@
       transform: translateY(0);
     }
   }
+
+  /* Glow card hover utility */
+  .glow-card {
+    @apply transition-all duration-300;
+  }
+
+  .glow-card:hover {
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.2), 0 0 30px hsl(var(--primary) / 0.1);
+    border-color: hsl(var(--primary) / 0.3);
+  }
+
+  /* Gradient text hero */
+  .text-gradient-hero {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--xlayer-blue)) 50%, hsl(var(--xlayer-purple)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
 @layer utilities {
