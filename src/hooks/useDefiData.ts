@@ -17,6 +17,7 @@ import {
   fetchChainTVL,
   fetchChainDexVolumes,
   fetchChainYieldPools,
+  fetchChainFees,
   Protocol,
   ChainTVL,
   ChainData,
@@ -232,13 +233,13 @@ export function useChainTVLHistory(chain: string | null) {
   });
 }
 
-// Combined hook for dashboard overview
-export function useDashboardData() {
-  const protocols = useXLayerProtocols();
-  const tvl = useXLayerTVL();
-  const tvlHistory = useXLayerTVLHistory();
-  const dexVolumes = useXLayerDexVolumes();
-  const yieldPools = useXLayerYieldPools();
+// Combined hook for dashboard overview - chain-aware
+export function useDashboardData(chainId: string = "xlayer") {
+  const protocols = useChainProtocols(chainId);
+  const tvl = useChainTVLData(chainId);
+  const tvlHistory = useChainTVLHistory(chainId === "all" ? null : (getChainSlug(chainId) || "X Layer"));
+  const dexVolumes = useChainDexVolumes(chainId);
+  const yieldPools = useChainYieldPools(chainId);
 
   return {
     protocols,
@@ -259,6 +260,18 @@ export function useDashboardData() {
       dexVolumes.isError ||
       yieldPools.isError,
   };
+}
+
+// Helper to get DefiLlama slug from chain id
+function getChainSlug(chainId: string): string | null {
+  const map: Record<string, string> = {
+    xlayer: "X Layer", ethereum: "Ethereum", arbitrum: "Arbitrum",
+    optimism: "Optimism", base: "Base", polygon: "Polygon",
+    avalanche: "Avalanche", bsc: "BSC", solana: "Solana",
+    sui: "Sui", fantom: "Fantom", zksync: "zkSync Era",
+    linea: "Linea", scroll: "Scroll",
+  };
+  return map[chainId] || null;
 }
 
 // ============================================================
@@ -303,6 +316,18 @@ export function useChainYieldPools(chainId: string) {
     queryKey: ["chain-yield-pools", chainId],
     queryFn: async () => {
       const data = await fetchChainYieldPools(chainId);
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: LIVE_REFRESH,
+    refetchInterval: LIVE_REFRESH,
+  });
+}
+
+export function useChainFees(chainId: string) {
+  return useQuery<any[]>({
+    queryKey: ["chain-fees", chainId],
+    queryFn: async () => {
+      const data = await fetchChainFees(chainId);
       return Array.isArray(data) ? data : [];
     },
     staleTime: LIVE_REFRESH,

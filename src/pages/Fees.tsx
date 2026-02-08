@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useFeesData } from "@/hooks/useDefiData";
+import { useChainFees } from "@/hooks/useDefiData";
+import { useChain } from "@/contexts/ChainContext";
 import { formatCurrency } from "@/lib/api/defillama";
 import { BarChart3, TrendingUp, Search, DollarSign, Activity, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,8 @@ export default function Fees() {
 
 function FeesContent() {
   const { t } = useTranslation();
-  const { data: fees, isLoading } = useFeesData();
+  const { selectedChain } = useChain();
+  const { data: fees, isLoading } = useChainFees(selectedChain.id);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
@@ -80,7 +82,7 @@ function FeesContent() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('fees.title')}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t('fees.title')}</h1>
             <p className="text-muted-foreground mt-1">{t('fees.subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">

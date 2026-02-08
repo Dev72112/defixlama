@@ -11,13 +11,15 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ErrorState } from "@/components/ErrorState";
+import { useChain } from "@/contexts/ChainContext";
 
 export default function Stablecoins() {
   const { t } = useTranslation();
+  const { selectedChain } = useChain();
   const { data: stablecoins, isLoading, isError, error, refetch } = useStablecoins();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter stablecoins that might be on XLayer
+  // Filter stablecoins by selected chain
   const filteredStablecoins = useMemo(() => {
     if (!stablecoins) return [];
     
@@ -25,14 +27,19 @@ export default function Stablecoins() {
       .filter((s) => {
         const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.symbol.toLowerCase().includes(searchQuery.toLowerCase());
-        // Include major stablecoins that could be on XLayer
+        if (selectedChain.id === "all") {
+          // Show top stablecoins globally
+          return matchesSearch;
+        }
+        // Filter by chain
+        const chainSlug = selectedChain.slug.toLowerCase();
         const isRelevant = s.chains?.some(
-          (c) => c.toLowerCase() === "xlayer" || c.toLowerCase() === "x layer"
+          (c) => c.toLowerCase() === chainSlug || c.toLowerCase().replace(/[\s-]/g, "") === chainSlug.replace(/[\s-]/g, "")
         ) || ["USDT", "USDC", "DAI", "FRAX", "LUSD", "TUSD"].includes(s.symbol);
         return matchesSearch && isRelevant;
       })
-      .slice(0, 20);
-  }, [stablecoins, searchQuery]);
+      .slice(0, 50);
+  }, [stablecoins, searchQuery, selectedChain]);
 
   // Calculate metrics
   const totalMarketCap = filteredStablecoins.reduce((acc, s) => {
@@ -68,7 +75,7 @@ export default function Stablecoins() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('stablecoins.title')}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t('stablecoins.title')}</h1>
             <p className="text-muted-foreground mt-1">
               {t('stablecoins.subtitle')}
             </p>

@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import React, { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useXLayerProtocols, useProtocolTVLHistory, useProtocolDetails } from "@/hooks/useDefiData";
+import { useAllProtocols, useProtocolTVLHistory, useProtocolDetails } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
 import { ArrowLeft, TrendingUp, TrendingDown, Layers, ExternalLink, Globe, Shield, Twitter, Code, Lock, Zap, Award, Target, Flame, Crown, Users, BarChart3, DollarSign } from "lucide-react";
@@ -36,7 +36,7 @@ export default function ProtocolDetail() {
 
 function ProtocolDetailContent() {
   const { slug } = useParams<{ slug: string }>();
-  const { data: protocols, isLoading: protocolsLoading } = useXLayerProtocols();
+  const { data: protocols, isLoading: protocolsLoading } = useAllProtocols();
   const { data: tvlHistory, isLoading: historyLoading } = useProtocolTVLHistory(slug || null);
   const { data: protocolDetails, isLoading: detailsLoading } = useProtocolDetails(slug || null);
 
