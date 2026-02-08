@@ -4,6 +4,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Activity } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDashboardData, useChainsTVL, useFeesData, useStablecoins, useTop10Chains } from "@/hooks/useDefiData";
+import { useChain } from "@/contexts/ChainContext";
 import { useTokenPrices } from "@/hooks/useTokenData";
 import { LivePriceIndicator } from "@/components/LivePriceIndicator";
 import { LivePriceTicker } from "@/components/LivePriceTicker";
@@ -42,7 +43,8 @@ function ErrorFallback({ error }: { error: Error }) {
 
 function DashboardContent() {
   const { t } = useTranslation();
-  const dashboardData = useDashboardData();
+  const { selectedChain } = useChain();
+  const dashboardData = useDashboardData(selectedChain.id);
   const chainsTVL = useChainsTVL();
   const top10Chains = useTop10Chains();
   const feesData = useFeesData();

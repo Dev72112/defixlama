@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useXLayerDexVolumes, useAllDexVolumes, useDexDetails } from "@/hooks/useDefiData";
+import { useAllDexVolumes, useDexDetails } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency, formatPercentage } from "@/lib/api/defillama";
 import { ArrowLeft, Activity, TrendingUp, TrendingDown, BarChart3, ExternalLink, Globe, Code, Lock, Twitter, Shield, Award, Target, Flame, Crown, Users, Zap } from "lucide-react";
@@ -26,34 +26,20 @@ import {
 
 export default function DexDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: xlayerDexs, isLoading: xlayerLoading } = useXLayerDexVolumes();
-  const { data: allDexs, isLoading: allLoading } = useAllDexVolumes();
+  const { data: allDexs, isLoading } = useAllDexVolumes();
   const { data: dexDetails, isLoading: detailsLoading } = useDexDetails(id?.toLowerCase() || null);
 
-  const isLoading = xlayerLoading || allLoading;
-
-  // Find DEX from XLayer dexs first, then all dexs
+  // Find DEX from all dexs
   const dex = useMemo(() => {
-    if (!id) return null;
+    if (!id || !allDexs) return null;
     const searchId = id.toLowerCase();
-    
-    // Try XLayer dexs first
-    const xlayerMatch = xlayerDexs?.find(
+    return allDexs.find(
       (d) =>
         d.name.toLowerCase() === searchId ||
         (d.displayName || "").toLowerCase() === searchId ||
         d.name.toLowerCase().replace(/\s+/g, "-") === searchId
-    );
-    if (xlayerMatch) return xlayerMatch;
-
-    // Then try all dexs
-    return allDexs?.find(
-      (d) =>
-        d.name.toLowerCase() === searchId ||
-        (d.displayName || "").toLowerCase() === searchId ||
-        d.name.toLowerCase().replace(/\s+/g, "-") === searchId
-    );
-  }, [xlayerDexs, allDexs, id]);
+    ) || null;
+  }, [allDexs, id]);
 
   // Calculate rank among all DEXes
   const rank = useMemo(() => {

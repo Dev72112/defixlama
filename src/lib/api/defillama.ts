@@ -298,11 +298,14 @@ export async function fetchXLayerYieldPools(): Promise<YieldPool[]> {
   return fetchChainYieldPools("xlayer");
 }
 
-// Fetch yield pools filtered by chain (or "all" for everything)
+// Fetch yield pools filtered by chain (or "all" for everything, capped at 500)
 export async function fetchChainYieldPools(chain: string): Promise<YieldPool[]> {
   try {
     const pools = await fetchYieldPools();
-    if (chain === "all") return pools;
+    if (chain === "all") {
+      // Cap at 500 sorted by TVL to prevent browser freeze
+      return pools.sort((a, b) => (b.tvlUsd || 0) - (a.tvlUsd || 0)).slice(0, 500);
+    }
     const lower = chain.toLowerCase().replace(/[\s-]/g, "");
     return pools.filter(
       (p) => p.chain.toLowerCase().replace(/[\s-]/g, "") === lower
@@ -390,6 +393,28 @@ export async function fetchFeesData(): Promise<any[]> {
     return Array.isArray(protocols) ? protocols : [];
   } catch (error) {
     console.error("Error fetching fees data:", error);
+    return [];
+  }
+}
+
+// Fetch fees data filtered by chain (or "all" for everything)
+export async function fetchChainFees(chain: string): Promise<any[]> {
+  try {
+    if (chain === "all") return fetchFeesData();
+    // DefiLlama supports chain-specific fees endpoint
+    const response = await fetch(`https://api.llama.fi/overview/fees/${encodeURIComponent(chain)}?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true`);
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data?.protocols)) return data.protocols;
+    }
+    // Fallback: filter from all fees
+    const allFees = await fetchFeesData();
+    const lower = chain.toLowerCase().replace(/[\s-]/g, "");
+    return allFees.filter((f: any) =>
+      f.chains?.some((c: string) => c.toLowerCase().replace(/[\s-]/g, "") === lower)
+    );
+  } catch (error) {
+    console.error(`Error fetching ${chain} fees:`, error);
     return [];
   }
 }

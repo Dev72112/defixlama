@@ -1,5 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
-import { useXLayerProtocols } from "@/hooks/useDefiData";
+import { useChainProtocols } from "@/hooks/useDefiData";
+import { useChain } from "@/contexts/ChainContext";
 import { Shield, CheckCircle, AlertTriangle, ExternalLink, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
@@ -12,7 +13,8 @@ import { TVLByAuditChart } from "@/components/dashboard/TVLByAuditChart";
 
 export default function Security() {
   const { t } = useTranslation();
-  const { data: protocols, isLoading } = useXLayerProtocols();
+  const { selectedChain } = useChain();
+  const { data: protocols, isLoading } = useChainProtocols(selectedChain.id);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter protocols
@@ -37,7 +39,7 @@ export default function Security() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('security.title')}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t('security.title')}</h1>
             <p className="text-muted-foreground mt-1">
               {t('security.subtitle')}
             </p>

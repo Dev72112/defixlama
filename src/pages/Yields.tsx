@@ -15,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { YieldDistributionChart } from "@/components/dashboard/YieldDistributionChart";
 import { TopYieldPools } from "@/components/dashboard/TopYieldPools";
 import { exportToCSV } from "@/lib/export";
@@ -30,6 +38,8 @@ export default function Yields() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("apy");
   const [projectFilter, setProjectFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Get unique projects
   const projects = useMemo(() => {
@@ -78,6 +88,17 @@ export default function Yields() {
   const maxApy = pools && pools.length > 0
     ? Math.max(...pools.map((p) => (p.apyBase || 0) + (p.apyReward || 0)))
     : 0;
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredPools.length / pageSize));
+  if (page > totalPages && totalPages > 0) setPage(1);
+  const paginatedPools = filteredPools.slice((page - 1) * pageSize, page * pageSize);
+
+  // Limit chart data to top 20 pools to prevent rendering overload
+  const chartPools = useMemo(() => {
+    if (!pools) return [];
+    return [...pools].sort((a, b) => (b.tvlUsd || 0) - (a.tvlUsd || 0)).slice(0, 20);
+  }, [pools]);
 
   const handleExport = () => {
     if (!filteredPools.length) return;
@@ -145,8 +166,8 @@ export default function Yields() {
 
         {/* Yield Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <YieldDistributionChart pools={pools || []} loading={isLoading} />
-          <TopYieldPools pools={pools || []} loading={isLoading} />
+          <YieldDistributionChart pools={chartPools} loading={isLoading} />
+          <TopYieldPools pools={chartPools} loading={isLoading} />
         </div>
 
         {/* Filters */}
@@ -192,14 +213,54 @@ export default function Yields() {
             onRetry={() => refetch()}
           />
         ) : (
-          <YieldTable pools={filteredPools} loading={isLoading} />
+          <YieldTable pools={paginatedPools} loading={isLoading} />
         )}
 
-        {/* Results count */}
+        {/* Pagination controls */}
         {!isLoading && (
-          <p className="text-sm text-muted-foreground">
-            {t('common.showing')} {filteredPools.length} {t('common.of')} {poolCount} {t('yields.pools')}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {t('common.showing')} {Math.min((page - 1) * pageSize + 1, filteredPools.length)}-
+              {Math.min(page * pageSize, filteredPools.length)} {t('common.of')} {filteredPools.length} {t('yields.pools')}
+            </p>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{t('common.perPage')}</span>
+                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                  <SelectTrigger className="w-[90px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }).slice(0, 7).map((_, i) => {
+                    const p = i + 1;
+                    return (
+                      <PaginationItem key={p}>
+                        <PaginationLink isActive={p === page} onClick={() => setPage(p)}>
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
         )}
       </div>
     </Layout>
