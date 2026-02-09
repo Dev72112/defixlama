@@ -111,7 +111,7 @@ export default function Activities() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground text-gradient-primary">{t('activities.title')}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground text-gradient-primary">{selectedChain.name} {t('activities.title')}</h1>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
                 {t('activities.liveFeed')}

@@ -28,10 +28,12 @@ export default function Tokens() {
   // Filter tokens by chain and search query
   const chainFilteredTokens = (tokens || []).filter((t: any) => {
     if (isAllChains) return true;
-    const chainName = selectedChain.name.toLowerCase();
-    if (t.chain && t.chain.toLowerCase() === chainName) return true;
-    if (t.isCommunityToken && selectedChain.id === "xlayer") return true;
-    if (t.isDbListing && t.chain && t.chain.toLowerCase() === chainName) return true;
+    const chainId = selectedChain.id.toLowerCase();
+    const chainSlug = selectedChain.slug.toLowerCase();
+    // Match token chain field against chain id or slug
+    if (t.chain && (t.chain.toLowerCase() === chainId || t.chain.toLowerCase() === chainSlug)) return true;
+    if (t.isCommunityToken && chainId === "xlayer") return true;
+    if (t.isDbListing && t.chain && (t.chain.toLowerCase() === chainId || t.chain.toLowerCase() === chainSlug)) return true;
     // Major tokens with no chain field show on all chains
     if (!t.chain && !t.isCommunityToken && !t.isDbListing) return true;
     return false;
@@ -116,7 +118,7 @@ export default function Tokens() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{t("tokens.title")}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t("tokens.title")}</h1>
             <p className="text-muted-foreground mt-1">
               {t("tokens.subtitle")}
             </p>
