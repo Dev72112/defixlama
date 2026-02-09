@@ -15,26 +15,39 @@ import { WatchlistButton } from "@/components/WatchlistButton";
 import { exportToCSV } from "@/lib/export";
 import { PriceDisplay, ChangeDisplay } from "@/components/PriceDisplay";
 import { ErrorState } from "@/components/ErrorState";
+import { useChain } from "@/contexts/ChainContext";
 
 export default function Tokens() {
   const { t } = useTranslation();
+  const { selectedChain, isAllChains } = useChain();
   const { data: tokens, isLoading, isError, error, refetch } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState("");
   const [showComparison, setShowComparison] = useState(false);
   const navigate = useNavigate();
 
-  // Filter tokens
-  const filteredTokens = (tokens || []).filter((t) =>
+  // Filter tokens by chain and search query
+  const chainFilteredTokens = (tokens || []).filter((t: any) => {
+    if (isAllChains) return true;
+    const chainName = selectedChain.name.toLowerCase();
+    if (t.chain && t.chain.toLowerCase() === chainName) return true;
+    if (t.isCommunityToken && selectedChain.id === "xlayer") return true;
+    if (t.isDbListing && t.chain && t.chain.toLowerCase() === chainName) return true;
+    // Major tokens with no chain field show on all chains
+    if (!t.chain && !t.isCommunityToken && !t.isDbListing) return true;
+    return false;
+  });
+
+  const filteredTokens = chainFilteredTokens.filter((t: any) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Calculate metrics
-  const totalMcap = (tokens || []).reduce((acc, t) => acc + (t.mcap || 0), 0);
-  const totalVolume = (tokens || []).reduce((acc, t) => acc + (t.volume24h || 0), 0);
-  const validTokens = (tokens || []).filter((t) => t.price > 0);
+  // Calculate metrics from chain-filtered tokens
+  const totalMcap = chainFilteredTokens.reduce((acc: number, t: any) => acc + (t.mcap || 0), 0);
+  const totalVolume = chainFilteredTokens.reduce((acc: number, t: any) => acc + (t.volume24h || 0), 0);
+  const validTokens = chainFilteredTokens.filter((t: any) => t.price > 0);
   const avgChange = validTokens.length > 0 
-    ? validTokens.reduce((acc, t) => acc + (t.change24h || 0), 0) / validTokens.length 
+    ? validTokens.reduce((acc: number, t: any) => acc + (t.change24h || 0), 0) / validTokens.length 
     : 0;
 
   // Get the correct route ID for each token
@@ -145,7 +158,7 @@ export default function Tokens() {
           />
           <StatCard
             title={t("tokens.tokensTracked")}
-            value={(tokens?.length || 0).toString()}
+            value={chainFilteredTokens.length.toString()}
             icon={Wallet}
             loading={isLoading}
           />

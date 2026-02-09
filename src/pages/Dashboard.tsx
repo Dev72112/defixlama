@@ -265,13 +265,13 @@ function DashboardContent() {
         <HistoricalTVLChart 
           data={tvlHistory?.data ?? []} 
           loading={tvlHistory?.isLoading ?? true} 
-          title="XLayer TVL History"
+          title={`${selectedChain.name} TVL History`}
         />
         <HistoricalComparisonChart 
           tvlData={tvlHistory?.data ?? []} 
           volumeData={dexVolumes?.data ?? []}
           loading={tvlHistory?.isLoading ?? true} 
-          title="TVL vs Volume Trend"
+          title={`${selectedChain.name} TVL vs Volume Trend`}
         />
       </div>
 

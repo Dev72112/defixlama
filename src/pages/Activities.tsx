@@ -9,10 +9,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { ActivityBreakdown } from "@/components/dashboard/ActivityBreakdown";
+import { useChain } from "@/contexts/ChainContext";
 
 export default function Activities() {
   const { t } = useTranslation();
-  const dashboardData = useDashboardData();
+  const { selectedChain } = useChain();
+  const dashboardData = useDashboardData(selectedChain.id);
   const chainsTVL = useChainsTVL();
   const feesData = useFeesData();
 

@@ -61,7 +61,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Chain Selector */}
-          <ChainSelector compact className="hidden sm:flex" />
+          <ChainSelector compact />
 
           {/* Live indicator */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-xs font-medium badge-pulse">
