@@ -193,7 +193,7 @@ function DashboardContent() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{t("dashboard.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{selectedChain.name} {t("dashboard.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">{t("dashboard.subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
