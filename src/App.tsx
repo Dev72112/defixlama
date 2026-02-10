@@ -74,6 +74,8 @@ const App = () => (
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/builder-logs" element={<BuilderLogs />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/whale-activity" element={<WhaleActivity />} />
+            <Route path="/market-structure" element={<MarketStructure />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

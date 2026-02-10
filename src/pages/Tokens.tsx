@@ -348,22 +348,16 @@ export default function Tokens() {
             >
               DefiLlama API Docs →
             </a>
-            <a
-              href="https://www.okx.com/xlayer/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary/70 hover:text-primary transition-colors"
-            >
-              XLayer Docs →
-            </a>
-            <a
-              href="https://defillama.com/chain/xlayer"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary/70 hover:text-primary transition-colors"
-            >
-              XLayer on DefiLlama →
-            </a>
+            {selectedChain.slug && (
+              <a
+                href={`https://defillama.com/chain/${selectedChain.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary/70 hover:text-primary transition-colors"
+              >
+                {selectedChain.name} on DefiLlama →
+              </a>
+            )}
           </div>
         </div>
       </div>

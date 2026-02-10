@@ -257,17 +257,17 @@ function FeesContent() {
 
         {/* Pagination controls */}
         {!isLoading && (
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <p className="text-sm text-muted-foreground">
               {t('common.showing')} {Math.min((page - 1) * pageSize + 1, filteredFees.length)}-
               {Math.min(page * pageSize, filteredFees.length)} {t('common.of')} {filteredFees.length} {t('common.results')}
             </p>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{t('common.perPage')}</span>
                 <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
-                  <SelectTrigger className="w-[90px]">
+                  <SelectTrigger className="w-[80px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -281,11 +281,11 @@ function FeesContent() {
               </div>
 
               <Pagination>
-                <PaginationContent>
+                <PaginationContent className="flex-wrap">
                   <PaginationItem>
                     <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
                   </PaginationItem>
-                  {Array.from({ length: totalPages }).slice(0, 7).map((_, i) => {
+                  {Array.from({ length: totalPages }).slice(0, 5).map((_, i) => {
                     const p = i + 1;
                     return (
                       <PaginationItem key={p}>

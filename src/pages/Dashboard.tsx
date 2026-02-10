@@ -495,7 +495,7 @@ function DashboardContent() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Fees (24h)</h2>
           <StatCard
-            title="Estimated Fees (24h)"
+            title={t("fees.fees24h")}
             value={formatCurrency(fees24h)}
             icon={Database}
             loading={feesData?.isLoading ?? true}
