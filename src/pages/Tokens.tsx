@@ -307,19 +307,8 @@ export default function Tokens() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="text-right whitespace-nowrap">
-                      {token.price > 0 ? (
-                        <span
-                          className={cn(
-                            "font-mono text-sm",
-                            token.change24h >= 0 ? "text-success" : "text-destructive"
-                          )}
-                        >
-                          {token.change24h >= 0 ? "+" : ""}{token.change24h.toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
+                    <td className="text-right font-mono text-muted-foreground hidden md:table-cell whitespace-nowrap">
+                      {token.volume24h > 0 ? formatCurrency(token.volume24h) : "-"}
                     </td>
                     <td className="text-right font-mono font-medium text-foreground hidden lg:table-cell whitespace-nowrap">
                       {token.mcap > 0 ? formatCurrency(token.mcap) : "-"}
