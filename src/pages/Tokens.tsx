@@ -321,9 +321,6 @@ export default function Tokens() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="text-right font-mono text-muted-foreground hidden md:table-cell whitespace-nowrap">
-                      {token.volume24h > 0 ? formatCurrency(token.volume24h) : "-"}
-                    </td>
                     <td className="text-right font-mono font-medium text-foreground hidden lg:table-cell whitespace-nowrap">
                       {token.mcap > 0 ? formatCurrency(token.mcap) : "-"}
                     </td>
