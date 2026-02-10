@@ -5,11 +5,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
-import { KeyboardShortcutsDialog } from "@/components/KeyboardShortcutsDialog";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
 import { ChainSelector } from "@/components/ChainSelector";
 
@@ -23,7 +20,6 @@ export function Header({ onMenuClick }: HeaderProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
-  // Register keyboard shortcuts
   useKeyboardShortcuts({
     onSearch: () => setSearchOpen(true),
     onEscape: () => setSearchOpen(false),
@@ -31,7 +27,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 backdrop-blur-md px-4 lg:px-6 transition-all duration-300">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/95 backdrop-blur-md px-4 lg:px-6 transition-all duration-300">
         {/* Mobile menu button */}
         <Button
           variant="ghost"
@@ -46,13 +42,13 @@ export function Header({ onMenuClick }: HeaderProps) {
         <div className="flex-1 max-w-xl mx-4">
           <Button
             variant="secondary"
-            className="w-full justify-start text-muted-foreground font-normal h-10 hover:border-primary/50 hover:bg-secondary/80 transition-all duration-200 group"
+            className="w-full justify-start text-muted-foreground font-normal h-9 hover:border-primary/30 hover:bg-secondary/80 transition-all duration-200 group"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-4 w-4 mr-2 group-hover:text-primary transition-colors" />
             <span className="hidden sm:inline">{t("header.searchPlaceholder")}</span>
             <span className="sm:hidden">{t("common.search")}...</span>
-            <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground group-hover:border-primary/30 transition-colors">
+            <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               /
             </kbd>
           </Button>
@@ -60,16 +56,9 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
-          {/* Chain Selector */}
           <ChainSelector compact />
 
-          {/* Live indicator */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-xs font-medium badge-pulse">
-            <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            {t("common.live")}
-          </div>
-
-          {/* Desktop refresh button */}
+          {/* Refresh */}
           <Button
             variant="ghost"
             size="icon"
@@ -84,29 +73,12 @@ export function Header({ onMenuClick }: HeaderProps) {
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
 
-          {/* Watchlist */}
           <WatchlistPanel />
-
-          {/* Notifications */}
           <NotificationsPanel />
-
-          {/* Keyboard shortcuts */}
-          <div className="hidden sm:block">
-            <KeyboardShortcutsDialog />
-          </div>
-
-          {/* Language Switcher */}
-          <LanguageSwitcher />
-
-          {/* Theme toggle with dropdown */}
-          <ThemeToggle showDropdown />
-
-          {/* User menu */}
           <UserMenu />
         </div>
       </header>
 
-      {/* Global Search Dialog */}
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );

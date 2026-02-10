@@ -20,6 +20,8 @@ import {
   Bell,
   X,
   ShieldCheck,
+  Waves,
+  Landmark,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -42,10 +44,10 @@ const navItems: NavItem[] = [
   { labelKey: "nav.dashboard", href: "/", icon: LayoutDashboard },
   { labelKey: "nav.protocols", href: "/protocols", icon: Database },
   { labelKey: "nav.dexs", href: "/dexs", icon: ArrowLeftRight },
-  { labelKey: "nav.yields", href: "/yields", icon: TrendingUp, badge: "APY" },
+  { labelKey: "nav.yields", href: "/yields", icon: TrendingUp },
   { labelKey: "nav.stablecoins", href: "/stablecoins", icon: Coins },
   { labelKey: "nav.tokens", href: "/tokens", icon: Wallet },
-  { labelKey: "nav.portfolio", href: "/portfolio", icon: PieChart, badge: "NEW" },
+  { labelKey: "nav.portfolio", href: "/portfolio", icon: PieChart },
   { labelKey: "nav.alerts", href: "/alerts", icon: Bell },
 ];
 
@@ -54,6 +56,11 @@ const moreItems: NavItem[] = [
   { labelKey: "nav.fees", href: "/fees", icon: BarChart3 },
   { labelKey: "nav.activities", href: "/activities", icon: Activity },
   { labelKey: "nav.security", href: "/security", icon: Shield },
+];
+
+const advancedItems: NavItem[] = [
+  { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "SOON" },
+  { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "SOON" },
 ];
 
 interface SidebarProps {
@@ -99,7 +106,7 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
         )}
       >
         <Icon className="h-4 w-4 flex-shrink-0" />
-        {!isCollapsed && <span>{t(item.labelKey)}</span>}
+        {!isCollapsed && <span>{typeof item.labelKey === 'string' && item.labelKey.startsWith('nav.') ? t(item.labelKey) : item.labelKey}</span>}
         {!isCollapsed && item.badge && (
           <span className="ml-auto rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
             {item.badge}
@@ -113,7 +120,7 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
         <Tooltip>
           <TooltipTrigger asChild>{link}</TooltipTrigger>
           <TooltipContent side="right" className="font-medium">
-            {t(item.labelKey)}
+            {typeof item.labelKey === 'string' && item.labelKey.startsWith('nav.') ? t(item.labelKey) : item.labelKey}
           </TooltipContent>
         </Tooltip>
       );
@@ -130,17 +137,17 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
       )}>
         {/* Logo */}
         <div className={cn(
-          "flex h-16 items-center border-b border-sidebar-border",
+          "flex h-14 items-center border-b border-sidebar-border",
           isCollapsed ? "justify-center px-2" : "justify-between px-4"
         )}>
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 flex-shrink-0">
-              <span className="text-lg font-bold text-primary-foreground">dX</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 flex-shrink-0">
+              <span className="text-sm font-bold text-primary-foreground">dX</span>
             </div>
             {!isCollapsed && (
               <div className="flex flex-col">
-                <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">defiXlama</span>
-                <span className="text-xs text-muted-foreground">XLayer Analytics</span>
+                <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">defiXlama</span>
+                <span className="text-[10px] text-muted-foreground">DeFi Analytics</span>
               </div>
             )}
           </Link>
@@ -152,8 +159,8 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
-          <div className="space-y-1 px-2">
+        <nav className="flex-1 overflow-y-auto py-3">
+          <div className="space-y-0.5 px-2">
             {navItems.map((item) => (
               <NavItemLink key={item.href} item={item} />
             ))}
@@ -175,7 +182,7 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
                 </button>
 
                 {moreOpen && (
-                  <div className="ml-4 space-y-1 border-l border-sidebar-border pl-3">
+                  <div className="ml-4 space-y-0.5 border-l border-sidebar-border pl-3">
                     {moreItems.map((item) => {
                       const isActive = location.pathname === item.href;
                       const Icon = item.icon;
@@ -199,10 +206,27 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
             )}
           </div>
 
-          {/* External Links */}
+          {/* Advanced Analytics section */}
           {!isCollapsed && (
-            <div className="mt-6 px-2">
-              <p className="px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+            <div className="mt-4 px-2">
+              <p className="px-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">
+                Advanced Analytics
+              </p>
+              {advancedItems.map((item) => (
+                <NavItemLink key={item.href} item={item} />
+              ))}
+            </div>
+          )}
+          {isCollapsed && advancedItems.map((item) => (
+            <div key={item.href} className="px-2">
+              <NavItemLink item={item} />
+            </div>
+          ))}
+
+          {/* Resources */}
+          {!isCollapsed && (
+            <div className="mt-4 px-2">
+              <p className="px-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">
                 {t("nav.resources")}
               </p>
               <a href="https://defillama.com/docs/api" target="_blank" rel="noopener noreferrer"
@@ -230,7 +254,7 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
           )}
         </nav>
 
-        {/* Footer with collapse toggle */}
+        {/* Footer */}
         <div className="border-t border-sidebar-border p-2">
           {!mobile && onToggleCollapse && (
             <button
@@ -244,18 +268,12 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
             </button>
           )}
           {!isCollapsed && (
-            <div className="px-3 py-2 flex flex-col gap-1 text-xs text-muted-foreground">
-              <div className="flex items-center justify-between">
-                <span>{t("common.poweredBy")}</span>
-                <div className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-                  <span>{t("common.live")}</span>
-                </div>
+            <div className="px-3 py-2 flex items-center justify-between text-[10px] text-muted-foreground">
+              <span>{t("common.poweredBy")}</span>
+              <div className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                <span>{t("common.live")}</span>
               </div>
-              <a href="https://xlama.lovable.app" target="_blank" rel="noopener noreferrer"
-                className="text-primary/70 hover:text-primary transition-colors">
-                xlama.lovable.app
-              </a>
             </div>
           )}
         </div>
