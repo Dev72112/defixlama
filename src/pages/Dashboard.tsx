@@ -198,7 +198,7 @@ function DashboardContent() {
         </div>
         <div className="flex items-center gap-3">
           <LivePriceIndicator />
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium pulse-live badge-pulse">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
             <Activity className="h-4 w-4 animate-pulse" />
             {t("dashboard.liveData")}
           </div>
