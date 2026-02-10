@@ -29,6 +29,8 @@ import Alerts from "./pages/Alerts";
 import BuilderLogs from "./pages/BuilderLogs";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import WhaleActivity from "./pages/WhaleActivity";
+import MarketStructure from "./pages/MarketStructure";
 
 const queryClient = new QueryClient({
   defaultOptions: {
