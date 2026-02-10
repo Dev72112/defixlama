@@ -29,6 +29,8 @@ import Alerts from "./pages/Alerts";
 import BuilderLogs from "./pages/BuilderLogs";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import WhaleActivity from "./pages/WhaleActivity";
+import MarketStructure from "./pages/MarketStructure";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +74,8 @@ const App = () => (
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/builder-logs" element={<BuilderLogs />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/whale-activity" element={<WhaleActivity />} />
+            <Route path="/market-structure" element={<MarketStructure />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -198,7 +198,7 @@ function DashboardContent() {
         </div>
         <div className="flex items-center gap-3">
           <LivePriceIndicator />
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium pulse-live badge-pulse">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
             <Activity className="h-4 w-4 animate-pulse" />
             {t("dashboard.liveData")}
           </div>
@@ -440,23 +440,25 @@ function DashboardContent() {
         </ErrorBoundary>
       </div>
 
-      {/* Call to Action */}
-      <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Build on XLayer</h3>
-            <p className="text-muted-foreground mt-1">Deploy your DeFi protocol on XLayer and get listed here</p>
-          </div>
-          <div className="flex gap-3">
-            <a href="https://www.okx.com/xlayer/docs" target="_blank" rel="noopener noreferrer">
-              <Button variant="outline">Documentation</Button>
-            </a>
-            <a href="https://www.okx.com/xlayer" target="_blank" rel="noopener noreferrer">
-              <Button>Get Started</Button>
-            </a>
+      {/* Call to Action — only for X Layer */}
+      {selectedChain.id === "xlayer" && (
+        <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Build on X Layer</h3>
+              <p className="text-muted-foreground mt-1">Deploy your DeFi protocol on X Layer and get listed here</p>
+            </div>
+            <div className="flex gap-3">
+              <a href="https://www.okx.com/xlayer/docs" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline">Documentation</Button>
+              </a>
+              <a href="https://www.okx.com/xlayer" target="_blank" rel="noopener noreferrer">
+                <Button>Get Started</Button>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
       {/* Top Chains & Fees */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -493,7 +495,7 @@ function DashboardContent() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Fees (24h)</h2>
           <StatCard
-            title="Estimated Fees (24h)"
+            title={t("fees.fees24h")}
             value={formatCurrency(fees24h)}
             icon={Database}
             loading={feesData?.isLoading ?? true}

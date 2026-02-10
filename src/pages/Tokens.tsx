@@ -307,20 +307,6 @@ export default function Tokens() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="text-right whitespace-nowrap">
-                      {token.price > 0 ? (
-                        <span
-                          className={cn(
-                            "font-mono text-sm",
-                            token.change24h >= 0 ? "text-success" : "text-destructive"
-                          )}
-                        >
-                          {token.change24h >= 0 ? "+" : ""}{token.change24h.toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </td>
                     <td className="text-right font-mono text-muted-foreground hidden md:table-cell whitespace-nowrap">
                       {token.volume24h > 0 ? formatCurrency(token.volume24h) : "-"}
                     </td>
@@ -351,22 +337,16 @@ export default function Tokens() {
             >
               DefiLlama API Docs →
             </a>
-            <a
-              href="https://www.okx.com/xlayer/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary/70 hover:text-primary transition-colors"
-            >
-              XLayer Docs →
-            </a>
-            <a
-              href="https://defillama.com/chain/xlayer"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary/70 hover:text-primary transition-colors"
-            >
-              XLayer on DefiLlama →
-            </a>
+            {selectedChain.slug && (
+              <a
+                href={`https://defillama.com/chain/${selectedChain.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary/70 hover:text-primary transition-colors"
+              >
+                {selectedChain.name} on DefiLlama →
+              </a>
+            )}
           </div>
         </div>
       </div>

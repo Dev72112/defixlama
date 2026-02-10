@@ -17,6 +17,8 @@ import {
   ScrollText,
   Heart,
   X,
+  Waves,
+  Landmark,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -31,6 +33,7 @@ interface NavTab {
   labelKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
 }
 
 const mainTabs: NavTab[] = [
@@ -51,6 +54,8 @@ const moreTabs: NavTab[] = [
   { labelKey: "nav.security", href: "/security", icon: Shield },
   { labelKey: "nav.donations", href: "/donations", icon: Heart },
   { labelKey: "nav.builderLogs", href: "/builder-logs", icon: ScrollText },
+  { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "SOON" },
+  { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "SOON" },
 ];
 
 export function BottomNav() {
@@ -74,13 +79,13 @@ export function BottomNav() {
                 key={tab.href}
                 to={tab.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-h-[56px] min-w-[56px] flex-1 transition-colors duration-200",
+                  "flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-h-[52px] min-w-[52px] flex-1 transition-colors duration-200",
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground"
                 )}
               >
-                <Icon className={cn("h-5 w-5", isActive && "drop-shadow-[0_0_6px_hsl(var(--primary)/0.6)]")} />
+                <Icon className={cn("h-5 w-5", isActive && "drop-shadow-[0_0_4px_hsl(var(--primary)/0.4)]")} />
                 <span className="text-[10px] font-medium leading-tight">{t(tab.labelKey)}</span>
               </Link>
             );
@@ -90,11 +95,11 @@ export function BottomNav() {
           <button
             onClick={() => setMoreOpen(true)}
             className={cn(
-              "flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-h-[56px] min-w-[56px] flex-1 transition-colors duration-200",
+              "flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-h-[52px] min-w-[52px] flex-1 transition-colors duration-200",
               isMoreActive ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <MoreHorizontal className={cn("h-5 w-5", isMoreActive && "drop-shadow-[0_0_6px_hsl(var(--primary)/0.6)]")} />
+            <MoreHorizontal className={cn("h-5 w-5", isMoreActive && "drop-shadow-[0_0_4px_hsl(var(--primary)/0.4)]")} />
             <span className="text-[10px] font-medium leading-tight">{t("nav.more")}</span>
           </button>
         </div>
@@ -121,14 +126,21 @@ export function BottomNav() {
                   to={tab.href}
                   onClick={() => setMoreOpen(false)}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors duration-200",
+                    "flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors duration-200 relative",
                     isActive
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted"
                   )}
                 >
                   <Icon className="h-6 w-6" />
-                  <span className="text-[11px] font-medium text-center leading-tight">{t(tab.labelKey)}</span>
+                  <span className="text-[11px] font-medium text-center leading-tight">
+                    {tab.labelKey.startsWith('nav.') ? t(tab.labelKey) : tab.labelKey}
+                  </span>
+                  {tab.badge && (
+                    <span className="absolute top-1 right-1 text-[8px] font-bold text-primary bg-primary/15 px-1 rounded">
+                      {tab.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
