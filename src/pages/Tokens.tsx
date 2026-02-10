@@ -284,7 +284,7 @@ export default function Tokens() {
                             </span>
                             {token.contract && (
                                 <a
-                                href={selectedChain.explorerUrl ? `${selectedChain.explorerUrl}/address/${encodeURIComponent(token.contract)}` : `https://www.okx.com/explorer/xlayer/address/${encodeURIComponent(token.contract)}`}
+                                href={`https://www.okx.com/explorer/xlayer/address/${encodeURIComponent(token.contract)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-primary/70 hover:text-primary"
