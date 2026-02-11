@@ -22,8 +22,8 @@ export function DexTable({
 
   if (loading) {
     return (
-      <div className={cn("rounded-lg border border-border bg-card overflow-x-auto", className)}>
-        <table className="data-table w-full min-w-[500px]">
+      <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
+        <table className="data-table w-full">
           <thead>
             <tr className="bg-muted/30">
               <th className="w-12 hidden sm:table-cell">#</th>
@@ -55,17 +55,17 @@ export function DexTable({
     return (
       <div className={cn("rounded-lg border border-border bg-card p-8 text-center", className)}>
         <ArrowLeftRight className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-        <p className="text-muted-foreground">No DEX data available for XLayer</p>
+        <p className="text-muted-foreground">No DEX data available</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Launch a DEX on XLayer to see it here!
+          No DEX volume data available for this chain
         </p>
       </div>
     );
   }
 
   return (
-    <div className={cn("rounded-lg border border-border bg-card overflow-x-auto", className)}>
-      <table className="data-table w-full min-w-[500px]">
+    <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
+      <table className="data-table w-full">
         <thead>
           <tr className="bg-muted/30">
             <th className="w-10 hidden sm:table-cell"></th>

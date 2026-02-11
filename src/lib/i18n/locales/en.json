@@ -65,8 +65,8 @@
     }
   },
   "dashboard": {
-    "title": "XLayer DeFi Overview",
-    "subtitle": "Real-time analytics for the XLayer ecosystem",
+    "title": "DeFi Overview",
+    "subtitle": "Real-time analytics across DeFi",
     "liveData": "Live Data",
     "tvl": "Total Value Locked",
     "protocols": "Protocols",
@@ -97,12 +97,12 @@
   },
   "protocols": {
     "title": "Protocols",
-    "subtitle": "All DeFi protocols deployed on XLayer",
+    "subtitle": "All DeFi protocols",
     "tracked": "protocols tracked",
     "totalTvl": "Total TVL",
     "avgTvlPerProtocol": "Avg. TVL per Protocol",
     "topGainer": "Top Gainer (24h)",
-    "tvlHistory": "XLayer Protocol TVL History",
+    "tvlHistory": "Protocol TVL History",
     "searchPlaceholder": "Search protocols...",
     "allCategories": "All Categories",
     "sortByTvl": "TVL (High to Low)",
@@ -119,7 +119,7 @@
   },
   "tokens": {
     "title": "Tokens",
-    "subtitle": "Live token prices on XLayer",
+    "subtitle": "Live token prices and market data",
     "totalMarketCap": "Total Market Cap",
     "volume24h": "24h Volume",
     "tokensTracked": "Tokens Tracked",
@@ -134,11 +134,11 @@
     "mcap": "MCap",
     "community": "Community",
     "fetching": "Fetching...",
-    "priceInfo": "Token prices are fetched live from CoinGecko with 5-second refresh. Community tokens (DOG, NIUMA, XDOG) are native XLayer tokens."
+    "priceInfo": "Token prices are fetched live from multiple sources including DefiLlama and CoinGecko."
   },
   "portfolio": {
     "title": "Portfolio",
-    "subtitle": "Track your XLayer holdings",
+    "subtitle": "Track your DeFi holdings",
     "totalValue": "Total Value",
     "totalPnl": "Total P&L",
     "addHolding": "Add Holding",
@@ -175,7 +175,7 @@
   },
   "dexs": {
     "title": "DEX Analytics",
-    "subtitle": "Decentralized exchange volumes on XLayer",
+    "subtitle": "Decentralized exchange volumes",
     "totalVolume24h": "Total Volume (24h)",
     "dexCount": "DEX Count",
     "avgVolume": "Avg. Volume",
@@ -188,12 +188,17 @@
   },
   "yields": {
     "title": "Yield Farming",
-    "subtitle": "Top yield opportunities on XLayer",
+    "subtitle": "Top yield farming opportunities",
     "avgApy": "Average APY",
     "poolCount": "Pool Count",
     "totalTvl": "Total TVL",
     "topPool": "Top Pool",
     "searchPlaceholder": "Search pools...",
+    "searchPools": "Search pools...",
+    "allProjects": "All Projects",
+    "apyHighToLow": "APY (High to Low)",
+    "maxApy": "Max APY",
+    "activePools": "Active Pools",
     "pool": "Pool",
     "project": "Project",
     "apy": "APY",
@@ -213,14 +218,31 @@
     "protocolCount": "Protocol Count",
     "avgFees": "Avg. Fees",
     "topEarner": "Top Earner",
-    "searchPlaceholder": "Search protocols..."
+    "searchPlaceholder": "Search protocols...",
+    "fees24h": "24h Total",
+    "fees7d": "7d Total",
+    "protocols": "Protocols",
+    "protocol": "Protocol",
+    "avgFeeProtocol": "Avg. Fee / Protocol",
+    "feeRevenueByProtocol": "Fee Revenue by Protocol",
+    "searchProtocols": "Search protocols...",
+    "change": "Change",
+    "noFeeDataFound": "No fee data found"
   },
   "security": {
     "title": "Security",
     "subtitle": "Protocol security and audits",
     "audited": "Audited",
     "unaudited": "Unaudited",
-    "totalTvlAudited": "Total TVL Audited"
+    "totalTvlAudited": "Total TVL Audited",
+    "auditRate": "Audit Rate",
+    "totalProtocols": "Total Protocols",
+    "searchProtocols": "Search protocols...",
+    "noProtocolsFound": "No protocols found",
+    "securityDisclaimer": "Security Disclaimer",
+    "disclaimerText": "Audit status is sourced from DefiLlama protocol data. An audit badge does not guarantee security. Always do your own research.",
+    "website": "Website",
+    "tvl": "TVL"
   },
   "activities": {
     "title": "Activities",
@@ -233,7 +255,7 @@
   },
   "docs": {
     "title": "Documentation",
-    "subtitle": "Learn about XLayer DeFi"
+    "subtitle": "Learn about DeFi analytics"
   },
   "common": {
     "search": "Search",
@@ -268,7 +290,13 @@
     "name": "Name",
     "symbol": "Symbol",
     "retry": "Retry",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "exportCsv": "Export CSV",
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "perPage": "Per page",
+    "sortBy": "Sort by"
   },
   "errors": {
     "networkTitle": "Connection Error",
@@ -282,7 +310,7 @@
   },
   "stablecoins": {
     "title": "Stablecoins",
-    "subtitle": "Stablecoin analytics for XLayer",
+    "subtitle": "Stablecoin analytics",
     "totalMarketCap": "Total Market Cap",
     "stablecoinsAvailable": "Available",
     "mostUsed": "Most Used",

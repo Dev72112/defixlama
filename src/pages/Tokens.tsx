@@ -282,7 +282,7 @@ export default function Tokens() {
                             <span className="text-xs text-muted-foreground">
                               {token.symbol}
                             </span>
-                            {token.contract && (
+                            {token.contract && selectedChain.id === "xlayer" && (
                                 <a
                                 href={`https://www.okx.com/explorer/xlayer/address/${encodeURIComponent(token.contract)}`}
                                 target="_blank"

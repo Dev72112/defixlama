@@ -56,8 +56,8 @@ export function ProtocolTable({
 
   if (loading) {
     return (
-      <div className={cn("rounded-lg border border-border bg-card overflow-x-auto", className)}>
-        <table className="data-table w-full min-w-[500px]">
+      <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
+        <table className="data-table w-full">
           <thead>
             <tr className="bg-muted/30">
               <th className="w-12 hidden sm:table-cell">#</th>
@@ -90,17 +90,17 @@ export function ProtocolTable({
   if (displayProtocols.length === 0) {
     return (
       <div className={cn("rounded-lg border border-border bg-card p-8 text-center", className)}>
-        <p className="text-muted-foreground">No protocols found for XLayer</p>
+        <p className="text-muted-foreground">No protocols found</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Be the first to deploy on XLayer!
+          No protocol data available for this chain
         </p>
       </div>
     );
   }
 
   return (
-    <div className={cn("rounded-lg border border-border bg-card overflow-x-auto", className)}>
-      <table className="data-table w-full min-w-[500px]">
+    <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
+      <table className="data-table w-full">
         <thead>
           <tr className="bg-muted/30">
             <th className="w-10 hidden sm:table-cell"></th>
