@@ -169,7 +169,10 @@ export async function fetchXLayerProtocols(): Promise<Protocol[]> {
 export async function fetchChainProtocols(chain: string): Promise<Protocol[]> {
   try {
     const protocols = await fetchProtocols();
-    if (chain === "all") return protocols;
+    if (chain === "all") {
+      // Cap at 500 sorted by TVL to prevent browser freeze
+      return protocols.sort((a, b) => (b.tvl || 0) - (a.tvl || 0)).slice(0, 500);
+    }
     const lower = chain.toLowerCase().replace(/[\s-]/g, "");
     return protocols.filter(
       (p) =>

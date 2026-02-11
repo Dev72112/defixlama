@@ -23,12 +23,12 @@ export function YieldTable({
   if (loading) {
     return (
       <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
-        <table className="data-table">
+        <table className="data-table w-full">
           <thead>
             <tr className="bg-muted/30">
-              <th className="w-12">#</th>
+              <th className="w-12 hidden sm:table-cell">#</th>
               <th>Pool</th>
-              <th>Project</th>
+              <th className="hidden sm:table-cell">Project</th>
               <th className="text-right">TVL</th>
               <th className="text-right">APY</th>
             </tr>
@@ -55,9 +55,9 @@ export function YieldTable({
     return (
       <div className={cn("rounded-lg border border-border bg-card p-8 text-center", className)}>
         <Droplets className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-        <p className="text-muted-foreground">No yield pools found for XLayer</p>
+        <p className="text-muted-foreground">No yield pools found</p>
         <p className="text-sm text-muted-foreground mt-2">
-          Yield farming opportunities coming soon!
+          No yield data available for this chain
         </p>
       </div>
     );
@@ -65,12 +65,12 @@ export function YieldTable({
 
   return (
     <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
-      <table className="data-table">
+      <table className="data-table w-full">
         <thead>
           <tr className="bg-muted/30">
-            <th className="w-12">#</th>
+            <th className="w-12 hidden sm:table-cell">#</th>
             <th>Pool</th>
-            <th>Project</th>
+            <th className="hidden sm:table-cell">Project</th>
             <th className="text-right">TVL</th>
             <th className="text-right">APY</th>
           </tr>
@@ -81,7 +81,7 @@ export function YieldTable({
             
             return (
               <tr key={pool.pool} className="group">
-                <td className="text-muted-foreground font-mono text-sm">
+                <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
                   {index + 1}
                 </td>
                 <td>
@@ -101,7 +101,7 @@ export function YieldTable({
                     </div>
                   </div>
                 </td>
-                <td>
+                <td className="hidden sm:table-cell">
                   <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground capitalize">
                     {pool.project}
                   </span>
