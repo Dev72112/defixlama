@@ -1,178 +1,158 @@
 
 
-# defiXlama: Product Expansion, UI/UX Refinement, and Technical Cleanup
+# Comprehensive Fix: Chain Awareness, Mobile UX, i18n, and Performance
 
-This is a large-scope plan covering theme consolidation, design system refinement, mobile UX audit, chain-awareness cleanup, and remaining hardcoded references. The new product features (whale tracking, smart contract analytics, flow decomposition) require external data sources that DefiLlama does not provide, so those are scoped as placeholder infrastructure for future integration.
+## Issues Identified from Screenshots and Code Audit
 
----
+### Critical Issues
+1. **Dashboard double title**: Shows "X Layer XLayer DeFi Overview" because `selectedChain.name` ("X Layer") is prepended to `t("dashboard.title")` which already contains "XLayer DeFi Overview"
+2. **Security page freezes on "All Chains"**: `fetchChainProtocols("all")` returns 5000+ protocols, all rendered as cards simultaneously with no pagination or cap
+3. **Missing i18n keys**: ~30 translation keys are missing from `en.json`, causing raw key strings like `fees.searchProtocols`, `yields.allProjects`, `fees.fees24h` to appear in the UI
+4. **Hardcoded "XLayer" in empty states**: ProtocolTable, DexTable, YieldTable all have hardcoded "XLayer" in their empty-state messages
 
-## Phase 1: Remove Light/Dark Themes -- Matrix Only
+### Mobile UX Issues (from screenshots)
+5. **Tables have horizontal overflow**: `min-w-[500px]` on Protocol, DEX, and Yield tables forces horizontal scrolling on mobile (visible in all screenshots)
+6. **Protocol names clipped**: First column names are cut off on mobile because table columns don't have responsive width allocation
 
-**Goal**: Strip bright and dark themes entirely. Matrix is the only theme.
-
-### Changes:
-
-**`src/index.css`**
-- Remove the `:root, [data-theme="bright"]` block (lines 44-116)
-- Remove the `[data-theme="dark"]` block (lines 119-190)
-- Move Matrix variables to `:root` directly (no `[data-theme]` selector needed)
-- Remove `theme-transitioning` CSS and `animate-theme-ripple` keyframes (no longer needed)
-
-**`src/components/ThemeToggle.tsx`**
-- Delete this entire file -- no longer needed
-
-**`src/components/layout/Header.tsx`**
-- Remove `ThemeToggle` import and `<ThemeToggle showDropdown />` from the header actions
-
-**`src/components/layout/Sidebar.tsx`**
-- Remove "XLayer Analytics" subtitle text (line 143) -- replace with nothing or "Multi-Chain DeFi Analytics"
-
-**`src/contexts/ChainContext.tsx`** -- No changes needed
+### Chain Awareness Issues
+7. **Tokens page**: Chain selector doesn't effectively filter tokens because `useTokenPrices()` returns global CoinGecko data with no `chain` field on most tokens, so switching chains shows the same global list
+8. **Dashboard XLayerSpotlight**: Always shows regardless of chain -- this is intentional per the plan, but it's confusing when combined with the double title
 
 ---
 
-## Phase 2: Refine Matrix Theme for Professional Polish
+## Phase 1: Fix i18n -- Add All Missing Translation Keys
 
-**Goal**: Tone down the novelty. More contrast, better readability, subtler glow effects.
+**File: `src/lib/i18n/locales/en.json`**
 
-### `src/index.css` refinements:
-- **Foreground**: Keep `0 0% 93%` (good readability on OLED black)
-- **Card background**: Shift from `0 0% 4%` to `0 0% 3%` (deeper black, more contrast with background)
-- **Border**: `0 0% 10%` -- reduce to `0 0% 8%` for subtler separation
-- **Primary green**: Reduce saturation slightly: `142 76% 46%` instead of `142 90% 50%` (less neon, more refined)
-- **Muted foreground**: Bump from `0 0% 55%` to `0 0% 50%` (slightly dimmer secondary text)
-- **Glow effects**: Reduce all `box-shadow` glow intensities by ~40% across `.glow-neon`, `.glow-neon-hover`, `.card-matrix`, `.btn-matrix`
-- **Remove** `.card-gradient` hard-coded dark color `hsl(220 18% 5%)` -- use `var(--card)` instead
-- Refine scrollbar thumb to be slightly more visible
+Add missing keys:
 
-### Typography refinements:
-- Reduce heading sizes on mobile slightly (text-2xl instead of text-3xl for page titles on mobile -- already done with `md:text-3xl`)
-- Ensure `font-mono` numbers have consistent sizing
+```text
+dashboard.title: "DeFi Overview" (remove "XLayer" prefix -- chain name is already prepended dynamically)
+dashboard.subtitle: "Real-time analytics across DeFi" (remove XLayer reference)
 
----
+fees.fees24h: "24h Total"
+fees.fees7d: "7d Total"
+fees.protocols: "Protocols"
+fees.protocol: "Protocol"
+fees.avgFeeProtocol: "Avg. Fee / Protocol"
+fees.feeRevenueByProtocol: "Fee Revenue by Protocol"
+fees.searchProtocols: "Search protocols..."
+fees.change: "Change"
+fees.noFeeDataFound: "No fee data found"
 
-## Phase 3: Navigation Cleanup and Consistency
+yields.searchPools: "Search pools..."
+yields.allProjects: "All Projects"
+yields.apyHighToLow: "APY (High to Low)"
+yields.maxApy: "Max APY"
+yields.activePools: "Active Pools"
 
-### Desktop Sidebar (`src/components/layout/Sidebar.tsx`):
-- Replace "XLayer Analytics" with "DeFi Analytics" (line 143)
-- Remove the footer link to `xlama.lovable.app` (line 255-258) -- feels promotional, not professional
-- Clean up the "Powered by" section -- simplify to just a status indicator
+security.auditRate: "Audit Rate"
+security.totalProtocols: "Total Protocols"
+security.searchProtocols: "Search protocols..."
+security.noProtocolsFound: "No protocols found"
+security.securityDisclaimer: "Security Disclaimer"
+security.disclaimerText: "Audit status is sourced from DefiLlama protocol data. An audit badge does not guarantee security. Always do your own research."
+security.website: "Website"
+security.tvl: "TVL"
 
-### Mobile Bottom Nav (`src/components/layout/BottomNav.tsx`):
-- No structural changes needed -- 5-tab system is solid
-- Ensure drawer items have consistent touch targets (already 44px min)
+common.exportCsv: "Export CSV"
+common.showing: "Showing"
+common.of: "of"
+common.results: "results"
+common.perPage: "Per page"
+common.sortBy: "Sort by"
 
-### Header (`src/components/layout/Header.tsx`):
-- Remove `ThemeToggle` (Phase 1)
-- Remove `LanguageSwitcher` from the header to reduce clutter (i18n can move to a settings page later)
-- Remove `KeyboardShortcutsDialog` button from header (keep the keyboard handler, remove the visible button)
-- This reduces the header action count from 7 items to 4: ChainSelector, Refresh, Watchlist, Notifications, UserMenu
-- Remove the "Live" badge from the header (line 72-76) -- redundant since pages already show live indicators
+protocols.subtitle: "All DeFi protocols" (remove "on XLayer")
+tokens.subtitle: "Live token prices and market data" (remove "on XLayer")
+tokens.priceInfo: "Token prices are fetched live from multiple sources including DefiLlama and CoinGecko."
+dexs.subtitle: "Decentralized exchange volumes" (remove "on XLayer")
+yields.subtitle: "Top yield farming opportunities" (remove "on XLayer")
+stablecoins.subtitle: "Stablecoin analytics" (remove "for XLayer")
+portfolio.subtitle: "Track your DeFi holdings" (remove "XLayer")
+docs.subtitle: "Learn about DeFi analytics"
+```
 
----
-
-## Phase 4: Mobile Responsiveness Audit
-
-### Tokens page (`src/pages/Tokens.tsx`):
-- The table has a duplicate "24h Change" column (lines 303-322 duplicate lines 196/304) -- remove the duplicate `<td>` that renders change twice
-- Ensure token names truncate properly on narrow screens
-
-### Fees page (`src/pages/Fees.tsx`):
-- Pagination controls on mobile wrap awkwardly -- stack pagination controls vertically on small screens
-- The per-page selector + pagination row should use `flex-wrap` on mobile
-
-### Dashboard (`src/pages/Dashboard.tsx`):
-- The "Build on XLayer" CTA (lines 444-458) is hardcoded to XLayer -- make it conditional: only show when X Layer is selected, or generalize to current chain
-- The "Estimated Fees (24h)" label (line 497) is not translatable -- use t() key
-- Remove hardcoded "Build on XLayer" text, replace with chain-aware CTA or remove entirely for non-X Layer chains
-
-### General:
-- All `overflow-x-auto` table containers already exist -- verify no new horizontal overflow issues
-- Ensure stat card grids don't overflow on 320px viewports (grid-cols-2 with gap-3 is fine)
+Also update the other 7 locale files (de, es, fr, ja, ko, pt, zh) with the same new keys using their respective languages.
 
 ---
 
-## Phase 5: Remaining Chain-Awareness Cleanup
+## Phase 2: Fix Security Page Freeze
 
-### Dashboard hardcoded references:
-- Line 447: `"Build on XLayer"` -- conditionally show only for X Layer or remove
-- Line 448: `"Deploy your DeFi protocol on XLayer"` -- same
-- Line 451-456: XLayer docs/get started links -- conditionally show
+**File: `src/pages/Security.tsx`**
 
-### Tokens page (`src/pages/Tokens.tsx`):
-- Lines 350-370: Footer links are hardcoded to XLayer docs -- make conditional on selected chain or generalize
-- Explorer link (line 287-293): Hardcoded to `okx.com/explorer/xlayer` -- should use chain-specific explorer URL
+- Add pagination (same pattern as Fees/Yields pages)
+- Cap displayed protocols to a page size (default 20)
+- Add search + pagination controls
+- When "All Chains" is selected, limit the protocol grid to paginated results instead of rendering all 5000+ cards
 
-### Sidebar (`src/components/layout/Sidebar.tsx`):
-- Line 143: "XLayer Analytics" subtitle -- change to "DeFi Analytics"
+**File: `src/lib/api/defillama.ts`**
 
----
-
-## Phase 6: Design System Polish
-
-### Card styles standardization:
-- Ensure all cards use consistent padding: `p-4` for compact, `p-6` for standard
-- Standardize border radius across all card components
-- Remove `card-gradient` background that uses hardcoded dark values
-
-### Loading states:
-- Already have skeleton shimmer -- verify all pages use consistent skeleton patterns
-- Ensure empty states have consistent messaging format
-
-### Animations:
-- Keep existing `page-enter`, `fade-in`, `stagger-item` animations
-- Remove `badge-pulse` from header (too flashy)
-- Keep `animate-pulse` only on small dots (live indicators)
-- Remove `hover-lift` transform on stat cards -- too much motion for dense data views. Replace with subtle border-color transition only.
+- In `fetchChainProtocols()`, when chain is "all", cap at 500 protocols sorted by TVL descending (same pattern as `fetchChainYieldPools`)
 
 ---
 
-## Phase 7: New Feature Infrastructure (Placeholder Pages)
+## Phase 3: Fix Dashboard Double Title
 
-These features require data sources not currently available from DefiLlama. Create placeholder page structure with clear "Coming Soon" states.
+**File: `src/pages/Dashboard.tsx`**
 
-### New pages to create:
-1. **`/whale-activity`** -- Whale and Institutional Behavior page (placeholder)
-2. **`/market-structure`** -- Market Structure and Liquidity page (placeholder)
+- Line 196: Change from `{selectedChain.name} {t("dashboard.title")}` to just use the updated i18n key which no longer contains "XLayer"
+- After i18n fix, this will show "X Layer DeFi Overview" instead of "X Layer XLayer DeFi Overview"
 
-### Navigation updates:
-- Add these to the sidebar under a new "Advanced Analytics" section
-- Add to the mobile "More" drawer
+---
 
-### Each placeholder page will include:
-- Page title and description
-- "Coming Soon" indicator
-- Brief explanation of what data this section will provide
-- No mock data -- just structural placeholder
+## Phase 4: Fix Table Mobile Overflow
+
+**Files: `src/components/dashboard/ProtocolTable.tsx`, `DexTable.tsx`, `YieldTable.tsx`**
+
+Remove `min-w-[500px]` from all tables -- this is the root cause of horizontal scrolling on mobile. Instead:
+- Use responsive column hiding (`hidden sm:table-cell`, `hidden md:table-cell`) for less critical columns
+- Ensure the Name column truncates properly with `max-w-[140px] truncate` on mobile
+- Remove the `#` column on mobile (already hidden via `hidden sm:table-cell`)
+- For YieldTable, hide the `#` column on mobile and constrain Pool/Project columns
+
+**Also fix hardcoded empty-state messages:**
+- ProtocolTable line 93-95: "No protocols found for XLayer" / "Be the first to deploy on XLayer!" -- make generic: "No protocols found" / "No protocol data available for this chain"
+- DexTable line 58-60: "No DEX data available for XLayer" -- make generic
+- YieldTable line 58-59: "No yield pools found for XLayer" -- make generic
+
+---
+
+## Phase 5: Tokens Page Chain Filtering
+
+**File: `src/pages/Tokens.tsx`**
+
+The current filtering logic at lines 29-40 doesn't work for most chains because CoinGecko tokens have no `chain` field. Fix:
+- For "All Chains": show all tokens (current behavior, works)
+- For specific chains: since we can't filter CoinGecko global tokens by chain, show a message indicating that chain-specific token discovery is coming soon, but still show the global market leaders
+- Remove the hardcoded XLayer explorer link (line 287) -- make it conditional on selectedChain
+
+**File: `src/pages/Tokens.tsx` line 287**
+- Replace hardcoded `okx.com/explorer/xlayer` with chain-aware explorer URL from `selectedChain`
+
+---
+
+## Phase 6: Whale Activity and Market Structure Pages
+
+The current placeholder pages are already well-structured. No changes needed to them at this stage since they require external data sources not yet integrated. They correctly communicate "Coming Soon" with clear descriptions of planned functionality.
 
 ---
 
 ## Technical Summary
 
-| Phase | Files Modified | Priority |
-|-------|---------------|----------|
-| 1. Remove themes | `index.css`, `ThemeToggle.tsx` (delete), `Header.tsx` | High |
-| 2. Refine Matrix | `index.css` | High |
-| 3. Nav cleanup | `Header.tsx`, `Sidebar.tsx` | High |
-| 4. Mobile audit | `Tokens.tsx`, `Fees.tsx`, `Dashboard.tsx` | High |
-| 5. Chain cleanup | `Dashboard.tsx`, `Tokens.tsx`, `Sidebar.tsx` | Medium |
-| 6. Design polish | `index.css`, various card components | Medium |
-| 7. Placeholder pages | New files: `WhaleActivity.tsx`, `MarketStructure.tsx`, `App.tsx`, `Sidebar.tsx`, `BottomNav.tsx` | Low |
+| Phase | Files Modified | Issue Fixed |
+|-------|---------------|-------------|
+| 1 | `en.json` + 7 locale files | 30+ missing i18n keys showing raw strings |
+| 2 | `Security.tsx`, `defillama.ts` | Page freeze on All Chains (5000+ cards) |
+| 3 | `Dashboard.tsx` | Double "XLayer" in title |
+| 4 | `ProtocolTable.tsx`, `DexTable.tsx`, `YieldTable.tsx` | Mobile horizontal overflow + hardcoded XLayer strings |
+| 5 | `Tokens.tsx` | Non-functional chain filtering, hardcoded explorer link |
+| 6 | None | Whale Activity / Market Structure already have proper placeholders |
 
-### Files to delete:
-- `src/components/ThemeToggle.tsx`
-
-### Files to create:
-- `src/pages/WhaleActivity.tsx`
-- `src/pages/MarketStructure.tsx`
-
-### Files to modify:
-- `src/index.css` (major -- theme consolidation + refinement)
-- `src/components/layout/Header.tsx` (remove theme toggle, language switcher, live badge, shortcuts button)
-- `src/components/layout/Sidebar.tsx` (rename subtitle, cleanup footer, add new nav items)
-- `src/components/layout/BottomNav.tsx` (add new items to More drawer)
-- `src/pages/Dashboard.tsx` (conditional XLayer CTA, hardcoded strings)
-- `src/pages/Tokens.tsx` (duplicate column fix, chain-specific explorer links, footer links)
-- `src/pages/Fees.tsx` (mobile pagination layout)
-- `src/App.tsx` (add new routes)
+### Priority Order
+1. i18n keys (affects every page visually)
+2. Security page freeze (critical UX bug)
+3. Dashboard double title (confusing)
+4. Table mobile overflow (major mobile UX)
+5. Tokens chain filtering fix (functional bug)
+6. Hardcoded empty states (polish)
 
