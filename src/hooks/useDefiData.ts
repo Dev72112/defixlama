@@ -3,6 +3,7 @@ import {
   fetchXLayerProtocols,
   fetchXLayerTVL,
   fetchChainTVLHistory,
+  fetchGlobalTVLHistory,
   fetchXLayerDexVolumes,
   fetchXLayerYieldPools,
   fetchProtocols,
@@ -233,11 +234,26 @@ export function useChainTVLHistory(chain: string | null) {
   });
 }
 
+// Hook to fetch global TVL history (all chains aggregated)
+export function useGlobalTVLHistory() {
+  return useQuery<ChainTVL[]>({
+    queryKey: ["global-tvl-history"],
+    queryFn: async () => {
+      const data = await fetchGlobalTVLHistory();
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: STANDARD_REFRESH,
+    refetchInterval: STANDARD_REFRESH,
+  });
+}
+
 // Combined hook for dashboard overview - chain-aware
 export function useDashboardData(chainId: string = "xlayer") {
   const protocols = useChainProtocols(chainId);
   const tvl = useChainTVLData(chainId);
-  const tvlHistory = useChainTVLHistory(chainId === "all" ? null : (getChainSlug(chainId) || "X Layer"));
+  const chainTvlHistory = useChainTVLHistory(chainId === "all" ? null : (getChainSlug(chainId) || "X Layer"));
+  const globalTvlHistory = useGlobalTVLHistory();
+  const tvlHistory = chainId === "all" ? globalTvlHistory : chainTvlHistory;
   const dexVolumes = useChainDexVolumes(chainId);
   const yieldPools = useChainYieldPools(chainId);
 

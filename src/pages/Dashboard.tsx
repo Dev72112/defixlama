@@ -210,8 +210,8 @@ function DashboardContent() {
         <LivePriceTicker />
       </div>
 
-      {/* X Layer Spotlight */}
-      <XLayerSpotlight />
+      {/* X Layer Spotlight — only when X Layer is selected */}
+      {selectedChain.id === "xlayer" && <XLayerSpotlight />}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
