@@ -185,6 +185,19 @@ export async function fetchChainProtocols(chain: string): Promise<Protocol[]> {
   }
 }
 
+// Fetch global (all chains aggregated) TVL history
+export async function fetchGlobalTVLHistory(): Promise<ChainTVL[]> {
+  try {
+    const response = await fetch(`${DEFILLAMA_BASE_URL}/v2/historicalChainTvl`);
+    if (!response.ok) throw new Error("Failed to fetch global TVL history");
+    const data: ChainTVL[] = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error fetching global TVL history:", error);
+    return [];
+  }
+}
+
 // Fetch TVL history for a chain
 export async function fetchChainTVLHistory(chain: string): Promise<ChainTVL[]> {
   try {
