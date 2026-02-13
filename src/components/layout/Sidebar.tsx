@@ -59,8 +59,8 @@ const moreItems: NavItem[] = [
 ];
 
 const advancedItems: NavItem[] = [
-  { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "SOON" },
-  { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "SOON" },
+  { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "PRO" },
+  { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO" },
 ];
 
 interface SidebarProps {

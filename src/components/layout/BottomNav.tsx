@@ -54,8 +54,8 @@ const moreTabs: NavTab[] = [
   { labelKey: "nav.security", href: "/security", icon: Shield },
   { labelKey: "nav.donations", href: "/donations", icon: Heart },
   { labelKey: "nav.builderLogs", href: "/builder-logs", icon: ScrollText },
-  { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "SOON" },
-  { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "SOON" },
+  { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "PRO" },
+  { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO" },
 ];
 
 export function BottomNav() {
