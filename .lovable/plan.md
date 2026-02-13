@@ -1,114 +1,266 @@
 
 
-# Fix Dashboard Charts, Mobile UX, and Build Whale Activity
+# defiXlama: Epic Product Expansion -- Advanced Analytics, Detail Page Upgrades, and Subscription Infrastructure
 
-## Issues Identified
-
-### 1. All Chains TVL History Charts Show Blank
-**Root cause**: In `useDefiData.ts` line 240, when `chainId === "all"`, `null` is passed to `useChainTVLHistory`, which sets `enabled: false` -- so no data is fetched at all. DefiLlama has a global TVL history endpoint (`/v2/historicalChainTvl` with no chain param) that returns aggregate data.
-
-### 2. Dashboard Still Shows "X Layer" XLayerSpotlight in All Chains Mode
-The `<XLayerSpotlight />` component renders unconditionally on line 214. It should only show when X Layer is selected or when "All Chains" is selected (where it serves as a featured spotlight), but the double-title issue ("X Layer DeFi Overview" with XLayer spotlight below) creates visual confusion.
-
-### 3. Dashboard Title Still Doubles
-Line 196: `{selectedChain.name} {t("dashboard.title")}` -- if `dashboard.title` was updated to "DeFi Overview" this should now show "All Chains DeFi Overview" which is correct. But checking the i18n key may still contain "XLayer".
+This plan covers three major workstreams: (1) expanding Whale Activity and Market Structure into premium-grade analytics pages, (2) adding entirely new tracking features, (3) enriching all detail pages, and (4) building a subscription paywall with a 3-month free trial notice.
 
 ---
 
-## Implementation Plan
+## Workstream 1: Expand Whale Activity Page
 
-### Fix 1: Global TVL History for "All Chains" Mode
+The current page has basic TVL concentration charts and a simple alert feed. To make it subscription-worthy, we add deep behavioral analytics.
 
-**File: `src/lib/api/defillama.ts`**
-- Add a new function `fetchGlobalTVLHistory()` that calls `https://api.llama.fi/v2/historicalChainTvl` (no chain path) and returns the aggregate global TVL over time.
+### New Sections to Add:
 
-**File: `src/hooks/useDefiData.ts`**
-- In `useDashboardData()` line 240: Instead of passing `null` when `chainId === "all"`, call a new `useGlobalTVLHistory()` hook that fetches from the global endpoint.
-- Add `useGlobalTVLHistory()` hook that calls `fetchGlobalTVLHistory()`.
-- Modify line 240 logic:
-  - If `chainId === "all"` -> use `useGlobalTVLHistory()`
-  - Otherwise -> use `useChainTVLHistory(getChainSlug(chainId))`
+**1. Herfindahl-Hirschman Index (HHI) Score**
+- Compute the HHI from protocol TVL shares to measure ecosystem concentration
+- Display as a gauge/score card with interpretation (competitive / moderate / concentrated)
+- Data source: existing `useChainProtocols`
 
-### Fix 2: Conditional XLayerSpotlight
+**2. Capital Velocity Tracker**
+- Calculate the ratio of 24h inflows+outflows relative to total TVL -- measures how fast capital is rotating
+- Show as a metric card with a small sparkline trend (use 7d protocol change data)
+- Data source: existing protocol `change_1d` fields
 
-**File: `src/pages/Dashboard.tsx`**
-- Line 214: Wrap `<XLayerSpotlight />` with a condition: only show when `selectedChain.id === "xlayer"` (similar to the CTA on line 444).
+**3. Accumulation vs Distribution Heatmap**
+- Grid of top 20 protocols showing 1h, 1d, 7d changes as colored cells (green = accumulation, red = distribution)
+- Creates an at-a-glance view of where capital is moving over multiple timeframes
+- Data source: existing protocol `change_1h`, `change_1d`, `change_7d`
 
-### Fix 3: Remaining Mobile Overflow Audit
+**4. Cross-Chain Capital Flow Matrix**
+- For protocols deployed on multiple chains, show which chains are gaining vs losing TVL
+- Use `chainTvls` field from protocol data to decompose TVL by chain
+- Display as a table: Protocol | Chain A | Chain B | ... with color-coded flow direction
 
-Tables look good now with `hidden sm:table-cell` patterns. The main remaining issue is the `data-table` CSS class -- verify it doesn't have `min-width` set. Also ensure the `table-layout` allows cells to shrink on mobile.
-
-**File: `src/index.css`**
-- Check `.data-table` CSS -- ensure `table-layout: auto` and no min-width constraints.
-- Add `overflow-x: auto` wrapper styling for safety.
-
-### Fix 4: Build Whale Activity Page with Real Data
-
-Replace the placeholder with a functional page using DefiLlama data to simulate whale-level analytics:
-
-**File: `src/pages/WhaleActivity.tsx`** -- Complete rebuild with:
-
-1. **Top Protocols by TVL Concentration** -- Use protocol data to show which protocols hold the most TVL (proxy for "whale-sized" capital). Show top 10 protocols with their TVL share of total ecosystem TVL as a horizontal bar chart.
-
-2. **TVL Flow Analysis** -- Use protocol `change_1d` and `change_7d` to identify large TVL movements (inflows/outflows). Show protocols with the biggest absolute TVL changes as a "flow analysis" table -- positive = accumulation, negative = distribution.
-
-3. **Chain Capital Distribution** -- Use chains TVL data to show capital concentration across chains (Herfindahl index or top-N share). Pie/donut chart showing how concentrated capital is.
-
-4. **Protocol Category Breakdown** -- Group protocols by category and show TVL per category -- reveals where institutional capital clusters (lending, DEX, derivatives, etc.)
-
-5. **Large TVL Movement Feed** -- A real-time-styled feed showing protocols with >5% TVL change in the last 24h, sorted by absolute change amount. This serves as a "whale alert" proxy.
-
-**Data sources (all from existing DefiLlama hooks)**:
-- `useChainProtocols(chainId)` -- protocol TVL + changes
-- `useChainsTVL()` -- chain-level capital distribution
-- `useChainDexVolumes(chainId)` -- DEX volume concentration
-
-**New components needed:**
-- `src/components/dashboard/TVLFlowTable.tsx` -- Table showing top TVL movers (inflows/outflows)
-- `src/components/dashboard/CapitalConcentrationChart.tsx` -- Donut chart of TVL distribution by chain or protocol
-
-### Fix 5: Build Market Structure Page with Real Data
-
-**File: `src/pages/MarketStructure.tsx`** -- Complete rebuild with:
-
-1. **Liquidity Depth Overview** -- Use DEX volume data to show volume concentration across DEXs. Bar chart of top DEXs by volume share.
-
-2. **DEX vs Lending TVL Split** -- Use protocol categories to separate DEX protocols from lending protocols. Show the ratio as a stacked bar or comparison.
-
-3. **Volume-to-TVL Ratio** -- Calculate and display the volume/TVL ratio per chain -- a key market structure metric. Higher ratio = more active trading relative to locked capital.
-
-4. **Protocol Diversity Score** -- Using category distribution data, calculate a diversity index (how spread out capital is across protocol types). Display as a score card.
-
-5. **Fee Revenue Distribution** -- Use fees data to show which protocols capture the most fees -- a proxy for protocol "stickiness" and real usage.
-
-**Data sources (all existing)**:
-- `useChainProtocols(chainId)` -- for category breakdown
-- `useChainDexVolumes(chainId)` -- for DEX concentration
-- `useChainFees(chainId)` -- for fee revenue analysis
-- `useChainsTVL()` -- for cross-chain comparison
-
----
-
-## File Changes Summary
-
-| File | Change | Priority |
-|------|--------|----------|
-| `src/lib/api/defillama.ts` | Add `fetchGlobalTVLHistory()` function | Critical |
-| `src/hooks/useDefiData.ts` | Add `useGlobalTVLHistory()`, fix `useDashboardData` for "all" | Critical |
-| `src/pages/Dashboard.tsx` | Conditional XLayerSpotlight | High |
-| `src/pages/WhaleActivity.tsx` | Full rebuild with real protocol data | High |
-| `src/pages/MarketStructure.tsx` | Full rebuild with real DEX/fee data | High |
-| `src/components/dashboard/TVLFlowTable.tsx` | New -- TVL movers table | High |
-| `src/components/dashboard/CapitalConcentrationChart.tsx` | New -- donut chart for capital distribution | High |
-
-### New files to create:
-- `src/components/dashboard/TVLFlowTable.tsx`
-- `src/components/dashboard/CapitalConcentrationChart.tsx`
+**5. Whale Alert Feed Enhancements**
+- Add severity levels (>5% = moderate, >15% = major, >30% = extreme)
+- Add estimated dollar value of movement (TVL * change%)
+- Add category tags and protocol logos
+- Add filtering by severity and category
 
 ### Files to modify:
-- `src/lib/api/defillama.ts`
-- `src/hooks/useDefiData.ts`
-- `src/pages/Dashboard.tsx`
-- `src/pages/WhaleActivity.tsx`
-- `src/pages/MarketStructure.tsx`
+- `src/pages/WhaleActivity.tsx` -- major expansion
+- New: `src/components/dashboard/AccumulationHeatmap.tsx`
+- New: `src/components/dashboard/CrossChainFlowMatrix.tsx`
+
+---
+
+## Workstream 2: Expand Market Structure Page
+
+Current page has DEX volume concentration and fee distribution. Needs deeper liquidity and structural analysis.
+
+### New Sections to Add:
+
+**1. Liquidity Fragmentation Index**
+- Measure how spread out DEX volume is across protocols (inverse of concentration)
+- Use existing DEX volume data to compute Gini coefficient
+- Display as a metric with health interpretation
+
+**2. Fee-to-TVL Efficiency Ratio**
+- For each protocol, calculate fees/TVL ratio -- higher = more capital-efficient
+- Top 10 most efficient protocols as a ranked bar chart
+- Data source: combine `useChainFees` with `useChainProtocols`
+
+**3. Category Capital Flow Treemap**
+- Visual treemap showing TVL by category with change colors overlaid
+- Categories: DEX, Lending, Derivatives, Bridge, Yield, Liquid Staking, CDP, etc.
+- Data source: existing protocol category + TVL data
+
+**4. Volume-to-TVL Cross-Chain Comparison**
+- Compare Vol/TVL ratio across the top 10 chains
+- Bar chart showing which chains have the most active trading relative to locked capital
+- Data source: `useChainsTVL` + per-chain DEX volumes
+
+**5. Protocol Lifecycle Distribution**
+- Categorize protocols by age (using `listedAt` timestamp): <30d, 30-90d, 90d-1y, >1y
+- Show TVL distribution by age cohort -- reveals ecosystem maturity
+- Data source: existing protocol `listedAt` field
+
+### Files to modify:
+- `src/pages/MarketStructure.tsx` -- major expansion
+- New: `src/components/dashboard/CategoryTreemap.tsx`
+- New: `src/components/dashboard/ProtocolLifecycle.tsx`
+
+---
+
+## Workstream 3: New Tracking Pages
+
+### Page 1: Yield Intelligence (`/yield-intelligence`)
+Advanced yield analytics beyond the basic yields table.
+
+**Sections:**
+- **Risk-Adjusted Yield Ranking**: Sort pools by APY / TVL volatility ratio
+- **Yield Curve by Category**: Average APY by protocol category over time
+- **Impermanent Loss Estimator**: Input-based tool showing IL for common pairs
+- **Yield Concentration**: Which protocols capture most of the yield TVL
+- **Stablecoin vs Volatile Yields**: Split yield pools by underlying asset type
+
+Data source: existing `useChainYieldPools`
+
+### Page 2: Correlation Matrix (`/correlations`)
+Show how protocol TVLs move together.
+
+**Sections:**
+- **TVL Correlation Heatmap**: Matrix showing correlation coefficients between top 20 protocol TVL changes
+- **Sector Rotation Tracker**: Which categories are gaining/losing share simultaneously
+- **Divergence Alerts**: Protocols whose TVL movements diverge from their category average
+
+Data source: existing protocol change data (`change_1h`, `change_1d`, `change_7d`)
+
+### Files to create:
+- `src/pages/YieldIntelligence.tsx`
+- `src/pages/Correlations.tsx`
+- New components as needed
+
+### Navigation updates:
+- `src/components/layout/Sidebar.tsx` -- add under "Advanced Analytics" section
+- `src/components/layout/BottomNav.tsx` -- add to More drawer
+- `src/App.tsx` -- add routes
+
+---
+
+## Workstream 4: Expand All Detail Pages
+
+### ProtocolDetail.tsx (830 lines -- already rich, add):
+- **Fee Revenue Section**: If the protocol appears in fees data, show 24h/7d/30d fee breakdown
+- **Cross-Chain TVL Breakdown**: Use `chainTvls` to show TVL per chain as a stacked bar
+- **Competitor Comparison Table**: Show the protocol vs top 5 in same category side by side (TVL, changes, fees)
+- Fix hardcoded "XLayer" in description fallback (line 169)
+
+### DexDetail.tsx (728 lines -- add):
+- **Market Share Trend**: Show DEX's share of total volume (current vs 7d ago vs 30d ago)
+- **Chain Coverage Map**: Visual grid of which chains this DEX operates on
+- **Volume Efficiency**: Volume/TVL ratio compared to category average
+
+### ChainDetail.tsx (601 lines -- add):
+- **Ecosystem Composition**: Treemap of protocol categories on this chain
+- **Growth Velocity**: Rate of new protocol deployments (using `listedAt` data)
+- **Top Yield Pools on Chain**: Quick table of best yields available
+
+### TokenDetail.tsx (624 lines):
+- Already comprehensive -- add market dominance percentage vs total crypto market cap
+- Add link to protocol detail if token has a matching protocol
+
+### StablecoinDetail.tsx (523 lines -- add):
+- **Peg Deviation History**: If available, show how close to $1 the stablecoin has stayed
+- **Chain Dominance Shift**: Which chains are gaining share of this stablecoin's supply
+
+### FeeDetail.tsx (612 lines -- add):
+- **Fee Efficiency Score**: Fees relative to TVL -- higher = more productive protocol
+- **Fee Category Rank**: Where this protocol ranks within its category for fee generation
+
+### SecurityDetail.tsx (626 lines -- add):
+- **Risk Score Composite**: Combine audit status, TVL volatility, age, and category into a single risk rating
+- **Similar Protocol Comparison**: Security posture comparison with category peers
+
+### Files to modify:
+- `src/pages/ProtocolDetail.tsx`
+- `src/pages/DexDetail.tsx`
+- `src/pages/ChainDetail.tsx`
+- `src/pages/TokenDetail.tsx`
+- `src/pages/StablecoinDetail.tsx`
+- `src/pages/FeeDetail.tsx`
+- `src/pages/SecurityDetail.tsx`
+
+---
+
+## Workstream 5: Subscription Infrastructure
+
+### Approach:
+Use Stripe for $20/month subscription. All advanced analytics pages are gated behind a subscription check, but unlocked free for 3 months with a visible countdown banner.
+
+### Implementation:
+
+**1. Subscription Banner Component**
+- New: `src/components/SubscriptionBanner.tsx`
+- Shows on all advanced pages: "Free access until [date]. After that, $20/month."
+- Calm, informative design -- not aggressive upsell
+- Countdown shows days remaining
+
+**2. Subscription Gate Component**
+- New: `src/components/SubscriptionGate.tsx`
+- Wraps advanced page content
+- During free period: renders children + banner
+- After free period: checks Stripe subscription status
+- If not subscribed: shows a professional paywall with feature list and subscribe button
+
+**3. Database Table**
+- `subscriptions` table: user_id, stripe_customer_id, stripe_subscription_id, status, current_period_end, created_at
+- RLS: users can only read their own subscription
+
+**4. Stripe Integration**
+- Enable Stripe via the Lovable Stripe tool
+- Create a $20/month "defiXlama Pro" product
+- Edge function for checkout session creation
+- Edge function for webhook handling (subscription created/updated/cancelled)
+
+**5. Free Trial Logic**
+- The free period is NOT a Stripe trial -- it's a hardcoded date (3 months from launch)
+- `const FREE_UNTIL = new Date('2026-05-13')` -- simple, no backend needed during free period
+- After that date, the gate checks subscription status
+
+**6. Pages Gated as "Pro":**
+- `/whale-activity`
+- `/market-structure`
+- `/yield-intelligence`
+- `/correlations`
+- All detail page "advanced sections" (fee efficiency, cross-chain flows, etc.) show a small "Pro" badge and are gated after the free period
+
+### Navigation Updates:
+- Sidebar shows a small "PRO" badge next to advanced nav items
+- Remove "SOON" badges, replace with "PRO" badges
+
+### Files to create:
+- `src/components/SubscriptionBanner.tsx`
+- `src/components/SubscriptionGate.tsx`
+- `src/hooks/useSubscription.ts`
+- Edge function: `supabase/functions/create-checkout/index.ts`
+- Edge function: `supabase/functions/stripe-webhook/index.ts`
+- DB migration: subscriptions table
+
+### Files to modify:
+- `src/pages/WhaleActivity.tsx` -- wrap with SubscriptionGate
+- `src/pages/MarketStructure.tsx` -- wrap with SubscriptionGate
+- `src/pages/YieldIntelligence.tsx` -- wrap with SubscriptionGate
+- `src/pages/Correlations.tsx` -- wrap with SubscriptionGate
+- `src/components/layout/Sidebar.tsx` -- update badges from "SOON" to "PRO"
+- `src/App.tsx` -- add new routes
+
+---
+
+## Implementation Order
+
+Due to the scope, this should be done across multiple implementation rounds:
+
+**Round 1 (this session):**
+- Expand WhaleActivity with HHI, accumulation heatmap, cross-chain flow matrix, enhanced alerts
+- Expand MarketStructure with fragmentation index, fee efficiency, lifecycle distribution, cross-chain Vol/TVL
+- Remove "SOON" badges, replace with "PRO" badges in sidebar
+
+**Round 2:**
+- Create YieldIntelligence and Correlations pages
+- Expand all 7 detail pages with advanced sections
+- Fix remaining hardcoded "XLayer" references in detail pages
+
+**Round 3:**
+- Enable Stripe integration
+- Build subscription infrastructure (banner, gate, database, edge functions)
+- Wire up Pro gating across all advanced pages
+
+---
+
+## Technical Summary
+
+| Workstream | New Files | Modified Files | Complexity |
+|-----------|-----------|---------------|------------|
+| Whale Activity expansion | 2 components | 1 page | Medium |
+| Market Structure expansion | 2 components | 1 page | Medium |
+| New tracking pages | 2 pages + components | App.tsx, Sidebar, BottomNav | Medium |
+| Detail page expansion | 0 | 7 detail pages | High (many files) |
+| Subscription infrastructure | 3 components + 2 edge functions + 1 hook + DB migration | 4 pages + Sidebar | High |
+
+**Total new files**: ~12
+**Total modified files**: ~16
+**Stripe integration**: Required (via Lovable tool)
+**Database changes**: 1 new table (subscriptions)
 
