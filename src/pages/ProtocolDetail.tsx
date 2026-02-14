@@ -166,7 +166,7 @@ function ProtocolDetailContent() {
               </span>
             </div>
             <p className="text-muted-foreground mt-2 text-sm line-clamp-2">
-              {protocol.description || `${protocol.name} is a DeFi protocol on XLayer.`}
+              {protocol.description || `${protocol.name} is a ${protocol.category || 'DeFi'} protocol.`}
             </p>
             {/* Links */}
             <div className="flex flex-wrap gap-3 mt-3">

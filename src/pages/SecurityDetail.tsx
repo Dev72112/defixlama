@@ -207,22 +207,34 @@ export default function SecurityDetail() {
           />
         </div>
 
-        {/* Security Metrics Row */}
+        {/* Security Metrics Row + Risk Score Composite */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className={cn(
             "rounded-lg border p-4",
             isAudited ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"
           )}>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Security Score</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Risk Score</p>
             <div className="flex items-end gap-2">
               <span className={cn(
                 "text-2xl font-bold",
                 isAudited ? "text-success" : "text-warning"
               )}>
-                {isAudited ? "85" : "45"}
+                {(() => {
+                  let score = 0;
+                  if (isAudited) score += 40;
+                  if (tvlAnalytics && Math.abs(tvlAnalytics.change7d) < 10) score += 20;
+                  const age = proto.listedAt ? (Date.now() / 1000 - proto.listedAt) / 86400 : 0;
+                  if (age > 365) score += 20;
+                  else if (age > 90) score += 10;
+                  const cat = (proto.category || "").toLowerCase();
+                  if (cat.includes("dex") || cat.includes("lend")) score += 20;
+                  else score += 10;
+                  return score;
+                })()}
               </span>
               <span className="text-sm text-muted-foreground mb-0.5">/ 100</span>
             </div>
+            <p className="text-[10px] text-muted-foreground mt-1">Audit + Stability + Age + Category</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Risk Level</p>
@@ -362,6 +374,47 @@ export default function SecurityDetail() {
           </div>
         </div>
 
+        {/* Category Peer Comparison */}
+        {relatedProtocols.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Security Peer Comparison ({proto.category})</h3>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Protocol</th>
+                    <th>Audit</th>
+                    <th className="text-right">TVL</th>
+                    <th className="text-right">Age</th>
+                    <th className="text-right">Chains</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-primary/5">
+                    <td className="font-medium text-primary">{proto.name} (this)</td>
+                    <td>{isAudited ? <span className="text-success text-xs">✓ Audited</span> : <span className="text-warning text-xs">✗ Unaudited</span>}</td>
+                    <td className="text-right font-mono">{formatCurrency(proto.tvl || 0)}</td>
+                    <td className="text-right text-muted-foreground">{proto.listedAt ? `${Math.round((Date.now()/1000 - proto.listedAt) / 86400)}d` : "—"}</td>
+                    <td className="text-right">{proto.chains?.length || 0}</td>
+                  </tr>
+                  {relatedProtocols.map((p) => {
+                    const pAudited = p.audits && p.audits !== "0";
+                    return (
+                      <tr key={p.name}>
+                        <td className="font-medium text-foreground">{p.name}</td>
+                        <td>{pAudited ? <span className="text-success text-xs">✓ Audited</span> : <span className="text-warning text-xs">✗ Unaudited</span>}</td>
+                        <td className="text-right font-mono">{formatCurrency(p.tvl || 0)}</td>
+                        <td className="text-right text-muted-foreground">{p.listedAt ? `${Math.round((Date.now()/1000 - p.listedAt) / 86400)}d` : "—"}</td>
+                        <td className="text-right">{p.chains?.length || 0}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Related Protocols Section */}
         {relatedProtocols.length > 0 && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
@@ -373,12 +426,8 @@ export default function SecurityDetail() {
                   <Link to={`/security/${p.slug || p.name.toLowerCase().replace(/\s+/g, "-")}`} key={p.name}>
                     <div className="p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer h-full">
                       <div className="flex items-center gap-2 mb-2">
-                        {p.logo ? (
-                          <img src={p.logo} alt={p.name} className="h-8 w-8 rounded-full" loading="lazy" />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-                            {p.name?.charAt(0) || "?"}
-                          </div>
+                        {p.logo ? <img src={p.logo} alt={p.name} className="h-8 w-8 rounded-full" loading="lazy" /> : (
+                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">{p.name?.charAt(0) || "?"}</div>
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground truncate text-sm">{p.name}</p>
@@ -392,15 +441,9 @@ export default function SecurityDetail() {
                       <div className="mt-2 pt-2 border-t border-border">
                         <div className="flex items-center gap-1">
                           {isAuditedRelated ? (
-                            <>
-                              <CheckCircle className="h-3.5 w-3.5 text-success" />
-                              <span className="text-xs text-success">Audited</span>
-                            </>
+                            <><CheckCircle className="h-3.5 w-3.5 text-success" /><span className="text-xs text-success">Audited</span></>
                           ) : (
-                            <>
-                              <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                              <span className="text-xs text-warning">Unaudited</span>
-                            </>
+                            <><AlertTriangle className="h-3.5 w-3.5 text-warning" /><span className="text-xs text-warning">Unaudited</span></>
                           )}
                         </div>
                       </div>

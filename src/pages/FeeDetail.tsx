@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useFeesData, useProtocolDetails } from "@/hooks/useDefiData";
+import { useFeesData, useProtocolDetails, useAllProtocols } from "@/hooks/useDefiData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ArrowLeft, Wallet, TrendingUp, TrendingDown, DollarSign, BarChart3, ExternalLink, Award, Zap, Target, Flame, Crown, Users, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export default function FeeDetail() {
 function FeeDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: fees, isLoading } = useFeesData();
+  const { data: allProtocols } = useAllProtocols();
 
   // Better matching logic for finding the fee item
   const item = useMemo(() => {
@@ -129,6 +130,28 @@ function FeeDetailContent() {
       .slice(0, 5);
   }, [fees, item]);
 
+  // Fee Efficiency Score (fees / TVL in bps)
+  const feeEfficiency = useMemo(() => {
+    if (!item || !allProtocols) return null;
+    const matchedProto = allProtocols.find((p) => p.name.toLowerCase() === (item.name || "").toLowerCase());
+    if (!matchedProto || !matchedProto.tvl || matchedProto.tvl === 0) return null;
+    const bps = ((item.total24h || 0) / matchedProto.tvl) * 10000;
+    return {
+      bps: isFinite(bps) ? bps : 0,
+      tvl: matchedProto.tvl,
+      interpretation: bps > 10 ? "Highly Efficient" : bps > 3 ? "Above Average" : bps > 1 ? "Average" : "Below Average",
+    };
+  }, [item, allProtocols]);
+
+  // Category rank
+  const categoryRank = useMemo(() => {
+    if (!fees || !item || !item.category) return null;
+    const inCategory = fees
+      .filter((f: any) => f.category === item.category)
+      .sort((a: any, b: any) => (b.total24h || 0) - (a.total24h || 0));
+    const idx = inCategory.findIndex((f: any) => f.name === item.name);
+    return { rank: idx + 1, total: inCategory.length };
+  }, [fees, item]);
   if (isLoading) {
     return (
       <Layout>
@@ -567,6 +590,46 @@ function FeeDetailContent() {
           </Card>
         </div>
 
+        {/* Fee Efficiency & Category Rank */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {feeEfficiency && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 md:p-6">
+              <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                Fee Efficiency Score
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Fees/TVL (bps)</p>
+                  <p className="text-3xl font-bold text-primary">{feeEfficiency.bps.toFixed(1)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Rating</p>
+                  <p className="text-xl font-bold">{feeEfficiency.interpretation}</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Generating {feeEfficiency.bps.toFixed(1)} bps daily from {formatCurrency(feeEfficiency.tvl)} TVL
+              </p>
+            </div>
+          )}
+          {categoryRank && (
+            <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+              <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" />
+                Category Fee Rank
+              </h3>
+              <div className="flex items-end gap-2 mb-2">
+                <span className="text-4xl font-bold text-primary">#{categoryRank.rank}</span>
+                <span className="text-muted-foreground text-sm mb-1">of {categoryRank.total} in {item.category}</span>
+              </div>
+              <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary" style={{ width: `${((categoryRank.total - categoryRank.rank + 1) / categoryRank.total) * 100}%` }} />
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Related Protocols */}
         {relatedProtocols.length > 0 && (
           <Card className="p-4 md:p-6">
@@ -580,21 +643,10 @@ function FeeDetailContent() {
                   <div className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {proto.displayName || proto.name}
-                        </p>
+                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{proto.displayName || proto.name}</p>
                         <p className="text-xs text-muted-foreground">{proto.category}</p>
                       </div>
-                      {proto.logo && (
-                        <img
-                          src={proto.logo}
-                          alt={proto.name}
-                          className="h-8 w-8 rounded-full bg-muted"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      )}
+                      {proto.logo && <img src={proto.logo} alt={proto.name} className="h-8 w-8 rounded-full bg-muted" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
                     </div>
                     <div className="flex justify-between items-end">
                       <span className="text-sm text-muted-foreground">24h Fees</span>

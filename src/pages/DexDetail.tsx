@@ -571,7 +571,7 @@ export default function DexDetail() {
           </Card>
         </div>
 
-        {/* Related DEXs */}
+        {/* Related DEXs + Market Share */}
         {relatedDexs.length > 0 && (
           <Card className="p-4 md:p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -579,36 +579,48 @@ export default function DexDetail() {
               Other Top DEXs
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {relatedDexs.map((d) => (
-                <Link key={d.name} to={`/dexs/${(d.displayName || d.name).toLowerCase().replace(/\s+/g, '-')}`}>
-                  <div className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {d.displayName || d.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{d.chains?.length || 0} chains</p>
+              {relatedDexs.map((d) => {
+                const totalVol = allDexs?.reduce((a, dx) => a + (dx.total24h || 0), 0) || 1;
+                const share = ((d.total24h || 0) / totalVol * 100);
+                return (
+                  <Link key={d.name} to={`/dexs/${(d.displayName || d.name).toLowerCase().replace(/\s+/g, '-')}`}>
+                    <div className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {d.displayName || d.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{d.chains?.length || 0} chains • {share.toFixed(1)}% share</p>
+                        </div>
+                        {d.logo && (
+                          <img src={d.logo} alt={d.name} className="h-8 w-8 rounded-full bg-muted"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        )}
                       </div>
-                      {d.logo && (
-                        <img
-                          src={d.logo}
-                          alt={d.name}
-                          className="h-8 w-8 rounded-full bg-muted"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      )}
+                      <div className="flex justify-between items-end">
+                        <span className="text-sm text-muted-foreground">24h Volume</span>
+                        <span className="font-mono font-bold">{formatCurrency(d.total24h || 0)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-end">
-                      <span className="text-sm text-muted-foreground">24h Volume</span>
-                      <span className="font-mono font-bold">{formatCurrency(d.total24h || 0)}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </Card>
+        )}
+
+        {/* Market Share Stat */}
+        {hasVolumeData && allDexs && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 md:p-6">
+            <h3 className="text-base font-semibold text-foreground mb-2">Market Share</h3>
+            <div className="flex items-center gap-4">
+              <span className="text-3xl font-bold text-primary">
+                {((dex.total24h || 0) / (allDexs.reduce((a, d) => a + (d.total24h || 0), 0) || 1) * 100).toFixed(2)}%
+              </span>
+              <span className="text-muted-foreground text-sm">of total DEX volume across all tracked protocols</span>
+            </div>
+          </div>
         )}
 
         {/* Additional DEX Details from API */}
