@@ -56,6 +56,8 @@ const moreTabs: NavTab[] = [
   { labelKey: "nav.builderLogs", href: "/builder-logs", icon: ScrollText },
   { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "PRO" },
   { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO" },
+  { labelKey: "Yield Intelligence", href: "/yield-intelligence", icon: TrendingUp, badge: "PRO" },
+  { labelKey: "Correlations", href: "/correlations", icon: Activity, badge: "PRO" },
 ];
 
 export function BottomNav() {

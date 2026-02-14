@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { useChainsTVL, useChainTVLHistory, useAllProtocols, useAllDexVolumes } from "@/hooks/useDefiData";
+import { useChainsTVL, useChainTVLHistory, useAllProtocols, useAllDexVolumes, useChainYieldPools } from "@/hooks/useDefiData";
 import {
   AreaChart,
   Area,
@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
-import { ArrowLeft, Globe, Layers, TrendingUp, Activity, ExternalLink } from "lucide-react";
+import { ArrowLeft, Globe, Layers, TrendingUp, Activity, ExternalLink, Sprout, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
 
@@ -37,6 +37,7 @@ export default function ChainDetail() {
 
   // Now use chain for history query
   const { data: history, isLoading: historyLoading } = useChainTVLHistory(chain?.name || null);
+  const yieldPools = useChainYieldPools(chain?.name || "");
 
   // Calculate total TVL for market share
   const totalTVL = useMemo(() => {
@@ -537,6 +538,99 @@ export default function ChainDetail() {
           </div>
         </div>
 
+        {/* Ecosystem Composition + Growth Velocity */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Ecosystem Composition */}
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6 lg:col-span-2">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              Ecosystem Composition
+            </h3>
+            {(() => {
+              const catMap = new Map<string, number>();
+              for (const p of topProtocols) catMap.set(p.category || "Other", (catMap.get(p.category || "Other") || 0) + (p.chainTvl || 0));
+              const catList = Array.from(catMap.entries()).sort((a, b) => b[1] - a[1]);
+              const total = catList.reduce((a, [, v]) => a + v, 0) || 1;
+              return catList.length > 0 ? (
+                <div className="space-y-2">
+                  {catList.slice(0, 8).map(([cat, tvl], i) => (
+                    <div key={cat} className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground w-24 truncate">{cat}</span>
+                      <div className="flex-1 h-4 bg-muted/30 rounded overflow-hidden">
+                        <div className="h-full rounded" style={{ width: `${(tvl / total) * 100}%`, backgroundColor: COLORS[i % COLORS.length] }} />
+                      </div>
+                      <span className="text-xs font-mono text-muted-foreground w-14 text-right">{((tvl / total) * 100).toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-muted-foreground text-sm">No category data available</p>;
+            })()}
+          </div>
+
+          {/* Growth Velocity */}
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Growth Velocity
+            </h3>
+            {(() => {
+              const now = Date.now() / 1000;
+              const withAge = topProtocols.filter((p: any) => p.listedAt);
+              const last30d = withAge.filter((p: any) => now - p.listedAt < 30 * 86400).length;
+              const last90d = withAge.filter((p: any) => now - p.listedAt < 90 * 86400).length;
+              const last1y = withAge.filter((p: any) => now - p.listedAt < 365 * 86400).length;
+              return (
+                <div className="space-y-4">
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <p className="text-xs text-muted-foreground">Last 30 days</p>
+                    <p className="text-2xl font-bold text-primary">{last30d} new</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <p className="text-xs text-muted-foreground">Last 90 days</p>
+                    <p className="text-xl font-bold">{last90d} new</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <p className="text-xs text-muted-foreground">Last year</p>
+                    <p className="text-xl font-bold">{last1y} new</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Top Yield Pools on Chain */}
+        {yieldPools.data && yieldPools.data.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Sprout className="h-5 w-5 text-primary" />
+              Top Yield Pools on {chain.name}
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Pool</th>
+                    <th>Project</th>
+                    <th className="text-right">APY</th>
+                    <th className="text-right">TVL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {yieldPools.data.sort((a, b) => (b.apy || 0) - (a.apy || 0)).slice(0, 5).map((pool, i) => (
+                    <tr key={i}>
+                      <td className="font-medium text-foreground">{(pool.symbol || "").slice(0, 20)}</td>
+                      <td className="text-muted-foreground">{pool.project || "—"}</td>
+                      <td className="text-right font-mono text-success">{(pool.apy || 0).toFixed(2)}%</td>
+                      <td className="text-right font-mono">{formatCurrency(pool.tvlUsd || 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Top Protocols & DEXs on Chain */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
@@ -549,15 +643,11 @@ export default function ChainDetail() {
                   <div key={p.name || idx} className="flex items-center justify-between py-2 border-b last:border-b-0">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
-                        {p.logo ? (
-                          <img src={p.logo} alt={p.name} className="h-8 w-8 rounded-full" loading="lazy" />
-                        ) : (
-                          <span>{(p.name || "?").charAt(0)}</span>
-                        )}
+                        {p.logo ? <img src={p.logo} alt={p.name} className="h-8 w-8 rounded-full" loading="lazy" /> : <span>{(p.name || "?").charAt(0)}</span>}
                       </div>
                       <div>
                         <div className="font-medium text-foreground truncate max-w-[200px]">{p.name}</div>
-                        <div className="text-xs text-muted-foreground">{p.module || "Protocol"}</div>
+                        <div className="text-xs text-muted-foreground">{p.category || "Protocol"}</div>
                       </div>
                     </div>
                     <div className="text-right font-mono text-sm text-foreground">{formatCurrency(p.chainTvl)}</div>
@@ -577,11 +667,7 @@ export default function ChainDetail() {
                   <div key={d.name || idx} className="flex items-center justify-between py-2 border-b last:border-b-0">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
-                        {d.logo ? (
-                          <img src={d.logo} alt={d.displayName || d.name} className="h-8 w-8 rounded-full" loading="lazy" />
-                        ) : (
-                          <span>{(d.displayName || d.name || "?").charAt(0)}</span>
-                        )}
+                        {d.logo ? <img src={d.logo} alt={d.displayName || d.name} className="h-8 w-8 rounded-full" loading="lazy" /> : <span>{(d.displayName || d.name || "?").charAt(0)}</span>}
                       </div>
                       <div>
                         <div className="font-medium text-foreground truncate max-w-[200px]">{d.displayName || d.name}</div>

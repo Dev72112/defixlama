@@ -415,6 +415,25 @@ export default function StablecoinDetail() {
           </div>
         </div>
 
+        {/* Chain Distribution Ranking Table */}
+        {concentrationData.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Chain Supply Ranking</h3>
+            <div className="space-y-2">
+              {concentrationData.slice(0, 10).map((d, i) => (
+                <div key={d.chain} className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-6">#{i + 1}</span>
+                  <span className="text-sm text-foreground w-24 truncate">{d.chain}</span>
+                  <div className="flex-1 h-3 bg-muted/30 rounded overflow-hidden">
+                    <div className="h-full bg-primary rounded" style={{ width: `${d.percentage}%` }} />
+                  </div>
+                  <span className="text-xs font-mono text-muted-foreground w-14 text-right">{d.percentage.toFixed(1)}%</span>
+                  <span className="text-xs font-mono text-foreground w-20 text-right">{formatCurrency(d.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Related Stablecoins */}
         {relatedStablecoins.length > 0 && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
