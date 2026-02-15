@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { ProtocolTable } from "@/components/dashboard/ProtocolTable";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useChainProtocols, useChainTVLData, useChainTVLHistory } from "@/hooks/useDefiData";
+import { useChainProtocols, useChainTVLData, useChainTVLHistory, useGlobalTVLHistory } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { Database, Layers, TrendingUp, Search, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,10 @@ export default function Protocols() {
   const { data: protocols, isLoading: protocolsLoading, isError: protocolsError, error, refetch } = useChainProtocols(chainId);
   const { data: tvl, isLoading: tvlLoading } = useChainTVLData(chainId);
   const tvlHistoryChain = chainId === "all" ? null : selectedChain.slug;
-  const { data: tvlHistory, isLoading: tvlHistoryLoading } = useChainTVLHistory(tvlHistoryChain);
+  const chainTvlHistory = useChainTVLHistory(tvlHistoryChain);
+  const globalTvlHistory = useGlobalTVLHistory();
+  const tvlHistory = chainId === "all" ? globalTvlHistory.data : chainTvlHistory.data;
+  const tvlHistoryLoading = chainId === "all" ? globalTvlHistory.isLoading : chainTvlHistory.isLoading;
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("tvl");
@@ -159,13 +162,11 @@ export default function Protocols() {
         </div>
 
         {/* Historical TVL Chart */}
-        {tvlHistoryChain && (
-          <HistoricalTVLChart 
-            data={tvlHistory || []} 
-            loading={tvlHistoryLoading} 
-            title={`${selectedChain.name} TVL History`}
-          />
-        )}
+        <HistoricalTVLChart 
+          data={tvlHistory || []} 
+          loading={tvlHistoryLoading} 
+          title={`${selectedChain.name} TVL History`}
+        />
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">

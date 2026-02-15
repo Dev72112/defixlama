@@ -4,6 +4,13 @@ import { PegTracker } from "@/components/dashboard/PegTracker";
 import { useStablecoins } from "@/hooks/useDefiData";
 import { formatCurrency, Stablecoin } from "@/lib/api/defillama";
 import { Coins, TrendingUp, Search, DollarSign, Activity, PieChart } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,28 +25,48 @@ export default function Stablecoins() {
   const { selectedChain } = useChain();
   const { data: stablecoins, isLoading, isError, error, refetch } = useStablecoins();
   const [searchQuery, setSearchQuery] = useState("");
+  const [pegFilter, setPegFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("marketcap");
+
+  // Extract peg types
+  const pegTypes = useMemo(() => {
+    if (!stablecoins) return [];
+    const types = new Set(stablecoins.map((s) => s.pegType || "USD"));
+    return Array.from(types).sort();
+  }, [stablecoins]);
 
   // Filter stablecoins by selected chain
   const filteredStablecoins = useMemo(() => {
     if (!stablecoins) return [];
     
-    return stablecoins
-      .filter((s) => {
-        const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.symbol.toLowerCase().includes(searchQuery.toLowerCase());
-        if (selectedChain.id === "all") {
-          // Show top stablecoins globally
-          return matchesSearch;
-        }
-        // Filter by chain
-        const chainSlug = selectedChain.slug.toLowerCase();
-        const isRelevant = s.chains?.some(
-          (c) => c.toLowerCase() === chainSlug || c.toLowerCase().replace(/[\s-]/g, "") === chainSlug.replace(/[\s-]/g, "")
-        ) || ["USDT", "USDC", "DAI", "FRAX", "LUSD", "TUSD"].includes(s.symbol);
-        return matchesSearch && isRelevant;
-      })
-      .slice(0, 50);
-  }, [stablecoins, searchQuery, selectedChain]);
+    let filtered = stablecoins.filter((s) => {
+      const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesPeg = pegFilter === "all" || (s.pegType || "USD") === pegFilter;
+      if (selectedChain.id === "all") {
+        return matchesSearch && matchesPeg;
+      }
+      const chainSlug = selectedChain.slug.toLowerCase();
+      const isRelevant = s.chains?.some(
+        (c) => c.toLowerCase() === chainSlug || c.toLowerCase().replace(/[\s-]/g, "") === chainSlug.replace(/[\s-]/g, "")
+      ) || ["USDT", "USDC", "DAI", "FRAX", "LUSD", "TUSD"].includes(s.symbol);
+      return matchesSearch && matchesPeg && isRelevant;
+    });
+    
+    // Sort
+    filtered.sort((a, b) => {
+      const aCirc = a.circulating ? Object.values(a.circulating).reduce((x, y) => x + y, 0) : 0;
+      const bCirc = b.circulating ? Object.values(b.circulating).reduce((x, y) => x + y, 0) : 0;
+      switch (sortBy) {
+        case "marketcap": return bCirc - aCirc;
+        case "name": return a.name.localeCompare(b.name);
+        case "peg": return Math.abs(1 - (a.price || 1)) - Math.abs(1 - (b.price || 1));
+        default: return 0;
+      }
+    });
+    
+    return filtered.slice(0, 50);
+  }, [stablecoins, searchQuery, selectedChain, pegFilter, sortBy]);
 
   // Calculate metrics
   const totalMarketCap = filteredStablecoins.reduce((acc, s) => {
@@ -160,15 +187,38 @@ export default function Stablecoins() {
           <PegTracker stablecoins={filteredStablecoins} loading={isLoading} />
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t('stablecoins.searchStablecoins')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search + Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t('stablecoins.searchStablecoins')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={pegFilter} onValueChange={setPegFilter}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Peg Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Pegs</SelectItem>
+              {pegTypes.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="marketcap">Market Cap</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="peg">Peg Stability</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Stablecoins Grid */}

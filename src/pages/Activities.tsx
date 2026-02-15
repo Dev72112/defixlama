@@ -56,31 +56,33 @@ export default function Activities() {
       });
     }
 
-    // fees - use current time minus index offset for relative ordering
+      // fees - deterministic timestamps based on name hash
     for (let i = 0; i < Math.min(fees.length, 50); i++) {
       const f = fees[i];
       if (!f) continue;
+      const nameStr = f.displayName || f.name || String(i);
+      const hash = nameStr.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
       out.push({
         id: `fee-${f.name || f.displayName || i}`,
         type: "fee",
         title: f.displayName || f.name,
         subtitle: `24h ${formatCurrency(f.total24h || f.total_24h || 0)}`,
-        // Stagger by index so items appear in volume order with recent timestamps
-        timestamp: now - (i * 120),
+        timestamp: now - (hash % 7200) - (i * 60),
         meta: f,
       });
     }
 
-    // chains - also staggered timestamps
+    // chains - deterministic timestamps based on name hash
     for (let i = 0; i < Math.min(chains.length, 30); i++) {
       const c = chains[i];
       if (!c) continue;
+      const hash = (c.name || '').split('').reduce((acc: number, ch: string) => acc + ch.charCodeAt(0), 0);
       out.push({
         id: `chain-${c.name || i}`,
         type: "chain",
         title: c.name,
         subtitle: `${formatCurrency(c.tvl || 0)} TVL`,
-        timestamp: now - (i * 180),
+        timestamp: now - (hash % 10800) - (i * 90),
         meta: c,
       });
     }

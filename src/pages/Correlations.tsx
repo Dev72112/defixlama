@@ -1,20 +1,26 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
-import { useChainProtocols } from "@/hooks/useDefiData";
+import { useChainProtocols, useChainTVLHistory, useGlobalTVLHistory } from "@/hooks/useDefiData";
 import { formatCurrency, formatPercentage, getChangeColor } from "@/lib/api/defillama";
 import { ChartEmptyState } from "@/components/ChartEmptyState";
 import { CHART_TOOLTIP_STYLE, CHART_COLORS, AXIS_TICK_STYLE } from "@/lib/chartStyles";
-import { Activity, GitCompare, AlertTriangle, TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { DateRangeSelector, DateRange, filterByDateRange } from "@/components/dashboard/DateRangeSelector";
+import { Activity, GitCompare, AlertTriangle, TrendingUp, TrendingDown, BarChart3, History } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function Correlations() {
   const { selectedChain } = useChain();
-  const protocols = useChainProtocols(selectedChain.id);
+  const chainId = selectedChain.id;
+  const protocols = useChainProtocols(chainId);
+  const chainTvlHistory = useChainTVLHistory(chainId === "all" ? null : selectedChain.slug);
+  const globalTvlHistory = useGlobalTVLHistory();
+  const tvlHistory = chainId === "all" ? globalTvlHistory.data : chainTvlHistory.data;
   const protocolList = protocols.data ?? [];
   const isLoading = protocols.isLoading;
+  const [historyRange, setHistoryRange] = useState<DateRange>("30d");
 
   // Top 15 protocols for correlation matrix
   const top15 = useMemo(() => {
@@ -266,6 +272,45 @@ export default function Correlations() {
               </ResponsiveContainer>
             )}
           </div>
+        </div>
+
+        {/* Historical TVL Trend for Correlation Context */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" />
+              <h3 className="text-base font-semibold text-foreground">Historical TVL Context</h3>
+            </div>
+            <DateRangeSelector value={historyRange} onChange={setHistoryRange} />
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">TVL history helps contextualize current correlation patterns</p>
+          {!tvlHistory || tvlHistory.length === 0 ? (
+            <ChartEmptyState message="No historical data available" />
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={filterByDateRange(tvlHistory, historyRange)} margin={{ left: 0, right: 16, top: 8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="corrTvlGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(180, 80%, 45%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(180, 80%, 45%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(v) => new Date(v * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  tick={AXIS_TICK_STYLE}
+                  minTickGap={40}
+                />
+                <YAxis tickFormatter={(v) => formatCurrency(v, 0)} tick={AXIS_TICK_STYLE} />
+                <Tooltip
+                  labelFormatter={(v) => new Date(Number(v) * 1000).toLocaleDateString()}
+                  formatter={(v: number) => [formatCurrency(v), "TVL"]}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                />
+                <Area type="monotone" dataKey="tvl" stroke="hsl(180, 80%, 45%)" fill="url(#corrTvlGrad)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </Layout>

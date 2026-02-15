@@ -72,69 +72,56 @@ export function useTokenPrices() {
       // Map to our format
       const mapped = prices.map(mapTokenData);
       
-      // Add community tokens - now fetch from CoinGecko since they're listed!
-      const communityTokens = await Promise.all(
-        XLAYER_COMMUNITY_TOKENS.map(async (t) => {
-          let price = 0;
-          let change24h = 0;
-          let volume24h = 0;
-          let mcap = 0;
-          
-          // Try CoinGecko via edge function (primary source - they're listed!)
-          if (t.coingeckoId) {
-            try {
-              const cgData = await fetchTokenDetails(t.coingeckoId);
-              if (cgData?.market_data) {
-                price = cgData.market_data.current_price?.usd || 0;
-                change24h = cgData.market_data.price_change_percentage_24h || 0;
-                volume24h = cgData.market_data.total_volume?.usd || 0;
-                mcap = cgData.market_data.market_cap?.usd || 0;
-              }
-            } catch (e) {
-              console.log(`CoinGecko failed for ${t.symbol}, trying fallbacks`);
+      // Add community tokens - fetch sequentially to avoid rate limiting
+      const communityTokens: any[] = [];
+      for (const t of XLAYER_COMMUNITY_TOKENS) {
+        let price = 0;
+        let change24h = 0;
+        let volume24h = 0;
+        let mcap = 0;
+        
+        // Try CoinGecko via edge function (primary source - they're listed!)
+        if (t.coingeckoId) {
+          try {
+            const cgData = await fetchTokenDetails(t.coingeckoId);
+            if (cgData?.market_data) {
+              price = cgData.market_data.current_price?.usd || 0;
+              change24h = cgData.market_data.price_change_percentage_24h || 0;
+              volume24h = cgData.market_data.total_volume?.usd || 0;
+              mcap = cgData.market_data.market_cap?.usd || 0;
             }
+          } catch (e) {
+            // Skip on 503/rate-limit
           }
-          
-          // Fallback: Try OKLink
-          if (price === 0) {
-            try {
-              const oklinkPrice = await oklink.fetchOklinkLivePrice(t.contract);
-              if (oklinkPrice && oklinkPrice.price > 0) {
-                price = oklinkPrice.price;
-                change24h = oklinkPrice.change24h;
-                volume24h = oklinkPrice.volume24h;
-              }
-            } catch (e) {}
-          }
-          
-          // Fallback: Try DexScreener
-          if (price === 0) {
-            try {
-              const dexPrices = await fetchDexScreenerPrices([t.contract]);
-              const dexData = dexPrices[t.contract.toLowerCase()];
-              if (dexData) {
-                price = dexData.price || 0;
-                change24h = dexData.change24h || 0;
-                volume24h = dexData.volume24h || 0;
-              }
-            } catch (e) {}
-          }
-          
-          return {
-            id: t.coingeckoId || t.contract,
-            symbol: t.symbol,
-            name: t.name,
-            price,
-            change24h,
-            volume24h,
-            mcap,
-            logo: t.logo,
-            sparkline: [] as number[],
-            contract: t.contract,
-            isCommunityToken: true,
-          };
-        })
-      );
+        }
+        
+        // Fallback: Try DexScreener (skip OKLink to reduce calls)
+        if (price === 0 && t.contract && t.contract !== "0x") {
+          try {
+            const dexPrices = await fetchDexScreenerPrices([t.contract]);
+            const dexData = dexPrices[t.contract.toLowerCase()];
+            if (dexData) {
+              price = dexData.price || 0;
+              change24h = dexData.change24h || 0;
+              volume24h = dexData.volume24h || 0;
+            }
+          } catch (e) {}
+        }
+        
+        communityTokens.push({
+          id: t.coingeckoId || t.contract,
+          symbol: t.symbol,
+          name: t.name,
+          price,
+          change24h,
+          volume24h,
+          mcap,
+          logo: t.logo,
+          sparkline: [] as number[],
+          contract: t.contract,
+          isCommunityToken: true,
+        });
+      }
 
       // Fetch admin-added token listings from database
       let dbListings: any[] = [];
@@ -221,8 +208,8 @@ export function useTokenPrices() {
 
       return allTokens;
     },
-    staleTime: 5 * 1000,
-    refetchInterval: 5 * 1000,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });

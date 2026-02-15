@@ -39,8 +39,35 @@ export interface TokenMarketData {
   total_volumes: [number, number][];
 }
 
-// Token IDs for major tokens on XLayer - bidirectional mapping
+// Token IDs - expanded to cover top market tokens for "All Chains" view
 export const TOKEN_IDS: Record<string, string> = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  SOL: "solana",
+  BNB: "binancecoin",
+  XRP: "ripple",
+  ADA: "cardano",
+  AVAX: "avalanche-2",
+  DOT: "polkadot",
+  MATIC: "matic-network",
+  ATOM: "cosmos",
+  UNI: "uniswap",
+  AAVE: "aave",
+  CRV: "curve-dao-token",
+  MKR: "maker",
+  SNX: "havven",
+  COMP: "compound-governance-token",
+  LDO: "lido-dao",
+  RPL: "rocket-pool",
+  GMX: "gmx",
+  ARB: "arbitrum",
+  OP: "optimism",
+  SUI: "sui",
+  APT: "aptos",
+  SEI: "sei-network",
+  INJ: "injective-protocol",
+  NEAR: "near",
+  FTM: "fantom",
   OKB: "okb",
   WETH: "weth",
   WBTC: "wrapped-bitcoin",
@@ -48,18 +75,16 @@ export const TOKEN_IDS: Record<string, string> = {
   USDC: "usd-coin",
   DAI: "dai",
   LINK: "chainlink",
+  DOGE: "dogecoin",
+  SHIB: "shiba-inu",
+  TIA: "celestia",
+  PEPE: "pepe",
 };
 
 // Reverse mapping: CoinGecko ID -> Symbol
-export const TOKEN_IDS_REVERSE: Record<string, string> = {
-  okb: "OKB",
-  weth: "WETH",
-  "wrapped-bitcoin": "WBTC",
-  tether: "USDT",
-  "usd-coin": "USDC",
-  dai: "DAI",
-  chainlink: "LINK",
-};
+export const TOKEN_IDS_REVERSE: Record<string, string> = Object.fromEntries(
+  Object.entries(TOKEN_IDS).map(([symbol, id]) => [id, symbol])
+);
 
 // Get CoinGecko ID from any identifier (symbol, id, or contract)
 export function resolveToCoinGeckoId(identifier: string): string | null {
@@ -141,6 +166,20 @@ export function findCommunityToken(identifier: string) {
 
 // Token logo mappings for reliable logos
 const TOKEN_LOGOS: Record<string, string> = {
+  bitcoin: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+  ethereum: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+  solana: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
+  binancecoin: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png",
+  ripple: "https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png",
+  cardano: "https://assets.coingecko.com/coins/images/975/large/cardano.png",
+  "avalanche-2": "https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png",
+  polkadot: "https://assets.coingecko.com/coins/images/12171/large/polkadot.png",
+  "matic-network": "https://assets.coingecko.com/coins/images/4713/large/polygon.png",
+  cosmos: "https://assets.coingecko.com/coins/images/1481/large/cosmos_hub.png",
+  uniswap: "https://assets.coingecko.com/coins/images/12504/large/uniswap.png",
+  aave: "https://assets.coingecko.com/coins/images/12645/large/AAVE.png",
+  "curve-dao-token": "https://assets.coingecko.com/coins/images/12124/large/Curve.png",
+  maker: "https://assets.coingecko.com/coins/images/1364/large/Mark_Maker.png",
   okb: "https://assets.coingecko.com/coins/images/4463/large/okb_token.png",
   weth: "https://assets.coingecko.com/coins/images/2518/large/weth.png",
   "wrapped-bitcoin": "https://assets.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png",
@@ -148,17 +187,32 @@ const TOKEN_LOGOS: Record<string, string> = {
   "usd-coin": "https://assets.coingecko.com/coins/images/6319/large/usdc.png",
   dai: "https://assets.coingecko.com/coins/images/9956/large/Badge_Dai.png",
   chainlink: "https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png",
+  dogecoin: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png",
+  "shiba-inu": "https://assets.coingecko.com/coins/images/11939/large/shiba.png",
+  arbitrum: "https://assets.coingecko.com/coins/images/16547/large/photo_2023-03-29_21.47.00.jpeg",
+  optimism: "https://assets.coingecko.com/coins/images/25244/large/Optimism.png",
+  gmx: "https://assets.coingecko.com/coins/images/18323/large/arbit.png",
+  sui: "https://assets.coingecko.com/coins/images/26375/large/sui_asset.jpeg",
+  aptos: "https://assets.coingecko.com/coins/images/26455/large/aptos_round.png",
+  near: "https://assets.coingecko.com/coins/images/10365/large/near.jpg",
+  fantom: "https://assets.coingecko.com/coins/images/4001/large/Fantom_round.png",
 };
 
-// Token names for proper display
+// Token names - auto-generate from symbol for expanded set
 const TOKEN_NAMES: Record<string, string> = {
-  okb: "OKB",
-  weth: "Wrapped Ether",
-  "wrapped-bitcoin": "Wrapped Bitcoin",
-  tether: "Tether",
-  "usd-coin": "USD Coin",
-  dai: "Dai",
-  chainlink: "Chainlink",
+  bitcoin: "Bitcoin", ethereum: "Ethereum", solana: "Solana",
+  binancecoin: "BNB", ripple: "XRP", cardano: "Cardano",
+  "avalanche-2": "Avalanche", polkadot: "Polkadot", "matic-network": "Polygon",
+  cosmos: "Cosmos", uniswap: "Uniswap", aave: "Aave",
+  "curve-dao-token": "Curve DAO", maker: "Maker", havven: "Synthetix",
+  "compound-governance-token": "Compound", "lido-dao": "Lido DAO",
+  "rocket-pool": "Rocket Pool", gmx: "GMX", arbitrum: "Arbitrum",
+  optimism: "Optimism", sui: "Sui", aptos: "Aptos",
+  "sei-network": "Sei", "injective-protocol": "Injective", near: "NEAR",
+  fantom: "Fantom", okb: "OKB", weth: "Wrapped Ether",
+  "wrapped-bitcoin": "Wrapped Bitcoin", tether: "Tether", "usd-coin": "USD Coin",
+  dai: "Dai", chainlink: "Chainlink", dogecoin: "Dogecoin",
+  "shiba-inu": "Shiba Inu", celestia: "Celestia", pepe: "Pepe",
 };
 
 // Fetch token prices from DefiLlama as PRIMARY source

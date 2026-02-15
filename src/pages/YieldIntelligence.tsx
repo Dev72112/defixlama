@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
-import { useChainYieldPools } from "@/hooks/useDefiData";
+import { useChainYieldPools, useChainTVLHistory, useGlobalTVLHistory } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ChartEmptyState } from "@/components/ChartEmptyState";
 import { CHART_TOOLTIP_STYLE, CHART_COLORS, AXIS_TICK_STYLE, AXIS_TICK_LIGHT } from "@/lib/chartStyles";
-import { TrendingUp, Layers, Zap, BarChart3, Calculator, PieChart as PieIcon, Shield } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
+import { DateRangeSelector, DateRange, filterByDateRange } from "@/components/dashboard/DateRangeSelector";
+import { TrendingUp, Layers, Zap, BarChart3, Calculator, PieChart as PieIcon, Shield, History } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area, LineChart, Line } from "recharts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -14,10 +15,15 @@ import { cn } from "@/lib/utils";
 export default function YieldIntelligence() {
   const { selectedChain } = useChain();
   const pools = useChainYieldPools(selectedChain.id);
+  const chainId = selectedChain.id;
+  const chainTvlHistory = useChainTVLHistory(chainId === "all" ? null : selectedChain.slug);
+  const globalTvlHistory = useGlobalTVLHistory();
+  const tvlHistory = chainId === "all" ? globalTvlHistory.data : chainTvlHistory.data;
   const poolList = pools.data ?? [];
   const isLoading = pools.isLoading;
 
   const [ilPriceChange, setIlPriceChange] = useState(50);
+  const [historyRange, setHistoryRange] = useState<DateRange>("30d");
 
   // KPIs
   const kpis = useMemo(() => {
@@ -239,6 +245,45 @@ export default function YieldIntelligence() {
                   {yieldConcentration.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Bar>
               </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Historical TVL Trend */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" />
+              <h3 className="text-base font-semibold text-foreground">Historical TVL Trend</h3>
+            </div>
+            <DateRangeSelector value={historyRange} onChange={setHistoryRange} />
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Ecosystem TVL history — context for yield sustainability</p>
+          {!tvlHistory || tvlHistory.length === 0 ? (
+            <ChartEmptyState message="No historical data available" />
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={filterByDateRange(tvlHistory, historyRange)} margin={{ left: 0, right: 16, top: 8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="yieldTvlGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142, 76%, 46%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(142, 76%, 46%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(v) => new Date(v * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  tick={AXIS_TICK_STYLE}
+                  minTickGap={40}
+                />
+                <YAxis tickFormatter={(v) => formatCurrency(v, 0)} tick={AXIS_TICK_STYLE} />
+                <Tooltip
+                  labelFormatter={(v) => new Date(Number(v) * 1000).toLocaleDateString()}
+                  formatter={(v: number) => [formatCurrency(v), "TVL"]}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                />
+                <Area type="monotone" dataKey="tvl" stroke="hsl(142, 76%, 46%)" fill="url(#yieldTvlGrad)" strokeWidth={2} />
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </div>

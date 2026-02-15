@@ -2,6 +2,13 @@ import { Layout } from "@/components/layout/Layout";
 import { useChainProtocols } from "@/hooks/useDefiData";
 import { useChain } from "@/contexts/ChainContext";
 import { Shield, CheckCircle, AlertTriangle, ExternalLink, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -20,14 +27,29 @@ export default function Security() {
   const { data: protocols, isLoading } = useChainProtocols(selectedChain.id);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [auditFilter, setAuditFilter] = useState<"all" | "audited" | "unaudited">("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  // Extract categories
+  const categories = useMemo(() => {
+    if (!protocols) return [];
+    const cats = new Set(protocols.map((p) => p.category || "Other"));
+    return Array.from(cats).sort();
+  }, [protocols]);
 
   // Filter protocols
   const filteredProtocols = useMemo(() => {
     if (!protocols) return [];
-    return protocols.filter((p) => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [protocols, searchQuery]);
+    return protocols.filter((p) => {
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const isAudited = p.audits && p.audits !== "0";
+      const matchesAudit = auditFilter === "all" || 
+        (auditFilter === "audited" && isAudited) || 
+        (auditFilter === "unaudited" && !isAudited);
+      const matchesCategory = categoryFilter === "all" || (p.category || "Other") === categoryFilter;
+      return matchesSearch && matchesAudit && matchesCategory;
+    });
+  }, [protocols, searchQuery, auditFilter, categoryFilter]);
 
   // Paginate
   const totalPages = Math.max(1, Math.ceil(filteredProtocols.length / PAGE_SIZE));
@@ -118,8 +140,8 @@ export default function Security() {
           </div>
         </div>
 
-        {/* Search + Count */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="relative max-w-md flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -129,7 +151,28 @@ export default function Security() {
               className="pl-10"
             />
           </div>
-          <span className="text-sm text-muted-foreground">
+          <Select value={auditFilter} onValueChange={(v) => setAuditFilter(v as any)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Audit Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="audited">Audited</SelectItem>
+              <SelectItem value="unaudited">Unaudited</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground ml-auto">
             {t('common.showing')} {paginatedProtocols.length} {t('common.of')} {filteredProtocols.length} {t('common.results')}
           </span>
         </div>
