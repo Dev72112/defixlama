@@ -1,12 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols, useChainDexVolumes, useChainFees, useChainsTVL, useChainTVLData } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
-import { Landmark, Activity, BarChart3, Layers, Gauge, TrendingUp, Clock } from "lucide-react";
+import { Landmark, Activity, BarChart3, Layers, Gauge, TrendingUp, Clock, Search } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { CategoryTreemap } from "@/components/dashboard/CategoryTreemap";
 import { ProtocolLifecycle } from "@/components/dashboard/ProtocolLifecycle";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const COLORS = [
@@ -26,6 +27,7 @@ export default function MarketStructure() {
   const protocolList = protocols.data ?? [];
   const dexList = dexVolumes.data ?? [];
   const feeList = fees.data ?? [];
+  const [feeSearch, setFeeSearch] = useState("");
 
   // DEX volume concentration
   const dexConcentration = useMemo(() => {
@@ -90,25 +92,33 @@ export default function MarketStructure() {
   }, [dexList]);
   const fragmentation = 1 - gini; // Higher = more fragmented/spread
 
-  // Fee-to-TVL efficiency
+  // Fee-to-TVL efficiency with search
   const feeEfficiency = useMemo(() => {
     const protocolMap = new Map(protocolList.map((p) => [p.name.toLowerCase(), p.tvl || 0]));
-    return feeList
+    let results = feeList
       .filter((f: any) => (f.total24h || f.total_24h || 0) > 0)
       .map((f: any) => {
         const feeVal = f.total24h || f.total_24h || 0;
         const matchedTvl = protocolMap.get((f.name || "").toLowerCase()) || 0;
+        const fullName = (f.displayName || f.name) as string;
         return {
-          name: ((f.displayName || f.name) as string).length > 14 ? (f.displayName || f.name).slice(0, 12) + "…" : (f.displayName || f.name),
+          name: fullName.length > 14 ? fullName.slice(0, 12) + "…" : fullName,
+          fullName,
           fees: feeVal,
           tvl: matchedTvl,
           ratio: matchedTvl > 0 ? (feeVal / matchedTvl) * 10000 : 0, // bps
         };
       })
-      .filter((f) => f.ratio > 0)
+      .filter((f) => f.ratio > 0);
+    
+    if (feeSearch) {
+      results = results.filter((f) => f.fullName.toLowerCase().includes(feeSearch.toLowerCase()));
+    }
+    
+    return results
       .sort((a, b) => b.ratio - a.ratio)
       .slice(0, 10);
-  }, [feeList, protocolList]);
+  }, [feeList, protocolList, feeSearch]);
 
   // Fee distribution
   const feeDistribution = useMemo(() => {
@@ -226,7 +236,18 @@ export default function MarketStructure() {
 
         {/* Fee-to-TVL Efficiency */}
         <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="text-base font-semibold text-foreground mb-1">Fee-to-TVL Efficiency (bps)</h3>
+          <div className="flex flex-wrap items-center gap-3 mb-1">
+            <h3 className="text-base font-semibold text-foreground">Fee-to-TVL Efficiency (bps)</h3>
+            <div className="relative ml-auto max-w-[200px]">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                value={feeSearch}
+                onChange={(e) => setFeeSearch(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+          </div>
           <p className="text-xs text-muted-foreground mb-3">Most capital-efficient protocols — higher = more fees per $ locked</p>
           {fees.isLoading ? (
             <div className="skeleton h-[220px] w-full rounded-lg" />

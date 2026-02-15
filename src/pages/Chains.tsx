@@ -35,14 +35,24 @@ export default function Chains() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
+  const [sortBy, setSortBy] = useState("tvl");
+  
   // Filter and sort chains
   const filteredChains = useMemo(() => {
     if (!chains) return [];
 
-    return chains
-      .filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      .sort((a, b) => (b.tvl || 0) - (a.tvl || 0));
-  }, [chains, searchQuery]);
+    let filtered = chains.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "tvl": return (b.tvl || 0) - (a.tvl || 0);
+        case "name": return a.name.localeCompare(b.name);
+        default: return (b.tvl || 0) - (a.tvl || 0);
+      }
+    });
+    
+    return filtered;
+  }, [chains, searchQuery, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredChains.length / pageSize));
   if (page > totalPages) setPage(1);
@@ -138,15 +148,26 @@ export default function Chains() {
           <TVLDistributionChart chains={filteredChains} loading={isLoading} />
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t('chains.searchChains')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search + Sort */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t('chains.searchChains')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tvl">Sort by TVL</SelectItem>
+              <SelectItem value="name">Sort by Name</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Chains Table */}

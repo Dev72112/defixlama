@@ -44,19 +44,41 @@ function FeesContent() {
   const { selectedChain } = useChain();
   const { data: fees, isLoading } = useChainFees(selectedChain.id);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("fees24h");
   const navigate = useNavigate();
 
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(200);
 
-  // Filter and sort fee entries (no hard slice here)
+  // Extract unique categories
+  const categories = useMemo(() => {
+    if (!fees) return [];
+    const cats = new Set(fees.map((f: any) => f.category || "Other").filter(Boolean));
+    return Array.from(cats).sort();
+  }, [fees]);
+
+  // Filter and sort fee entries
   const filteredFees = useMemo(() => {
     if (!fees) return [];
-    return fees
-      .filter((f) => (f.displayName || f.name || "").toLowerCase().includes(searchQuery.toLowerCase()))
-      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0));
-  }, [fees, searchQuery]);
+    let filtered = fees.filter((f) => {
+      const matchesSearch = (f.displayName || f.name || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || (f as any).category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+    
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "fees24h": return (b.total24h || 0) - (a.total24h || 0);
+        case "fees7d": return (b.total7d || 0) - (a.total7d || 0);
+        case "change": return Math.abs(b.change_1d || 0) - Math.abs(a.change_1d || 0);
+        case "name": return (a.displayName || a.name || "").localeCompare(b.displayName || b.name || "");
+        default: return 0;
+      }
+    });
+    return filtered;
+  }, [fees, searchQuery, categoryFilter, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredFees.length / pageSize));
   if (page > totalPages) setPage(1);
@@ -133,15 +155,39 @@ function FeesContent() {
         {/* Historical Fees Chart */}
         <HistoricalFeesChart data={filteredFees} loading={isLoading} title={t('fees.feeRevenueByProtocol')} />
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t('fees.searchProtocols')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t('fees.searchProtocols')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fees24h">24h Fees</SelectItem>
+              <SelectItem value="fees7d">7d Fees</SelectItem>
+              <SelectItem value="change">Change</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Fees Table */}

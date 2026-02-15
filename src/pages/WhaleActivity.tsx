@@ -8,8 +8,9 @@ import { CapitalConcentrationChart } from "@/components/dashboard/CapitalConcent
 import { AccumulationHeatmap } from "@/components/dashboard/AccumulationHeatmap";
 import { CrossChainFlowMatrix } from "@/components/dashboard/CrossChainFlowMatrix";
 import { CategoryTreemap } from "@/components/dashboard/CategoryTreemap";
-import { Waves, TrendingUp, TrendingDown, BarChart3, AlertTriangle, Gauge, Zap, Filter } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { Waves, TrendingUp, TrendingDown, BarChart3, AlertTriangle, Gauge, Zap, Filter, Search } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from "recharts";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const CHART_COLORS = [
@@ -39,6 +40,8 @@ export default function WhaleActivity() {
   const chainsTVL = useChainsTVL();
   const dexVolumes = useChainDexVolumes(selectedChain.id);
   const [severityFilter, setSeverityFilter] = useState<Severity>("all");
+  const [whaleSearch, setWhaleSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   const protocolList = protocols.data ?? [];
 
@@ -96,7 +99,17 @@ export default function WhaleActivity() {
       }));
   }, [protocolList]);
 
-  const filteredAlerts = severityFilter === "all" ? whaleAlerts : whaleAlerts.filter((a) => a.severity === severityFilter);
+  const filteredAlerts = useMemo(() => {
+    let alerts = severityFilter === "all" ? whaleAlerts : whaleAlerts.filter((a) => a.severity === severityFilter);
+    if (whaleSearch) alerts = alerts.filter((a) => a.name.toLowerCase().includes(whaleSearch.toLowerCase()));
+    if (categoryFilter !== "all") alerts = alerts.filter((a) => (a.category || "Other") === categoryFilter);
+    return alerts;
+  }, [whaleAlerts, severityFilter, whaleSearch, categoryFilter]);
+
+  const whaleCategories = useMemo(() => {
+    const cats = new Set(protocolList.map((p) => p.category || "Other"));
+    return Array.from(cats).sort();
+  }, [protocolList]);
 
   // Summary stats
   const stats = useMemo(() => {
@@ -212,6 +225,26 @@ export default function WhaleActivity() {
                 </button>
               ))}
             </div>
+          </div>
+          {/* Search + Category filter */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search protocols..."
+                value={whaleSearch}
+                onChange={(e) => setWhaleSearch(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="h-8 text-xs rounded-md border border-border bg-card px-2 text-foreground"
+            >
+              <option value="all">All Categories</option>
+              {whaleCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
           {isLoading ? (
             <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-14 w-full" />)}</div>
