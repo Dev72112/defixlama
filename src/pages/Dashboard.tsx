@@ -244,7 +244,7 @@ function DashboardContent() {
       </div>
 
       {/* New Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <NetworkStatsCard 
           loading={protocols?.isLoading} 
           protocols={protocols?.data ?? []} 
@@ -261,7 +261,7 @@ function DashboardContent() {
       </ErrorBoundary>
 
       {/* Historical Charts with Date Range */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
         <HistoricalTVLChart 
           data={tvlHistory?.data ?? []} 
           loading={tvlHistory?.isLoading ?? true} 
@@ -276,7 +276,7 @@ function DashboardContent() {
       </div>
 
       {/* Market Intelligence Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MarketSentiment 
           protocols={protocols?.data ?? []} 
           tokens={tokens ?? []}
@@ -308,14 +308,14 @@ function DashboardContent() {
       </div>
 
       {/* Quick Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         <StatCard title={t("dashboard.marketCap")} value={formatCurrency(marketCap)} icon={Database} loading={protocols?.isLoading ?? true} />
         <StatCard title={t("dashboard.newProtocols")} value={String(newProtocolsCount)} icon={Layers} loading={protocols?.isLoading ?? true} />
         <StatCard title={t("dashboard.topCategories")} value={categoryCount.length.toString()} icon={TrendingUp} loading={protocols?.isLoading ?? true} />
       </div>
 
       {/* Insights: Categories + Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
           <h3 className="text-lg font-semibold text-foreground mb-3">{t("dashboard.protocolCategories")}</h3>
           <div className="flex flex-col gap-2">
@@ -395,7 +395,7 @@ function DashboardContent() {
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Top Protocols</h2>
@@ -461,7 +461,7 @@ function DashboardContent() {
       )}
       
       {/* Top Chains & Fees */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Top Chains by TVL</h2>
