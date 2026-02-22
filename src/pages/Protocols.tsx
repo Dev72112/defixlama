@@ -118,23 +118,23 @@ export default function Protocols() {
     <Layout>
       <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+        <div className="flex flex-col gap-2 sm:gap-4">
+          <div className="flex flex-col gap-2 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
               {selectedChain.name} {t("protocols.title")}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {t("protocols.subtitle")}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Activity className="h-4 w-4 text-primary animate-pulse" />
-            {protocolCount} {t("protocols.tracked")}
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-shrink-0">
+            <Activity className="h-4 w-4 text-primary animate-pulse flex-shrink-0" />
+            <span>{protocolCount} {t("protocols.tracked")}</span>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title={t("protocols.totalTvl")}
             value={formatCurrency(totalTVL)}
@@ -169,52 +169,62 @@ export default function Protocols() {
         />
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t("protocols.searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t("common.category")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("protocols.allCategories")}</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tvl">{t("protocols.sortByTvl")}</SelectItem>
-              <SelectItem value="change_1d">{t("protocols.sortByChange1d")}</SelectItem>
-              <SelectItem value="change_7d">{t("protocols.sortByChange7d")}</SelectItem>
-              <SelectItem value="name">{t("protocols.sortByName")}</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="ml-auto flex items-center gap-2">
-            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Page size" />
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground flex-shrink-0" />
+              <Input
+                placeholder={t("protocols.searchPlaceholder")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 text-xs sm:text-sm"
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-40 lg:w-[180px] text-xs sm:text-sm">
+                <SelectValue placeholder={t("common.category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="all">{t("protocols.allCategories")}</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={exportCSV}>{t("protocols.exportCsv")}</Button>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-40 lg:w-[180px] text-xs sm:text-sm">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tvl">{t("protocols.sortByTvl")}</SelectItem>
+                <SelectItem value="change_1d">{t("protocols.sortByChange1d")}</SelectItem>
+                <SelectItem value="change_7d">{t("protocols.sortByChange7d")}</SelectItem>
+                <SelectItem value="name">{t("protocols.sortByName")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+              <SelectTrigger className="w-full sm:w-32 lg:w-40 text-xs sm:text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 {t("common.perPage")}</SelectItem>
+                <SelectItem value="20">20 {t("common.perPage")}</SelectItem>
+                <SelectItem value="50">50 {t("common.perPage")}</SelectItem>
+                <SelectItem value="100">100 {t("common.perPage")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={exportCSV}
+              className="w-full sm:w-auto text-xs sm:text-sm"
+            >
+              {t("common.export", "Export CSV")}
+            </Button>
           </div>
         </div>
 
@@ -233,12 +243,12 @@ export default function Protocols() {
         )}
 
         {/* Pagination controls */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">{t("protocols.showing")} {pagedProtocols.length} {t("protocols.of")} {filteredProtocols.length} {t("protocols.results")}</div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>{t("protocols.prev")}</Button>
-            <div className="text-sm text-muted-foreground">{t("protocols.page")} {page} / {totalPages}</div>
-            <Button variant="ghost" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>{t("protocols.next")}</Button>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center sm:justify-between">
+          <div className="text-xs sm:text-sm text-muted-foreground">{t("protocols.showing")} {pagedProtocols.length} {t("protocols.of")} {filteredProtocols.length} {t("protocols.results")}</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="ghost" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="text-xs sm:text-sm">{t("protocols.prev")}</Button>
+            <div className="text-xs sm:text-sm text-muted-foreground">{t("protocols.page")} {page} / {totalPages}</div>
+            <Button variant="ghost" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="text-xs sm:text-sm">{t("protocols.next")}</Button>
           </div>
         </div>
 

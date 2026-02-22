@@ -59,7 +59,7 @@ export function XLayerSpotlight() {
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-3">
-              <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
                   { label: "TVL", value: formatCurrency(totalTVL), icon: Layers, loading: tvl?.isLoading },
                   { label: "24h Volume", value: formatCurrency(totalDexVolume), icon: ArrowLeftRight, loading: dexVolumes?.isLoading },

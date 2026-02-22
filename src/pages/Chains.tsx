@@ -76,21 +76,21 @@ export default function Chains() {
     <Layout>
       <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t('chains.title')}</h1>
-            <p className="text-muted-foreground mt-1">
+        <div className="flex flex-col gap-2 sm:gap-4">
+          <div className="flex flex-col gap-2 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{t('chains.title')}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {t('chains.subtitle')}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Activity className="h-4 w-4 text-primary animate-pulse" />
-            {chainCount} {t('chains.chainsTracked')}
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-shrink-0">
+            <Activity className="h-4 w-4 text-primary animate-pulse flex-shrink-0" />
+            <span>{chainCount} {t('chains.chainsTracked')}</span>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title={t('chains.totalDefiTvl')}
             value={formatCurrency(totalTVL)}

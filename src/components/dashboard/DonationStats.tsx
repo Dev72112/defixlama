@@ -38,7 +38,7 @@ export function DonationStats({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         <div className="text-center p-3 rounded-lg bg-muted/30">
           <Users className="h-5 w-5 text-primary mx-auto mb-1" />
           <p className="text-lg font-bold text-foreground">{donorCount}</p>

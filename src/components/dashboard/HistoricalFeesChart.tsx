@@ -155,7 +155,7 @@ export function HistoricalFeesChart({
           </ResponsiveContainer>
 
           {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mt-4 pt-4 border-t border-border">
             <div className="text-center">
               <p className="text-xs text-muted-foreground">24h Total</p>
               <p className="font-mono font-medium text-foreground">{formatCurrency(stats.total24h)}</p>

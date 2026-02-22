@@ -66,7 +66,7 @@ export function TopMovers({ protocols, tokens = [], loading, limit = 5 }: TopMov
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3 sm:gap-4">
       {/* Gainers */}
       <div className="rounded-lg border border-success/20 bg-success/5 p-4">
         <div className="flex items-center gap-2 mb-4">

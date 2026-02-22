@@ -38,7 +38,7 @@ export function RevenueBreakdown({ fees, loading }: RevenueBreakdownProps) {
     return (
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="skeleton h-5 w-40 mb-4" />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {Array(4).fill(0).map((_, i) => (
             <div key={i} className="skeleton h-20 rounded-lg" />
           ))}
@@ -50,7 +50,7 @@ export function RevenueBreakdown({ fees, loading }: RevenueBreakdownProps) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="font-semibold text-foreground mb-4">Revenue Analysis</h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
         <div className="rounded-lg bg-muted/30 p-3">
           <p className="text-xs text-muted-foreground mb-1">Total 24h Fees</p>
           <p className="text-xl font-bold text-foreground">{formatCurrency(stats.total24h)}</p>
