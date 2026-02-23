@@ -1,3 +1,6 @@
+import { useAuth } from '@/hooks/useAuth';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { canAccessFeature } from '@/lib/subscriptionHelper';
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
@@ -18,11 +21,26 @@ const COLORS = [
 
 export default function MarketStructure() {
   const { selectedChain } = useChain();
+  const { subscription_tier } = useAuth();
   const protocols = useChainProtocols(selectedChain.id);
   const dexVolumes = useChainDexVolumes(selectedChain.id);
   const fees = useChainFees(selectedChain.id);
   const tvlData = useChainTVLData(selectedChain.id);
   const chainsTVL = useChainsTVL();
+
+  // Check if user can access market structure
+  if (!canAccessFeature(subscription_tier, 'market_structure')) {
+    return (
+      <Layout>
+        <UpgradePrompt
+          feature="Market Structure"
+          currentTier={subscription_tier}
+          requiredTier="pro"
+          description="Deep dive into DEX concentration, protocol lifecycles, fee analysis, and market dynamics. Available in Pro and Enterprise plans."
+        />
+      </Layout>
+    );
+  }
 
   const protocolList = protocols.data ?? [];
   const dexList = dexVolumes.data ?? [];

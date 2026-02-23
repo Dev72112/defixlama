@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useChain } from '@/contexts/ChainContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useAllRiskMetrics, getRiskColor, getRiskBgColor, getRiskLabel } from '@/hooks/useRiskMetrics';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { canAccessFeature } from '@/lib/subscriptionHelper';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -19,9 +22,24 @@ const CHART_COLORS = [
 
 export default function RiskDashboard() {
   const { selectedChain } = useChain();
+  const { subscription_tier } = useAuth();
   const { data: allMetrics, isLoading } = useAllRiskMetrics(selectedChain.id === 'all' ? undefined : selectedChain.id);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'risk' | 'hacks' | 'governance'>('risk');
+
+  // Check if user can access risk dashboard
+  if (!canAccessFeature(subscription_tier, 'risk_dashboard')) {
+    return (
+      <Layout>
+        <UpgradePrompt
+          feature="Risk Dashboard"
+          currentTier={subscription_tier}
+          requiredTier="pro"
+          description="Monitor protocol risks, audit histories, governance concentration, and more. Available in Pro and Enterprise plans."
+        />
+      </Layout>
+    );
+  }
 
   const filteredMetrics = useMemo(() => {
     if (!allMetrics) return [];

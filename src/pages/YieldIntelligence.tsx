@@ -1,3 +1,6 @@
+import { useAuth } from '@/hooks/useAuth';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { canAccessFeature } from '@/lib/subscriptionHelper';
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
@@ -14,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 export default function YieldIntelligence() {
   const { selectedChain } = useChain();
+  const { subscription_tier } = useAuth();
   const pools = useChainYieldPools(selectedChain.id);
   const chainId = selectedChain.id;
   const chainTvlHistory = useChainTVLHistory(chainId === "all" ? null : selectedChain.slug);
@@ -21,6 +25,20 @@ export default function YieldIntelligence() {
   const tvlHistory = chainId === "all" ? globalTvlHistory.data : chainTvlHistory.data;
   const poolList = pools.data ?? [];
   const isLoading = pools.isLoading;
+
+  // Check if user can access yield intelligence
+  if (!canAccessFeature(subscription_tier, 'yield_intelligence')) {
+    return (
+      <Layout>
+        <UpgradePrompt
+          feature="Yield Intelligence"
+          currentTier={subscription_tier}
+          requiredTier="pro"
+          description="Analyze yield opportunities with risk-adjusted rankings, impermanent loss calculations, and optimization recommendations. Available in Pro and Enterprise plans."
+        />
+      </Layout>
+    );
+  }
 
   const [ilPriceChange, setIlPriceChange] = useState(50);
   const [historyRange, setHistoryRange] = useState<DateRange>("30d");
