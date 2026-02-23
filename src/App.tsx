@@ -33,6 +33,15 @@ import WhaleActivity from "./pages/WhaleActivity";
 import MarketStructure from "./pages/MarketStructure";
 import YieldIntelligence from "./pages/YieldIntelligence";
 import Correlations from "./pages/Correlations";
+import RiskDashboard from "./pages/RiskDashboard";
+import AlertsConfig from "./pages/AlertsConfig";
+import APIAccess from "./pages/APIAccess";
+import Backtester from "./pages/Backtester";
+import Predictions from "./pages/Predictions";
+import ProtocolComparison from "./pages/ProtocolComparison";
+import GovernanceTracker from "./pages/GovernanceTracker";
+import CommunitySentiment from "./pages/CommunitySentiment";
+import WatchlistExports from "./pages/WatchlistExports";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,12 +83,21 @@ const App = () => (
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/docs" element={<Docs />} />
             <Route path="/alerts" element={<Alerts />} />
+            <Route path="/alert-config" element={<AlertsConfig />} />
+            <Route path="/api-access" element={<APIAccess />} />
+            <Route path="/backtester" element={<Backtester />} />
+            <Route path="/predictions" element={<Predictions />} />
+            <Route path="/protocol-comparison" element={<ProtocolComparison />} />
+            <Route path="/community-sentiment" element={<CommunitySentiment />} />
+            <Route path="/governance" element={<GovernanceTracker />} />
+            <Route path="/watchlist-exports" element={<WatchlistExports />} />
             <Route path="/builder-logs" element={<BuilderLogs />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/whale-activity" element={<WhaleActivity />} />
             <Route path="/market-structure" element={<MarketStructure />} />
             <Route path="/yield-intelligence" element={<YieldIntelligence />} />
             <Route path="/correlations" element={<Correlations />} />
+            <Route path="/risk-dashboard" element={<RiskDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
