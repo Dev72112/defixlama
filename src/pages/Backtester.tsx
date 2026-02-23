@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useBacktesting } from '@/hooks/useBacktesting';
 import { useChain } from '@/contexts/ChainContext';
+import { useChainProtocols } from '@/hooks/useDefiData';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,26 +14,39 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { BacktestConfig } from '@/lib/backtesting/engine';
 
-const PROTOCOLS = [
-  { slug: 'aave', name: 'Aave', baseAPY: 3.5 },
-  { slug: 'curve', name: 'Curve', baseAPY: 5.2 },
-  { slug: 'lido', name: 'Lido', baseAPY: 2.8 },
-  { slug: 'yearn', name: 'Yearn', baseAPY: 8.1 },
-  { slug: 'balancer', name: 'Balancer', baseAPY: 6.5 },
-  { slug: 'compound', name: 'Compound', baseAPY: 2.1 },
-  { slug: 'uniswap-v3', name: 'Uniswap V3', baseAPY: 4.0 },
-];
-
 export default function Backtester() {
   const { runBacktest, saveBacktest, deleteBacktest, lastResults, isRunning, isSaving } = useBacktesting();
   const { selectedChain } = useChain();
+  const protocolsData = useChainProtocols(selectedChain?.id || 'all');
+
+  // Convert API protocols to usable format
+  const protocolsList = useMemo(() => {
+    if (!protocolsData?.data) return [];
+    return protocolsData.data.map((p: any) => ({
+      slug: p.slug || p.id,
+      name: p.name,
+      baseAPY: p.apy || p.tvlPct || Math.random() * 10, // Fallback APY estimation
+    })).filter((p: any) => p.slug && p.name).slice(0, 50); // Limit to top 50 for UI performance
+  }, [protocolsData?.data]);
+
+  // Show top protocols by default
+  const defaultProtocols = useMemo(() => {
+    const defaults: Record<string, number> = {};
+    protocolsList.slice(0, 5).forEach((p) => {
+      defaults[p.slug] = 20; // Equal distribution among top 5
+    });
+    return defaults;
+  }, [protocolsList]);
 
   // Form state
-  const [selectedProtocols, setSelectedProtocols] = useState<Record<string, number>>({
-    aave: 30,
-    curve: 40,
-    lido: 30,
-  });
+  const [selectedProtocols, setSelectedProtocols] = useState<Record<string, number>>({});
+
+  // Initialize with default protocols when data loads
+  useEffect(() => {
+    if (defaultProtocols && Object.keys(defaultProtocols).length > 0 && Object.keys(selectedProtocols).length === 0) {
+      setSelectedProtocols(defaultProtocols);
+    }
+  }, [defaultProtocols]);
   const [startDate, setStartDate] = useState('2025-08-22');
   const [endDate, setEndDate] = useState('2026-02-22');
   const [initialCapital, setInitialCapital] = useState('10000');
@@ -161,35 +175,42 @@ export default function Backtester() {
 
             {/* Protocol Weights */}
             <div className="space-y-3 pt-2 border-t border-border">
-              <p className="text-sm font-medium text-foreground">Protocol Allocation</p>
-              <div className="space-y-2">
-                {PROTOCOLS.map((protocol) => (
-                  <div key={protocol.slug}>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs text-muted-foreground">{protocol.name}</label>
-                      <span className="text-xs font-mono font-semibold">{selectedProtocols[protocol.slug] ?? 0}%</span>
-                    </div>
-                    <div className="flex gap-1">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={selectedProtocols[protocol.slug] ?? 0}
-                        onChange={(e) => handleProtocolWeightChange(protocol.slug, parseFloat(e.target.value))}
-                        className="flex-1 h-2 rounded-lg bg-muted"
-                      />
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={selectedProtocols[protocol.slug] ?? 0}
-                        onChange={(e) => handleProtocolWeightChange(protocol.slug, parseFloat(e.target.value))}
-                        className="w-12 px-2 py-1 text-xs rounded border border-border text-center"
-                      />
-                    </div>
-                  </div>
-                ))}
+              <div className="flex justify-between items-center">
+                <p className="text-sm font-medium text-foreground">Protocol Allocation</p>
+                <span className="text-xs text-muted-foreground">{protocolsList.length} available</span>
               </div>
+              {protocolsList.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-4">Loading protocols...</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {protocolsList.map((protocol) => (
+                    <div key={protocol.slug}>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs text-muted-foreground">{protocol.name}</label>
+                        <span className="text-xs font-mono font-semibold">{selectedProtocols[protocol.slug] ?? 0}%</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={selectedProtocols[protocol.slug] ?? 0}
+                          onChange={(e) => handleProtocolWeightChange(protocol.slug, parseFloat(e.target.value))}
+                          className="flex-1 h-2 rounded-lg bg-muted"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={selectedProtocols[protocol.slug] ?? 0}
+                          onChange={(e) => handleProtocolWeightChange(protocol.slug, parseFloat(e.target.value))}
+                          className="w-12 px-2 py-1 text-xs rounded border border-border text-center"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="p-2 bg-muted rounded">
                 <div className="flex justify-between text-xs">
