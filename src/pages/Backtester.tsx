@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useBacktesting } from '@/hooks/useBacktesting';
 import { useChain } from '@/contexts/ChainContext';
@@ -45,28 +45,47 @@ export default function Backtester() {
     }));
   };
 
-  const handleRunBacktest = () => {
-    const protocolsArray = Object.entries(selectedProtocols)
-      .filter(([, weight]) => weight > 0)
-      .map(([slug, weight]) => ({ slug, weight }));
+  // Auto-calculate backtest when inputs change (debounced)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    if (protocolsArray.length === 0) {
-      alert('Select at least one protocol');
+  useEffect(() => {
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Only auto-run if at least one protocol has weight > 0
+    const hasProtocols = Object.values(selectedProtocols).some((weight) => weight > 0);
+    if (!hasProtocols || isRunning) {
       return;
     }
 
-    const config: BacktestConfig = {
-      protocols: protocolsArray,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      initialCapital: parseFloat(initialCapital),
-    };
+    // Set debounced auto-run (300ms delay while user is adjusting sliders)
+    debounceTimerRef.current = setTimeout(() => {
+      const protocolsArray = Object.entries(selectedProtocols)
+        .filter(([, weight]) => weight > 0)
+        .map(([slug, weight]) => ({ slug, weight }));
 
-    runBacktest({
-      name: 'Backtest',
-      config,
-    });
-  };
+      const config: BacktestConfig = {
+        protocols: protocolsArray,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        initialCapital: parseFloat(initialCapital),
+      };
+
+      runBacktest({
+        name: 'Backtest',
+        config,
+      });
+    }, 300);
+
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [selectedProtocols, startDate, endDate, initialCapital, isRunning, runBacktest]);
 
   const handleSaveBacktest = () => {
     if (!lastResults || !strategyName.trim()) {
@@ -183,10 +202,40 @@ export default function Backtester() {
             </div>
 
             {/* Run Button */}
-            <Button onClick={handleRunBacktest} disabled={isRunning || totalWeight === 0} className="w-full">
-              {isRunning && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isRunning ? 'Running...' : 'Run Backtest'}
-            </Button>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Results update automatically as you adjust parameters</p>
+              <Button
+                onClick={() => {
+                  // Manual refresh button for users who want to force a recalculation
+                  const protocolsArray = Object.entries(selectedProtocols)
+                    .filter(([, weight]) => weight > 0)
+                    .map(([slug, weight]) => ({ slug, weight }));
+
+                  if (protocolsArray.length === 0) {
+                    alert('Select at least one protocol');
+                    return;
+                  }
+
+                  const config: BacktestConfig = {
+                    protocols: protocolsArray,
+                    startDate: new Date(startDate),
+                    endDate: new Date(endDate),
+                    initialCapital: parseFloat(initialCapital),
+                  };
+
+                  runBacktest({
+                    name: 'Backtest',
+                    config,
+                  });
+                }}
+                disabled={isRunning || totalWeight === 0}
+                variant="outline"
+                className="w-full"
+              >
+                {isRunning && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {isRunning ? 'Calculating...' : 'Refresh Results'}
+              </Button>
+            </div>
           </Card>
 
           {/* Results */}
