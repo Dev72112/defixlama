@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { captureException, addBreadcrumb } from "@/lib/errorTracking/tracking";
 
 interface Props {
   children: ReactNode;
@@ -30,6 +31,19 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
     // Store error info for debugging
     this.setState(prev => ({ ...prev, errorInfo }));
+
+    // Track error with error tracking system
+    captureException(error, {
+      context: this.props.context,
+      componentStack: errorInfo.componentStack,
+    });
+
+    // Add breadcrumb for debugging
+    addBreadcrumb(
+      `Error in ${this.props.context || 'unknown'} component`,
+      'error-boundary',
+      'error'
+    );
 
     // Call custom error handler if provided
     if (this.props.onError) {

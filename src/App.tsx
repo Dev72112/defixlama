@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ChainProvider } from "@/contexts/ChainContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { lazyLoad } from "@/lib/lazyLoad";
+import { QUERY_CLIENT_DEFAULT_OPTIONS } from "@/lib/cacheConfig";
 
 // Lazy load all page components for code splitting
 const Dashboard = lazyLoad(() => import("./pages/Dashboard"));
@@ -48,13 +49,7 @@ const WatchlistExports = lazyLoad(() => import("./pages/WatchlistExports"));
 const NotFound = lazyLoad(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 5 * 1000,
-      refetchOnWindowFocus: true,
-    },
-  },
+  defaultOptions: QUERY_CLIENT_DEFAULT_OPTIONS,
 });
 
 const App = () => (

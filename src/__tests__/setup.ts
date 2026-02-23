@@ -1,5 +1,5 @@
 // Test setup and globals
-import { expect, afterEach } from 'vitest';
+import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Cleanup after each test
@@ -14,21 +14,29 @@ Object.defineProperty(window, 'matchMedia', {
     matches: false,
     media: query,
     onchange: null,
-    addListener: () => {}, // deprecated
-    removeListener: () => {}, // deprecated
-    addEventListener: () => {},
-    removeEventListener: () {},
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
     dispatchEvent: () => true,
   }),
 });
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
+  constructor() {
+    // noop
+  }
+  disconnect() {
+    // noop
+  }
+  observe() {
+    // noop
+  }
   takeRecords() {
     return [];
   }
-  unobserve() {}
+  unobserve() {
+    // noop
+  }
 } as any;

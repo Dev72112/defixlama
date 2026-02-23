@@ -3,6 +3,7 @@
 // Leverages unified API client for error handling and retries
 
 import { ApiClient } from './client';
+import { validateData } from '@/lib/validation';
 
 const OKLINK_BASE = "https://www.oklink.com/api";
 const OKX_EXPLORER_BASE = "https://www.okx.com/api/v5/explorer";
