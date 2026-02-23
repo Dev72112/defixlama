@@ -3,6 +3,9 @@ import { Layout } from '@/components/layout/Layout';
 import { useBacktesting } from '@/hooks/useBacktesting';
 import { useChain } from '@/contexts/ChainContext';
 import { useChainProtocols } from '@/hooks/useDefiData';
+import { useAuth } from '@/hooks/useAuth';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { canAccessFeature } from '@/lib/subscriptionHelper';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +20,22 @@ import { BacktestConfig } from '@/lib/backtesting/engine';
 export default function Backtester() {
   const { runBacktest, saveBacktest, deleteBacktest, lastResults, isRunning, isSaving } = useBacktesting();
   const { selectedChain } = useChain();
+  const { subscription_tier } = useAuth();
   const protocolsData = useChainProtocols(selectedChain?.id || 'all');
+
+  // Check if user can access backtester
+  if (!canAccessFeature(subscription_tier, 'backtester')) {
+    return (
+      <Layout>
+        <UpgradePrompt
+          feature="Yield Farming Backtester"
+          currentTier={subscription_tier}
+          requiredTier="pro"
+          description="Simulate and optimize your yield farming strategies with our advanced backtesting engine. Available in Pro and Enterprise plans."
+        />
+      </Layout>
+    );
+  }
 
   // Convert API protocols to usable format
   const protocolsList = useMemo(() => {

@@ -1,117 +1,69 @@
-import { useState, useEffect, useCallback } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
+import { SubscriptionTier } from '@/lib/subscriptionHelper';
 
+interface AuthUser {
+  id: string;
+  email?: string;
+  subscription_tier: SubscriptionTier;
+  subscription_status?: 'active' | 'paused' | 'expired' | 'cancelled';
+  subscription_expires_at?: string;
+}
+
+/**
+ * Simple auth hook for subscription tier access
+ * TODO: Connect to actual Supabase auth and user_profiles table
+ */
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminLoading, setAdminLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        // Defer admin check with setTimeout to prevent deadlock
-        if (session?.user) {
-          setTimeout(() => {
-            checkAdminStatus(session.user.id);
-          }, 0);
-        } else {
-          setIsAdmin(false);
-          setAdminLoading(false);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-
-      if (session?.user) {
-        checkAdminStatus(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAdminStatus = async (userId: string) => {
-    setAdminLoading(true);
+    // TODO: Replace with actual Supabase auth check
+    // For now, check localStorage for demo/testing
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-        return;
+      const storedUser = localStorage.getItem('defixlama_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        // Default to free tier if no user
+        setUser(null);
       }
-
-      setIsAdmin(!!data);
     } catch (err) {
-      console.error('Error checking admin status:', err);
-      setIsAdmin(false);
+      console.error('Error loading user:', err);
+      setError('Failed to load user data');
     } finally {
-      setAdminLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          display_name: displayName || email.split('@')[0],
-        },
-      },
-    });
-
-    return { data, error };
-  }, []);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    return { data, error };
-  }, []);
-
-  const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      setUser(null);
-      setSession(null);
-      setIsAdmin(false);
-    }
-    return { error };
   }, []);
 
   return {
     user,
-    session,
-    loading,
-    isAdmin,
-    adminLoading,
-    signUp,
-    signIn,
-    signOut,
+    isLoading,
+    error,
+    isAuthenticated: !!user,
+    subscription_tier: user?.subscription_tier || 'free',
   };
+}
+
+/**
+ * Helper to set user in localStorage for testing
+ */
+export function setTestUser(tier: SubscriptionTier = 'pro') {
+  const testUser: AuthUser = {
+    id: 'test-user-' + Math.random().toString(36).substr(2, 9),
+    email: 'test@example.com',
+    subscription_tier: tier,
+    subscription_status: 'active',
+  };
+  localStorage.setItem('defixlama_user', JSON.stringify(testUser));
+  window.location.reload();
+}
+
+/**
+ * Helper to clear test user
+ */
+export function clearTestUser() {
+  localStorage.removeItem('defixlama_user');
+  window.location.reload();
 }
