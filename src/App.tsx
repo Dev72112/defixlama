@@ -41,6 +41,7 @@ const RiskDashboard = lazyLoad(() => import("./pages/RiskDashboard"));
 const AlertsConfig = lazyLoad(() => import("./pages/AlertsConfig"));
 const APIAccess = lazyLoad(() => import("./pages/APIAccess"));
 const Backtester = lazyLoad(() => import("./pages/Backtester"));
+const BillingPage = lazyLoad(() => import("./pages/BillingPage"));
 const PortfolioDashboard = lazyLoad(() => import("./pages/PortfolioDashboard"));
 const Predictions = lazyLoad(() => import("./pages/Predictions"));
 const ProtocolComparison = lazyLoad(() => import("./pages/ProtocolComparison"));
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="/correlations" element={<ErrorBoundary context="Correlations"><Correlations /></ErrorBoundary>} />
               <Route path="/community-sentiment" element={<ErrorBoundary context="Community Sentiment"><CommunitySentiment /></ErrorBoundary>} />
               <Route path="/api-access" element={<ErrorBoundary context="API Access"><APIAccess /></ErrorBoundary>} />
+              <Route path="/billing" element={<ErrorBoundary context="Billing"><BillingPage /></ErrorBoundary>} />
               <Route path="/watchlist-exports" element={<ErrorBoundary context="Watchlist Exports"><WatchlistExports /></ErrorBoundary>} />
 
               {/* Admin Routes */}
