@@ -41,6 +41,7 @@ const RiskDashboard = lazyLoad(() => import("./pages/RiskDashboard"));
 const AlertsConfig = lazyLoad(() => import("./pages/AlertsConfig"));
 const APIAccess = lazyLoad(() => import("./pages/APIAccess"));
 const Backtester = lazyLoad(() => import("./pages/Backtester"));
+const PortfolioDashboard = lazyLoad(() => import("./pages/PortfolioDashboard"));
 const Predictions = lazyLoad(() => import("./pages/Predictions"));
 const ProtocolComparison = lazyLoad(() => import("./pages/ProtocolComparison"));
 const GovernanceTracker = lazyLoad(() => import("./pages/GovernanceTracker"));
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="/alerts" element={<ErrorBoundary context="Alerts"><Alerts /></ErrorBoundary>} />
               <Route path="/alert-config" element={<ErrorBoundary context="Alerts Config"><AlertsConfig /></ErrorBoundary>} />
               <Route path="/backtester" element={<ErrorBoundary context="Backtester"><Backtester /></ErrorBoundary>} />
+              <Route path="/portfolio-dashboard" element={<ErrorBoundary context="Portfolio Dashboard"><PortfolioDashboard /></ErrorBoundary>} />
               <Route path="/predictions" element={<ErrorBoundary context="Predictions"><Predictions /></ErrorBoundary>} />
               <Route path="/protocol-comparison" element={<ErrorBoundary context="Protocol Comparison"><ProtocolComparison /></ErrorBoundary>} />
               <Route path="/governance" element={<ErrorBoundary context="Governance Tracker"><GovernanceTracker /></ErrorBoundary>} />

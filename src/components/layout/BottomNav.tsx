@@ -59,6 +59,7 @@ const moreTabs: NavTab[] = [
   { labelKey: "nav.builderLogs", href: "/builder-logs", icon: ScrollText },
   // Premium PRO Features
   { labelKey: "Backtester", href: "/backtester", icon: Target, badge: "PRO" },
+  { labelKey: "Portfolio Dashboard", href: "/portfolio-dashboard", icon: PieChart, badge: "PRO" },
   { labelKey: "Risk Dashboard", href: "/risk-dashboard", icon: Shield, badge: "PRO" },
   { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "PRO" },
   { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO" },
