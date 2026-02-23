@@ -117,21 +117,21 @@ export default function Yields() {
     <Layout>
       <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col gap-2 min-w-0">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t('yields.title')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
               {t('yields.subtitle')}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
-              <Download className="h-4 w-4" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-2 text-xs sm:text-sm w-full sm:w-auto">
+              <Download className="h-4 w-4 flex-shrink-0" />
               {t('common.exportCsv')}
             </Button>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Activity className="h-4 w-4 text-primary animate-pulse" />
-              {t('yields.maxApy')}: {Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+              <Activity className="h-4 w-4 text-primary animate-pulse flex-shrink-0" />
+              <span>{t('yields.maxApy')}: {Number(isNaN(maxApy) ? 0 : maxApy).toFixed(2)}%</span>
             </div>
           </div>
         </div>
@@ -165,45 +165,47 @@ export default function Yields() {
         </div>
 
         {/* Yield Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           <YieldDistributionChart pools={chartPools} loading={isLoading} />
           <TopYieldPools pools={chartPools} loading={isLoading} />
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground flex-shrink-0" />
             <Input
               placeholder={t('yields.searchPools')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 text-xs sm:text-sm w-full"
             />
           </div>
-          <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('yields.project')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('yields.allProjects')}</SelectItem>
-              {projects.map((proj) => (
-                <SelectItem key={proj} value={proj} className="capitalize">
-                  {proj}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('common.sortBy')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="apy">{t('yields.apyHighToLow')}</SelectItem>
-              <SelectItem value="tvl">{t('yields.tvlHighToLow')}</SelectItem>
-              <SelectItem value="symbol">{t('yields.symbolAZ')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-full sm:w-40 lg:w-[180px]">
+                <SelectValue placeholder={t('yields.project')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('yields.allProjects')}</SelectItem>
+                {projects.map((proj) => (
+                  <SelectItem key={proj} value={proj} className="capitalize">
+                    {proj}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-40 lg:w-[180px]">
+                <SelectValue placeholder={t('common.sortBy')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="apy">{t('yields.apyHighToLow')}</SelectItem>
+                <SelectItem value="tvl">{t('yields.tvlHighToLow')}</SelectItem>
+                <SelectItem value="symbol">{t('yields.symbolAZ')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Yield Table */}

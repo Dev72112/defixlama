@@ -143,7 +143,7 @@ export default function StablecoinDetail() {
         <div className="space-y-6 animate-fade-in">
           <div className="skeleton h-8 w-32" />
           <div className="skeleton h-16 w-64" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array(4).fill(0).map((_, i) => (
               <div key={i} className="skeleton h-24 rounded-lg" />
             ))}
@@ -211,7 +211,7 @@ export default function StablecoinDetail() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <StatCard
             title="Price"
             value={coin.price ? `$${coin.price.toFixed(4)}` : "$1.00"}
@@ -363,7 +363,7 @@ export default function StablecoinDetail() {
                 </div>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
               {chainData.slice(0, 6).map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-2 text-sm">
                   <div
@@ -438,7 +438,7 @@ export default function StablecoinDetail() {
         {relatedStablecoins.length > 0 && (
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Related Stablecoins ({coin.pegType})</h3>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {relatedStablecoins.map((s) => (
                 <Link to={`/stablecoins/${s.symbol.toLowerCase()}`} key={s.id}>
                   <div className="p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer h-full">
