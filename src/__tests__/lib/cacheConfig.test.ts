@@ -30,7 +30,7 @@ describe('Cache Configuration Strategy', () => {
     });
 
     it('should have protocol list cache reasonable duration', () => {
-      expect(CACHE_TIME.PROTOCOL_LIST).toBe(5 * 60 * 1000); // 5 minutes
+      expect(CACHE_TIME.PROTOCOL_LIST).toBe(10 * 60 * 1000); // 10 minutes
     });
   });
 
@@ -86,9 +86,9 @@ describe('Cache Configuration Strategy', () => {
   });
 
   describe('Real-world usage patterns', () => {
-    it('protocol list should cache 5 minutes', () => {
+    it('protocol list should cache 10 minutes', () => {
       const config = getCacheConfig('PROTOCOL_LIST');
-      expect(config.staleTime).toBe(5 * 60 * 1000);
+      expect(config.staleTime).toBe(10 * 60 * 1000);
     });
 
     it('live prices should cache 5 seconds', () => {

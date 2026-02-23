@@ -188,7 +188,7 @@ export type SecurityData = z.infer<typeof SecurityDataSchema>;
 
 export const PriceChartDataSchema = z.object({
   date: z.string().datetime(),
-  price: z.number(),
+  price: z.number().positive('Price must be positive'),
   volume: z.number().optional(),
   marketCap: z.number().optional(),
 });
