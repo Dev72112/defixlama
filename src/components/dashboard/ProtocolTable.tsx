@@ -1,4 +1,4 @@
-import { Protocol, formatCurrency, formatPercentage, getChangeColor } from "@/lib/api/defillama";
+import { Protocol, formatCurrency, formatPercentage, getChangeColor, timeAgo } from "@/lib/api/defillama";
 import { cn } from "@/lib/utils";
 import { ExternalLink, TrendingUp, TrendingDown, Shield, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -13,6 +13,7 @@ interface ProtocolTableProps {
   showAuditBadge?: boolean;
   limit?: number;
   className?: string;
+  dataUpdatedAt?: number;
 }
 
 // Simple sparkline component
@@ -51,6 +52,7 @@ export function ProtocolTable({
   showAuditBadge = false,
   limit,
   className,
+  dataUpdatedAt,
 }: ProtocolTableProps) {
   const displayProtocols = limit ? protocols.slice(0, limit) : protocols;
 
@@ -339,6 +341,12 @@ export function ProtocolTable({
         </tbody>
       </table>
 
+      {/* Updated timestamp footer */}
+      {dataUpdatedAt && (
+        <div className="px-4 py-2 border-t border-border bg-muted/20 text-xs text-muted-foreground">
+          Updated {timeAgo(Math.floor(dataUpdatedAt / 1000))}
+        </div>
+      )}
     </div>
   );
 }
