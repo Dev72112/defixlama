@@ -24,7 +24,7 @@ export default function Protocols() {
   const { selectedChain } = useChain();
   const chainId = selectedChain.id;
 
-  const { data: protocols, isLoading: protocolsLoading, isError: protocolsError, error, refetch } = useChainProtocols(chainId);
+  const { data: protocols, isLoading: protocolsLoading, isError: protocolsError, error, refetch, dataUpdatedAt } = useChainProtocols(chainId);
   const { data: tvl, isLoading: tvlLoading } = useChainTVLData(chainId);
   const tvlHistoryChain = chainId === "all" ? null : selectedChain.slug;
   const chainTvlHistory = useChainTVLHistory(tvlHistoryChain);
@@ -230,7 +230,7 @@ export default function Protocols() {
 
         {/* Protocols Table */}
         {protocolsError ? (
-          <ErrorState 
+          <ErrorState
             error={error as Error}
             onRetry={() => refetch()}
           />
@@ -239,6 +239,7 @@ export default function Protocols() {
             protocols={pagedProtocols}
             loading={protocolsLoading}
             showCategory={true}
+            dataUpdatedAt={dataUpdatedAt}
           />
         )}
 
