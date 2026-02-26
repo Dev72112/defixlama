@@ -129,7 +129,7 @@ export function YieldTable({
       {/* ── DESKTOP TABLE (hidden below sm) ── */}
       <table className="data-table w-full hidden sm:table">
         <thead>
-          <tr className="bg-muted/30">
+          <tr className="sticky top-0 bg-card z-20 backdrop-blur-sm bg-muted/30 border-b border-border">
             <th className="w-12 hidden sm:table-cell">#</th>
             <th>Pool</th>
             <th className="hidden sm:table-cell">Project</th>

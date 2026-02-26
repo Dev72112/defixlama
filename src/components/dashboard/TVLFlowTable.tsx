@@ -43,7 +43,7 @@ export function TVLFlowTable({ protocols, loading, limit = 15 }: TVLFlowTablePro
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="sticky top-0 bg-card z-20 backdrop-blur-sm border-b-2">
               <TableHead className="text-xs sm:text-sm">Protocol</TableHead>
               <TableHead className="hidden sm:table-cell text-xs sm:text-sm">Category</TableHead>
               <TableHead className="text-right text-xs sm:text-sm">TVL</TableHead>
