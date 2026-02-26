@@ -20,36 +20,23 @@ import { useChain } from "@/contexts/ChainContext";
 export default function Tokens() {
   const { t } = useTranslation();
   const { selectedChain, isAllChains } = useChain();
-  const { data: tokens, isLoading, isError, error, refetch } = useTokenPrices();
+  const { data: tokens, isLoading, isError, error, refetch } = useTokenPrices(selectedChain.id);
   const [searchQuery, setSearchQuery] = useState("");
   const [showComparison, setShowComparison] = useState(false);
   const navigate = useNavigate();
 
-  // Filter tokens by chain and search query
-  const chainFilteredTokens = (tokens || []).filter((t: any) => {
-    if (isAllChains) return true;
-    const chainId = selectedChain.id.toLowerCase();
-    const chainSlug = selectedChain.slug.toLowerCase();
-    // Match token chain field against chain id or slug
-    if (t.chain && (t.chain.toLowerCase() === chainId || t.chain.toLowerCase() === chainSlug)) return true;
-    if (t.isCommunityToken && chainId === "xlayer") return true;
-    if (t.isDbListing && t.chain && (t.chain.toLowerCase() === chainId || t.chain.toLowerCase() === chainSlug)) return true;
-    // Major tokens with no chain field show on all chains
-    if (!t.chain && !t.isCommunityToken && !t.isDbListing) return true;
-    return false;
-  });
-
-  const filteredTokens = chainFilteredTokens.filter((t: any) =>
+  // Filter tokens by search query only (chain filtering done server-side)
+  const filteredTokens = (tokens || []).filter((t: any) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Calculate metrics from chain-filtered tokens
-  const totalMcap = chainFilteredTokens.reduce((acc: number, t: any) => acc + (t.mcap || 0), 0);
-  const totalVolume = chainFilteredTokens.reduce((acc: number, t: any) => acc + (t.volume24h || 0), 0);
-  const validTokens = chainFilteredTokens.filter((t: any) => t.price > 0);
-  const avgChange = validTokens.length > 0 
-    ? validTokens.reduce((acc: number, t: any) => acc + (t.change24h || 0), 0) / validTokens.length 
+  // Calculate metrics from filtered tokens
+  const totalMcap = filteredTokens.reduce((acc: number, t: any) => acc + (t.mcap || 0), 0);
+  const totalVolume = filteredTokens.reduce((acc: number, t: any) => acc + (t.volume24h || 0), 0);
+  const validTokens = filteredTokens.filter((t: any) => t.price > 0);
+  const avgChange = validTokens.length > 0
+    ? validTokens.reduce((acc: number, t: any) => acc + (t.change24h || 0), 0) / validTokens.length
     : 0;
 
   // Get the correct route ID for each token
