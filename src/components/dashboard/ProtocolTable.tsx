@@ -1,9 +1,10 @@
 import { Protocol, formatCurrency, formatPercentage, getChangeColor, timeAgo } from "@/lib/api/defillama";
 import { cn } from "@/lib/utils";
-import { ExternalLink, TrendingUp, TrendingDown, Shield, ShieldCheck } from "lucide-react";
+import { ExternalLink, TrendingUp, TrendingDown, Shield, ShieldCheck, ArrowUp, ArrowDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { WatchlistButton } from "@/components/WatchlistButton";
+import { useState, useMemo } from "react";
 
 interface ProtocolTableProps {
   protocols: Protocol[];
@@ -54,7 +55,50 @@ export function ProtocolTable({
   className,
   dataUpdatedAt,
 }: ProtocolTableProps) {
-  const displayProtocols = limit ? protocols.slice(0, limit) : protocols;
+  const [sortBy, setSortBy] = useState<'tvl' | 'change_1d' | 'change_7d' | 'name'>('tvl');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  // Sort protocols based on current sort state
+  const sortedProtocols = useMemo(() => {
+    const sorted = [...protocols].sort((a, b) => {
+      let aVal: any, bVal: any;
+
+      switch (sortBy) {
+        case 'tvl':
+          aVal = a.tvl || 0;
+          bVal = b.tvl || 0;
+          break;
+        case 'change_1d':
+          aVal = a.change_1d || 0;
+          bVal = b.change_1d || 0;
+          break;
+        case 'change_7d':
+          aVal = a.change_7d || 0;
+          bVal = b.change_7d || 0;
+          break;
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      return sortDir === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+    });
+    return sorted;
+  }, [protocols, sortBy, sortDir]);
+
+  const displayProtocols = limit ? sortedProtocols.slice(0, limit) : sortedProtocols;
+
+  const toggleSort = (column: 'tvl' | 'change_1d' | 'change_7d' | 'name') => {
+    if (sortBy === column) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDir('desc');
+    }
+  };
 
   if (loading) {
     return (
@@ -190,13 +234,53 @@ export function ProtocolTable({
           <tr className="sticky top-0 bg-card z-20 backdrop-blur-sm bg-muted/30 border-b border-border">
             <th className="w-10 hidden sm:table-cell"></th>
             <th className="w-12 hidden sm:table-cell">#</th>
-            <th>Name</th>
+            <th
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => toggleSort('name')}
+            >
+              <div className="flex items-center gap-1">
+                Name
+                {sortBy === 'name' && (
+                  sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                )}
+              </div>
+            </th>
             {showCategory && <th className="hidden md:table-cell">Category</th>}
             {showAuditBadge && <th className="hidden lg:table-cell text-center">Audit</th>}
-            <th className="text-right">TVL</th>
+            <th
+              className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => toggleSort('tvl')}
+            >
+              <div className="flex items-center justify-end gap-1">
+                TVL
+                {sortBy === 'tvl' && (
+                  sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                )}
+              </div>
+            </th>
             {showSparkline && <th className="text-right hidden lg:table-cell">7d Trend</th>}
-            <th className="text-right">24h</th>
-            <th className="text-right hidden sm:table-cell">7d</th>
+            <th
+              className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => toggleSort('change_1d')}
+            >
+              <div className="flex items-center justify-end gap-1">
+                24h
+                {sortBy === 'change_1d' && (
+                  sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                )}
+              </div>
+            </th>
+            <th
+              className="text-right hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => toggleSort('change_7d')}
+            >
+              <div className="flex items-center justify-end gap-1">
+                7d
+                {sortBy === 'change_7d' && (
+                  sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                )}
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
