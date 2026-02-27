@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ChainProvider } from "@/contexts/ChainContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { lazyLoad } from "@/lib/lazyLoad";
 import { QUERY_CLIENT_DEFAULT_OPTIONS } from "@/lib/cacheConfig";
@@ -57,12 +58,13 @@ const queryClient = new QueryClient({
 const App = () => (
   <ErrorBoundary context="App Root">
     <QueryClientProvider client={queryClient}>
-      <ChainProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
+      <AuthProvider>
+        <ChainProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
               <Route path="/" element={<ErrorBoundary context="Dashboard"><Dashboard /></ErrorBoundary>} />
               <Route path="/auth" element={<ErrorBoundary context="Auth"><Auth /></ErrorBoundary>} />
 
@@ -117,6 +119,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </ChainProvider>
+    </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );
