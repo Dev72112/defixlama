@@ -4,42 +4,54 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ChainProvider } from "@/contexts/ChainContext";
+import { BackToTopFab } from "@/components/BackToTopFab";
+import { lazyLoad } from "@/lib/lazyLoad";
+import { CACHE_TIERS } from "@/lib/cacheConfig";
+
+// Eager-load the dashboard for fast initial render
 import Dashboard from "./pages/Dashboard";
-import Protocols from "./pages/Protocols";
-import ProtocolDetail from "./pages/ProtocolDetail";
-import Dexs from "./pages/Dexs";
-import DexDetail from "./pages/DexDetail";
-import Yields from "./pages/Yields";
-import Stablecoins from "./pages/Stablecoins";
-import StablecoinDetail from "./pages/StablecoinDetail";
-import Tokens from "./pages/Tokens";
-import TokenDetail from "./pages/TokenDetail";
-import Chains from "./pages/Chains";
-import ChainDetail from "./pages/ChainDetail";
-import Fees from "./pages/Fees";
-import FeeDetail from "./pages/FeeDetail";
-import Activities from "./pages/Activities";
-import Security from "./pages/Security";
-import SecurityDetail from "./pages/SecurityDetail";
-import NotFound from "./pages/NotFound";
-import Donations from "./pages/Donations";
-import Docs from "./pages/Docs";
-import Portfolio from "./pages/Portfolio";
-import Alerts from "./pages/Alerts";
-import BuilderLogs from "./pages/BuilderLogs";
-import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
-import WhaleActivity from "./pages/WhaleActivity";
-import MarketStructure from "./pages/MarketStructure";
-import YieldIntelligence from "./pages/YieldIntelligence";
-import Correlations from "./pages/Correlations";
+
+// Lazy-load all other pages
+const Protocols = lazyLoad(() => import("./pages/Protocols"));
+const ProtocolDetail = lazyLoad(() => import("./pages/ProtocolDetail"));
+const Dexs = lazyLoad(() => import("./pages/Dexs"));
+const DexDetail = lazyLoad(() => import("./pages/DexDetail"));
+const Yields = lazyLoad(() => import("./pages/Yields"));
+const Stablecoins = lazyLoad(() => import("./pages/Stablecoins"));
+const StablecoinDetail = lazyLoad(() => import("./pages/StablecoinDetail"));
+const Tokens = lazyLoad(() => import("./pages/Tokens"));
+const TokenDetail = lazyLoad(() => import("./pages/TokenDetail"));
+const Chains = lazyLoad(() => import("./pages/Chains"));
+const ChainDetail = lazyLoad(() => import("./pages/ChainDetail"));
+const Fees = lazyLoad(() => import("./pages/Fees"));
+const FeeDetail = lazyLoad(() => import("./pages/FeeDetail"));
+const Activities = lazyLoad(() => import("./pages/Activities"));
+const Security = lazyLoad(() => import("./pages/Security"));
+const SecurityDetail = lazyLoad(() => import("./pages/SecurityDetail"));
+const NotFound = lazyLoad(() => import("./pages/NotFound"));
+const Donations = lazyLoad(() => import("./pages/Donations"));
+const Docs = lazyLoad(() => import("./pages/Docs"));
+const Portfolio = lazyLoad(() => import("./pages/Portfolio"));
+const Alerts = lazyLoad(() => import("./pages/Alerts"));
+const BuilderLogs = lazyLoad(() => import("./pages/BuilderLogs"));
+const Auth = lazyLoad(() => import("./pages/Auth"));
+const Admin = lazyLoad(() => import("./pages/Admin"));
+const WhaleActivity = lazyLoad(() => import("./pages/WhaleActivity"));
+const MarketStructure = lazyLoad(() => import("./pages/MarketStructure"));
+const YieldIntelligence = lazyLoad(() => import("./pages/YieldIntelligence"));
+const Correlations = lazyLoad(() => import("./pages/Correlations"));
+
+// New premium pages
+const Backtester = lazyLoad(() => import("./pages/Backtester"));
+const RiskDashboard = lazyLoad(() => import("./pages/RiskDashboard"));
+const ApiAccess = lazyLoad(() => import("./pages/ApiAccess"));
+const Billing = lazyLoad(() => import("./pages/Billing"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      staleTime: 5 * 1000,
-      refetchOnWindowFocus: true,
+      ...CACHE_TIERS.SEMI_STATIC,
     },
   },
 });
@@ -80,8 +92,14 @@ const App = () => (
             <Route path="/market-structure" element={<MarketStructure />} />
             <Route path="/yield-intelligence" element={<YieldIntelligence />} />
             <Route path="/correlations" element={<Correlations />} />
+            {/* Premium pages */}
+            <Route path="/backtester" element={<Backtester />} />
+            <Route path="/risk-dashboard" element={<RiskDashboard />} />
+            <Route path="/api-access" element={<ApiAccess />} />
+            <Route path="/billing" element={<Billing />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <BackToTopFab />
         </BrowserRouter>
       </TooltipProvider>
     </ChainProvider>
