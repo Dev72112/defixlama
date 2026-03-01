@@ -63,6 +63,8 @@ const advancedItems: NavItem[] = [
   { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO" },
   { labelKey: "Yield Intelligence", href: "/yield-intelligence", icon: TrendingUp, badge: "PRO" },
   { labelKey: "Correlations", href: "/correlations", icon: Activity, badge: "PRO" },
+  { labelKey: "Backtester", href: "/backtester", icon: BarChart3, badge: "PRO" },
+  { labelKey: "Risk Dashboard", href: "/risk-dashboard", icon: Shield, badge: "PRO" },
 ];
 
 interface SidebarProps {
@@ -224,6 +226,17 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
               <NavItemLink item={item} />
             </div>
           ))}
+
+          {/* Premium Tools */}
+          {!isCollapsed && (
+            <div className="mt-4 px-2">
+              <p className="px-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">
+                Account
+              </p>
+              <NavItemLink item={{ labelKey: "API Access", href: "/api-access", icon: ExternalLink, badge: "PRO" }} />
+              <NavItemLink item={{ labelKey: "Billing", href: "/billing", icon: Wallet }} />
+            </div>
+          )}
 
           {/* Resources */}
           {!isCollapsed && (
