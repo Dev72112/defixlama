@@ -96,7 +96,7 @@ export function DominanceChart({ protocols, loading }: DominanceChartProps) {
           </PieChart>
         </ResponsiveContainer>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+      <div className="grid grid-cols-2 gap-2 mt-2">
         {chartData.map((item) => (
           <div key={item.name} className="flex items-center gap-2">
             <div

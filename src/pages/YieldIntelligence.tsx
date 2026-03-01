@@ -1,6 +1,3 @@
-import { useAuth } from '@/hooks/useAuth';
-import { UpgradePrompt } from '@/components/UpgradePrompt';
-import { canAccessFeature } from '@/lib/subscriptionHelper';
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
@@ -13,12 +10,10 @@ import { TrendingUp, Layers, Zap, BarChart3, Calculator, PieChart as PieIcon, Sh
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area, LineChart, Line } from "recharts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function YieldIntelligence() {
   const { selectedChain } = useChain();
-  const { subscription_tier } = useAuth();
   const pools = useChainYieldPools(selectedChain.id);
   const chainId = selectedChain.id;
   const chainTvlHistory = useChainTVLHistory(chainId === "all" ? null : selectedChain.slug);
@@ -27,24 +22,8 @@ export default function YieldIntelligence() {
   const poolList = pools.data ?? [];
   const isLoading = pools.isLoading;
 
-  // Check if user can access yield intelligence
-  if (!canAccessFeature(subscription_tier, 'yield_intelligence')) {
-    return (
-      <Layout>
-        <UpgradePrompt
-          feature="Yield Intelligence"
-          currentTier={subscription_tier}
-          requiredTier="pro"
-          description="Analyze yield opportunities with risk-adjusted rankings, impermanent loss calculations, and optimization recommendations. Available in Pro and Enterprise plans."
-        />
-      </Layout>
-    );
-  }
-
   const [ilPriceChange, setIlPriceChange] = useState(50);
   const [historyRange, setHistoryRange] = useState<DateRange>("30d");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
 
   // KPIs
   const kpis = useMemo(() => {
@@ -71,8 +50,8 @@ export default function YieldIntelligence() {
         tvl: p.tvlUsd || 0,
         riskScore: ((p.apy || 0) * Math.log10(Math.max(p.tvlUsd || 1, 1))) / 100,
       }))
-      .sort((a, b) => b.riskScore - a.riskScore);
-      // No limit - pagination handled at UI level
+      .sort((a, b) => b.riskScore - a.riskScore)
+      .slice(0, 30);
   }, [poolList]);
 
   // Yield by project (top 15)
@@ -172,80 +151,33 @@ export default function YieldIntelligence() {
           ) : riskAdjusted.length === 0 ? (
             <ChartEmptyState message="No yield pools with sufficient data" height="h-[200px]" />
           ) : (
-            <div className="space-y-4">
-              <div className="overflow-x-auto">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Pool</th>
-                      <th>Project</th>
-                      <th>Chain</th>
-                      <th className="text-right">APY</th>
-                      <th className="text-right">TVL</th>
-                      <th className="text-right">Risk Score</th>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Pool</th>
+                    <th>Project</th>
+                    <th>Chain</th>
+                    <th className="text-right">APY</th>
+                    <th className="text-right">TVL</th>
+                    <th className="text-right">Risk Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {riskAdjusted.slice(0, 20).map((r, i) => (
+                    <tr key={i}>
+                      <td className="text-muted-foreground">{i + 1}</td>
+                      <td className="font-medium text-foreground">{r.pool}</td>
+                      <td className="text-muted-foreground">{r.project}</td>
+                      <td className="text-muted-foreground">{r.chain}</td>
+                      <td className="text-right font-mono text-success">{r.apy.toFixed(2)}%</td>
+                      <td className="text-right font-mono">{formatCurrency(r.tvl)}</td>
+                      <td className="text-right font-mono text-primary">{r.riskScore.toFixed(2)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {riskAdjusted
-                      .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                      .map((r, i) => (
-                        <tr key={i}>
-                          <td className="text-muted-foreground">{(currentPage - 1) * itemsPerPage + i + 1}</td>
-                          <td className="font-medium text-foreground">{r.pool}</td>
-                          <td className="text-muted-foreground">{r.project}</td>
-                          <td className="text-muted-foreground">{r.chain}</td>
-                          <td className="text-right font-mono text-success">{r.apy.toFixed(2)}%</td>
-                          <td className="text-right font-mono">{formatCurrency(r.tvl)}</td>
-                          <td className="text-right font-mono text-primary">{r.riskScore.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                  {Math.min(currentPage * itemsPerPage, riskAdjusted.length)} of {riskAdjusted.length} pools
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-1 px-2">
-                    {Array.from({ length: Math.ceil(riskAdjusted.length / itemsPerPage) })
-                      .map((_, i) => i + 1)
-                      .filter((p) => Math.abs(p - currentPage) <= 2 || p === 1)
-                      .map((p, idx, arr) => (
-                        <div key={p}>
-                          {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1">...</span>}
-                          <Button
-                            size="sm"
-                            variant={p === currentPage ? "default" : "outline"}
-                            onClick={() => setCurrentPage(p)}
-                          >
-                            {p}
-                          </Button>
-                        </div>
-                      ))}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage >= Math.ceil(riskAdjusted.length / itemsPerPage)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

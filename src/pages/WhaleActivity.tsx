@@ -1,6 +1,3 @@
-import { useAuth } from '@/hooks/useAuth';
-import { UpgradePrompt } from '@/components/UpgradePrompt';
-import { canAccessFeature } from '@/lib/subscriptionHelper';
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
@@ -39,27 +36,12 @@ const SEVERITY_STYLES: Record<string, string> = {
 
 export default function WhaleActivity() {
   const { selectedChain } = useChain();
-  const { subscription_tier } = useAuth();
   const protocols = useChainProtocols(selectedChain.id);
   const chainsTVL = useChainsTVL();
   const dexVolumes = useChainDexVolumes(selectedChain.id);
   const [severityFilter, setSeverityFilter] = useState<Severity>("all");
   const [whaleSearch, setWhaleSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-
-  // Check if user can access whale activity
-  if (!canAccessFeature(subscription_tier, 'whale_tracking')) {
-    return (
-      <Layout>
-        <UpgradePrompt
-          feature="Whale Activity Tracking"
-          currentTier={subscription_tier}
-          requiredTier="pro"
-          description="Monitor large whale transactions, capital concentration, TVL movements, and risk alerts in real-time. Available in Pro and Enterprise plans."
-        />
-      </Layout>
-    );
-  }
 
   const protocolList = protocols.data ?? [];
 

@@ -72,8 +72,8 @@ export default function Dexs() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t("dexs.title")}</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t("dexs.title")}</h1>
+            <p className="text-muted-foreground mt-1">
               {t("dexs.subtitle")}
             </p>
           </div>
@@ -84,7 +84,7 @@ export default function Dexs() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title={t("dexs.volume24h")}
             value={formatCurrency(total24hVolume)}

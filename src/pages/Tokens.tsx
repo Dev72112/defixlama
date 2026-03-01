@@ -20,23 +20,36 @@ import { useChain } from "@/contexts/ChainContext";
 export default function Tokens() {
   const { t } = useTranslation();
   const { selectedChain, isAllChains } = useChain();
-  const { data: tokens, isLoading, isError, error, refetch } = useTokenPrices(selectedChain.id);
+  const { data: tokens, isLoading, isError, error, refetch } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState("");
   const [showComparison, setShowComparison] = useState(false);
   const navigate = useNavigate();
 
-  // Filter tokens by search query only (chain filtering done server-side)
-  const filteredTokens = (tokens || []).filter((t: any) =>
+  // Filter tokens by chain and search query
+  const chainFilteredTokens = (tokens || []).filter((t: any) => {
+    if (isAllChains) return true;
+    const chainId = selectedChain.id.toLowerCase();
+    const chainSlug = selectedChain.slug.toLowerCase();
+    // Match token chain field against chain id or slug
+    if (t.chain && (t.chain.toLowerCase() === chainId || t.chain.toLowerCase() === chainSlug)) return true;
+    if (t.isCommunityToken && chainId === "xlayer") return true;
+    if (t.isDbListing && t.chain && (t.chain.toLowerCase() === chainId || t.chain.toLowerCase() === chainSlug)) return true;
+    // Major tokens with no chain field show on all chains
+    if (!t.chain && !t.isCommunityToken && !t.isDbListing) return true;
+    return false;
+  });
+
+  const filteredTokens = chainFilteredTokens.filter((t: any) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Calculate metrics from filtered tokens
-  const totalMcap = filteredTokens.reduce((acc: number, t: any) => acc + (t.mcap || 0), 0);
-  const totalVolume = filteredTokens.reduce((acc: number, t: any) => acc + (t.volume24h || 0), 0);
-  const validTokens = filteredTokens.filter((t: any) => t.price > 0);
-  const avgChange = validTokens.length > 0
-    ? validTokens.reduce((acc: number, t: any) => acc + (t.change24h || 0), 0) / validTokens.length
+  // Calculate metrics from chain-filtered tokens
+  const totalMcap = chainFilteredTokens.reduce((acc: number, t: any) => acc + (t.mcap || 0), 0);
+  const totalVolume = chainFilteredTokens.reduce((acc: number, t: any) => acc + (t.volume24h || 0), 0);
+  const validTokens = chainFilteredTokens.filter((t: any) => t.price > 0);
+  const avgChange = validTokens.length > 0 
+    ? validTokens.reduce((acc: number, t: any) => acc + (t.change24h || 0), 0) / validTokens.length 
     : 0;
 
   // Get the correct route ID for each token
@@ -103,36 +116,36 @@ export default function Tokens() {
     <Layout>
       <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
-        <div className="flex flex-col gap-3 sm:gap-4">
-          <div className="flex flex-col gap-2 min-w-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t("tokens.title")}</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t("tokens.title")}</h1>
+            <p className="text-muted-foreground mt-1">
               {t("tokens.subtitle")}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
-            <Button variant="outline" size="sm" onClick={handleExport} className="gap-2 text-xs sm:text-sm w-full sm:w-auto">
-              <Download className="h-4 w-4 flex-shrink-0" />
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
+              <Download className="h-4 w-4" />
               {t("tokens.export")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowComparison(true)}
-              className="gap-2 text-xs sm:text-sm w-full sm:w-auto"
+              className="gap-2"
             >
-              <GitCompare className="h-4 w-4 flex-shrink-0" />
+              <GitCompare className="h-4 w-4" />
               {t("tokens.compare")}
             </Button>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-xs sm:text-sm font-medium flex-shrink-0 whitespace-nowrap">
-              <Activity className="h-4 w-4 animate-pulse flex-shrink-0" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
+              <Activity className="h-4 w-4 animate-pulse" />
               {t("common.live")}
             </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title={t("tokens.totalMarketCap")}
             value={formatCurrency(totalMcap)}
@@ -161,146 +174,19 @@ export default function Tokens() {
         </div>
 
         {/* Search */}
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground flex-shrink-0" />
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("tokens.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 text-xs sm:text-sm w-full"
+            className="pl-10"
           />
         </div>
 
         {/* Tokens Table */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          {isLoading ? (
-            <>
-              {/* Mobile loading skeleton */}
-              <div className="md:hidden divide-y divide-border">
-                {Array(8).fill(0).map((_, i) => (
-                  <div key={i} className="p-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="skeleton h-8 w-8 rounded-full flex-shrink-0" />
-                      <div className="space-y-1.5">
-                        <div className="skeleton h-3.5 w-24" />
-                        <div className="skeleton h-3 w-16" />
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                      <div className="skeleton h-3.5 w-20" />
-                      <div className="skeleton h-3 w-14" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {/* Desktop loading skeleton */}
-              <table className="data-table w-full hidden md:table">
-                <thead>
-                  <tr className="bg-muted/30">
-                    <th className="w-10 hidden sm:table-cell"></th>
-                    <th className="w-12 hidden sm:table-cell">#</th>
-                    <th className="text-left">{t("tokens.token")}</th>
-                    <th className="text-right">{t("tokens.price")}</th>
-                    <th className="text-right">{t("tokens.change24h")}</th>
-                    <th className="text-right hidden md:table-cell">{t("tokens.volume")}</th>
-                    <th className="text-right hidden lg:table-cell">{t("tokens.mcap")}</th>
-                    <th className="w-12 hidden sm:table-cell"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array(8).fill(0).map((_, i) => (
-                    <tr key={i}>
-                      <td className="hidden sm:table-cell"></td>
-                      <td className="hidden sm:table-cell"><div className="skeleton h-4 w-6" /></td>
-                      <td><div className="skeleton h-8 w-32" /></td>
-                      <td><div className="skeleton h-4 w-20 ml-auto" /></td>
-                      <td><div className="skeleton h-4 w-16 ml-auto" /></td>
-                      <td className="hidden md:table-cell"><div className="skeleton h-4 w-20 ml-auto" /></td>
-                      <td className="hidden lg:table-cell"><div className="skeleton h-4 w-20 ml-auto" /></td>
-                      <td className="hidden sm:table-cell"></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          ) : isError ? (
-            <div className="py-8">
-              <ErrorState
-                error={error as Error}
-                onRetry={() => refetch()}
-                compact
-              />
-            </div>
-          ) : (
-            <>
-              {/* ── MOBILE CARD LIST (hidden on md+) ── */}
-              <div className="md:hidden divide-y divide-border">
-                {filteredTokens.map((token, index) => {
-                  const routeId = getTokenRouteId(token);
-                  const isCommunity = token.isCommunityToken;
-
-                  return (
-                    <div
-                      key={token.symbol}
-                      className="flex items-center justify-between gap-3 px-3 py-2.5 active:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/tokens/${routeId}`)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${routeId}`); }}
-                    >
-                      {/* Left — logo + name + symbol + badge */}
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {token.logo ? (
-                          <img
-                            src={token.logo}
-                            alt={token.name}
-                            className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${token.symbol}&background=1a1a2e&color=2dd4bf&size=32`;
-                            }}
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                            {token.symbol.slice(0, 2)}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-medium text-sm text-foreground truncate leading-tight">
-                              {token.name}
-                            </p>
-                            {isCommunity && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary/20 text-primary font-medium flex-shrink-0 whitespace-nowrap">
-                                {t("tokens.community")}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-muted-foreground truncate leading-tight">
-                            {token.symbol}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Right — price + change stacked */}
-                      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                        <span className="font-mono text-sm font-medium text-foreground">
-                          <PriceDisplay price={token.price} />
-                        </span>
-                        {token.price > 0 ? (
-                          <div className="text-[11px]">
-                            <ChangeDisplay change={token.change24h} />
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-muted-foreground">-</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-          {/* ── DESKTOP TABLE (hidden below md) ── */}
-          <table className="data-table w-full hidden md:table">
+        <div className="rounded-lg border border-border bg-card overflow-x-auto">
+          <table className="data-table w-full">
             <thead>
               <tr className="bg-muted/30">
                 <th className="w-10 hidden sm:table-cell"></th>
@@ -314,7 +200,30 @@ export default function Tokens() {
               </tr>
             </thead>
             <tbody>
-              {filteredTokens.map((token, index) => {
+              {isLoading ? (
+                Array(8).fill(0).map((_, i) => (
+                  <tr key={i}>
+                    <td className="hidden sm:table-cell"></td>
+                    <td className="hidden sm:table-cell"><div className="skeleton h-4 w-6" /></td>
+                    <td><div className="skeleton h-8 w-32" /></td>
+                    <td><div className="skeleton h-4 w-20 ml-auto" /></td>
+                    <td><div className="skeleton h-4 w-16 ml-auto" /></td>
+                    <td className="hidden md:table-cell"><div className="skeleton h-4 w-20 ml-auto" /></td>
+                    <td className="hidden lg:table-cell"><div className="skeleton h-4 w-20 ml-auto" /></td>
+                    <td className="hidden sm:table-cell"></td>
+                  </tr>
+                ))
+              ) : isError ? (
+                <tr>
+                  <td colSpan={8} className="py-8">
+                    <ErrorState 
+                      error={error as Error}
+                      onRetry={() => refetch()}
+                      compact
+                    />
+                  </td>
+                </tr>
+              ) : filteredTokens.map((token, index) => {
                 const routeId = getTokenRouteId(token);
                 const isCommunity = token.isCommunityToken;
                 return (
@@ -412,8 +321,6 @@ export default function Tokens() {
               })}
             </tbody>
           </table>
-            </>
-          )}
         </div>
 
         {/* Info */}

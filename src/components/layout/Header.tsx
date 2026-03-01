@@ -34,7 +34,6 @@ export function Header({ onMenuClick }: HeaderProps) {
           size="icon"
           className="lg:hidden hover:bg-primary/10 hover:text-primary transition-colors"
           onClick={onMenuClick}
-          aria-label="Toggle navigation menu"
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -70,7 +69,6 @@ export function Header({ onMenuClick }: HeaderProps) {
               setTimeout(() => setIsRefreshing(false), 1000);
             }}
             title={t("common.refresh")}
-            aria-label="Refresh all data"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>

@@ -19,9 +19,6 @@ import {
   X,
   Waves,
   Landmark,
-  Target,
-  Code,
-  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -57,16 +54,10 @@ const moreTabs: NavTab[] = [
   { labelKey: "nav.security", href: "/security", icon: Shield },
   { labelKey: "nav.donations", href: "/donations", icon: Heart },
   { labelKey: "nav.builderLogs", href: "/builder-logs", icon: ScrollText },
-  // Premium PRO Features
-  { labelKey: "Backtester", href: "/backtester", icon: Target, badge: "PRO" },
-  { labelKey: "Portfolio Dashboard", href: "/portfolio-dashboard", icon: PieChart, badge: "PRO" },
-  { labelKey: "Risk Dashboard", href: "/risk-dashboard", icon: Shield, badge: "PRO" },
   { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "PRO" },
   { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO" },
   { labelKey: "Yield Intelligence", href: "/yield-intelligence", icon: TrendingUp, badge: "PRO" },
-  { labelKey: "API Access", href: "/api-access", icon: Code, badge: "PRO" },
-  // Premium ENTERPRISE Features
-  { labelKey: "Billing", href: "/billing", icon: CreditCard, badge: "PRO" },
+  { labelKey: "Correlations", href: "/correlations", icon: Activity, badge: "PRO" },
 ];
 
 export function BottomNav() {

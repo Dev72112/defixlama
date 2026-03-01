@@ -138,7 +138,7 @@ export default function DexDetail() {
         <div className="space-y-6 animate-fade-in">
           <div className="skeleton h-8 w-32" />
           <div className="skeleton h-16 w-64" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array(4).fill(0).map((_, i) => (
               <div key={i} className="skeleton h-24 rounded-lg" />
             ))}
@@ -252,7 +252,7 @@ export default function DexDetail() {
         {hasVolumeData ? (
           <>
             {/* Enhanced Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 title="24h Volume"
                 value={formatCurrency(dex.total24h || 0)}

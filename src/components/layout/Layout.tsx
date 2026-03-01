@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Button } from "@/components/ui/button";
-import { ChevronUp } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,26 +18,12 @@ export function Layout({ children }: LayoutProps) {
       return localStorage.getItem("sidebar-collapsed") === "true";
     } catch { return false; }
   });
-  const [showBackToTop, setShowBackToTop] = useState(false);
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
   useEffect(() => {
     try { localStorage.setItem("sidebar-collapsed", String(sidebarCollapsed)); } catch {}
   }, [sidebarCollapsed]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 300);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries();
@@ -85,17 +69,6 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Bottom Navigation - mobile only */}
       {isMobile && <BottomNav />}
-
-      {/* Back to Top Button */}
-      {showBackToTop && (
-        <Button
-          onClick={scrollToTop}
-          className="fixed bottom-8 right-8 md:bottom-32 z-40 rounded-full h-12 w-12 p-0 animate-fade-in"
-          aria-label="Back to top"
-        >
-          <ChevronUp className="h-5 w-5" />
-        </Button>
-      )}
     </div>
   );
 }

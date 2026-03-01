@@ -144,7 +144,7 @@ export default function TokenDetail() {
       <Layout>
         <div className="space-y-6 animate-fade-in">
           <div className="skeleton h-8 w-48" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array(4).fill(0).map((_, i) => (
               <div key={i} className="skeleton h-24 rounded-lg" />
             ))}
@@ -264,7 +264,7 @@ export default function TokenDetail() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Market Cap"
             value={formatCurrency(displayToken.market_data?.market_cap?.usd || 0)}

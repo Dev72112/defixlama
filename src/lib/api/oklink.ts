@@ -1,26 +1,8 @@
 // OKLink API helper for XLayer token data
 // Uses OKX Explorer public endpoints for live token data
-// Leverages unified API client for error handling and retries
-
-import { ApiClient } from './client';
-import { validateData } from '@/lib/validation';
 
 const OKLINK_BASE = "https://www.oklink.com/api";
 const OKX_EXPLORER_BASE = "https://www.okx.com/api/v5/explorer";
-
-const oklinkClient = new ApiClient({
-  baseUrl: OKLINK_BASE,
-  timeout: 8000,
-  maxRetries: 2,
-  retryDelay: 500,
-});
-
-const okxExplorerClient = new ApiClient({
-  baseUrl: OKX_EXPLORER_BASE,
-  timeout: 8000,
-  maxRetries: 2,
-  retryDelay: 500,
-});
 
 interface OklinkTokenInfo {
   symbol?: string;
@@ -36,113 +18,119 @@ interface OklinkTokenInfo {
   change24h?: number;
   volume24h?: number;
   marketCap?: number;
-  error?: string;
 }
 
-/**
- * Parse token info from various API response formats
- */
-function parseTokenInfo(data: any): OklinkTokenInfo | null {
-  if (!data) return null;
-
-  const info = data.result || data.data;
-  if (!info) return null;
-
-  return {
-    symbol: info.symbol || info.tokenSymbol,
-    name: info.name || info.tokenName || info.contractName,
-    logo: info.logo || info.image || info.tokenLogo,
-    contractLogo: info.contractLogo,
-    description: info.description,
-    contractName: info.contractName,
-    totalSupply: info.totalSupply,
-    holders: info.holders || info.holderCount,
-    price: parseFloat(info.price || info.priceUsd) || 0,
-    priceUsd: info.priceUsd,
-    change24h: parseFloat(info.priceChange24h || info.change24h) || 0,
-    volume24h: parseFloat(info.volume24h || info.tradingVolume) || 0,
-    marketCap: parseFloat(info.marketCap) || 0,
-  };
+async function tryFetch(url: string, options?: RequestInit) {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
 }
 
 // Fetch token info from OKX Explorer for XLayer
 export async function fetchOklinkTokenInfo(contract: string): Promise<OklinkTokenInfo | null> {
   const enc = encodeURIComponent(contract);
-
-  // Try multiple OKX Explorer endpoints for XLayer
+  
+  // Try multiple OKX Explorer endpoints for XLayer (chainShortName: xlayer or xlayer-testnet)
   const endpoints = [
-    `/xlayer/api?module=token&action=tokeninfo&contractaddress=${enc}`,
+    `${OKX_EXPLORER_BASE}/xlayer/api?module=token&action=tokeninfo&contractaddress=${enc}`,
+    `https://www.okx.com/explorer/xlayer/api/v1/token/${enc}`,
+    `https://www.okx.com/api/explorer/v1/xlayer/address/${enc}/tokenInfo`,
   ];
 
-  for (const path of endpoints) {
-    const response = await oklinkClient.get<any>(path);
-    if (response.success && response.data) {
-      const tokenInfo = parseTokenInfo(response.data);
-      if (tokenInfo) return tokenInfo;
+  for (const url of endpoints) {
+    const data = await tryFetch(url);
+    if (data?.result || data?.data) {
+      const info = data.result || data.data;
+      return {
+        symbol: info.symbol || info.tokenSymbol,
+        name: info.name || info.tokenName || info.contractName,
+        logo: info.logo || info.image || info.tokenLogo,
+        contractLogo: info.contractLogo,
+        description: info.description,
+        contractName: info.contractName,
+        totalSupply: info.totalSupply,
+        holders: info.holders || info.holderCount,
+        price: parseFloat(info.price || info.priceUsd) || 0,
+        priceUsd: info.priceUsd,
+        change24h: parseFloat(info.priceChange24h || info.change24h) || 0,
+        volume24h: parseFloat(info.volume24h || info.tradingVolume) || 0,
+        marketCap: parseFloat(info.marketCap) || 0,
+      };
     }
   }
-
-  // Fallback to OKX Explorer service
-  const okxResponse = await okxExplorerClient.get<any>(
-    `/xlayer/api?module=token&action=tokeninfo&contractaddress=${enc}`
-  );
-  if (okxResponse.success && okxResponse.data) {
-    const tokenInfo = parseTokenInfo(okxResponse.data);
-    if (tokenInfo) return tokenInfo;
-  }
-
+  
   return null;
 }
 
 export async function fetchOklinkAddressTokens(address: string) {
   const enc = encodeURIComponent(address);
+  const endpoints = [
+    `${OKLINK_BASE}/explorer/v1/address/${enc}/token`,
+    `${OKLINK_BASE}/explorer/v1/token/address/${enc}`,
+    `https://www.okx.com/api/explorer/v1/xlayer/address/${enc}/token-balance`,
+  ];
 
-  const response = await oklinkClient.get<any>(
-    `/explorer/v1/address/${enc}/token`
-  );
-
-  if (response.success && response.data) {
-    return response.data;
+  for (const url of endpoints) {
+    const data = await tryFetch(url);
+    if (data) return data;
   }
-
   return null;
 }
 
 export async function fetchOklinkContractInfo(address: string): Promise<OklinkTokenInfo | null> {
+  const enc = encodeURIComponent(address);
+  
   // Try dedicated token info first
   const tokenInfo = await fetchOklinkTokenInfo(address);
-  if (tokenInfo && tokenInfo.name) return tokenInfo;
-
-  const enc = encodeURIComponent(address);
-  const response = await oklinkClient.get<any>(`/explorer/v1/contract/${enc}`);
-
-  if (response.success && response.data) {
-    const info = parseTokenInfo(response.data);
-    if (info) return info;
+  if (tokenInfo) return tokenInfo;
+  
+  // Fallback to contract endpoints
+  const endpoints = [
+    `${OKLINK_BASE}/explorer/v1/contract/${enc}`,
+    `${OKLINK_BASE}/open/v1/contract/${enc}`,
+    `https://www.okx.com/api/explorer/v1/xlayer/contract/${enc}`,
+  ];
+  
+  for (const url of endpoints) {
+    const data = await tryFetch(url);
+    if (data?.result || data?.data) {
+      const info = data.result || data.data;
+      return {
+        symbol: info.symbol,
+        name: info.name || info.contractName,
+        logo: info.logo,
+        contractName: info.contractName,
+        description: info.description,
+        totalSupply: info.totalSupply,
+        holders: info.holders,
+      };
+    }
   }
-
   return null;
 }
 
 export async function fetchOklinkTxsForAddress(address: string, page = 1, size = 10) {
   const enc = encodeURIComponent(address);
-
-  const response = await oklinkClient.get<any>(
-    `/explorer/v1/address/${enc}/txs`,
-    { params: { page, size } }
-  );
-
-  if (response.success && response.data) {
-    return response.data;
+  const endpoints = [
+    `${OKLINK_BASE}/explorer/v1/address/${enc}/txs?page=${page}&size=${size}`,
+    `https://www.okx.com/api/explorer/v1/xlayer/address/${enc}/transactions?page=${page}&limit=${size}`,
+  ];
+  
+  for (const url of endpoints) {
+    const data = await tryFetch(url);
+    if (data) return data;
   }
-
   return null;
 }
 
 // Fetch live price from OKX for XLayer tokens
 export async function fetchOklinkLivePrice(contract: string): Promise<{ price: number; change24h: number; volume24h: number } | null> {
   const tokenInfo = await fetchOklinkTokenInfo(contract);
-  if (tokenInfo && tokenInfo.price && tokenInfo.price > 0) {
+  if (tokenInfo && tokenInfo.price) {
     return {
       price: tokenInfo.price,
       change24h: tokenInfo.change24h || 0,

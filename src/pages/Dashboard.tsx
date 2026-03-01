@@ -244,7 +244,7 @@ function DashboardContent() {
       </div>
 
       {/* New Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <NetworkStatsCard 
           loading={protocols?.isLoading} 
           protocols={protocols?.data ?? []} 
@@ -261,7 +261,7 @@ function DashboardContent() {
       </ErrorBoundary>
 
       {/* Historical Charts with Date Range */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <HistoricalTVLChart 
           data={tvlHistory?.data ?? []} 
           loading={tvlHistory?.isLoading ?? true} 
@@ -276,7 +276,7 @@ function DashboardContent() {
       </div>
 
       {/* Market Intelligence Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MarketSentiment 
           protocols={protocols?.data ?? []} 
           tokens={tokens ?? []}
@@ -298,7 +298,7 @@ function DashboardContent() {
 
       {/* Top Movers */}
       <div className="space-y-4">
-        <h2 className="text-base sm:text-lg md:text-lg font-semibold text-foreground">{t("dashboard.topMovers")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("dashboard.topMovers")}</h2>
         <TopMovers
           protocols={protocols?.data ?? []} 
           tokens={tokens ?? []}
@@ -308,16 +308,16 @@ function DashboardContent() {
       </div>
 
       {/* Quick Insights */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title={t("dashboard.marketCap")} value={formatCurrency(marketCap)} icon={Database} loading={protocols?.isLoading ?? true} />
         <StatCard title={t("dashboard.newProtocols")} value={String(newProtocolsCount)} icon={Layers} loading={protocols?.isLoading ?? true} />
         <StatCard title={t("dashboard.topCategories")} value={categoryCount.length.toString()} icon={TrendingUp} loading={protocols?.isLoading ?? true} />
       </div>
 
       {/* Insights: Categories + Recent Activity */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="rounded-lg border border-border bg-card p-3 sm:p-4 lg:col-span-2">
-          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3">{t("dashboard.protocolCategories")}</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
+          <h3 className="text-lg font-semibold text-foreground mb-3">{t("dashboard.protocolCategories")}</h3>
           <div className="flex flex-col gap-2">
             {categoryCount.map(([cat, count]: any) => (
               <div key={cat} className="flex items-center justify-between">
@@ -329,17 +329,17 @@ function DashboardContent() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-          <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground truncate">{t("dashboard.recentActivity")}</h3>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-foreground">{t("dashboard.recentActivity")}</h3>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
                 {t("common.live")}
               </div>
             </div>
-            <Link to="/activities" className="flex-shrink-0">
-              <Button variant="ghost" size="sm" className="text-primary text-xs sm:text-sm">{t("dashboard.viewAll")} →</Button>
+            <Link to="/activities">
+              <Button variant="ghost" size="sm" className="text-primary">{t("dashboard.viewAll")} →</Button>
             </Link>
           </div>
           {isActivityLoading ? (
@@ -395,12 +395,12 @@ function DashboardContent() {
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <h2 className="text-base sm:text-lg md:text-lg font-semibold text-foreground truncate">Top Protocols</h2>
-            <Link to="/protocols" className="flex-shrink-0">
-              <Button variant="ghost" size="sm" className="text-primary text-xs sm:text-sm">View All →</Button>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Top Protocols</h2>
+            <Link to="/protocols">
+              <Button variant="ghost" size="sm" className="text-primary">View All →</Button>
             </Link>
           </div>
           <ErrorBoundary FallbackComponent={ErrorFallback}>
@@ -411,10 +411,10 @@ function DashboardContent() {
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <h2 className="text-base sm:text-lg md:text-lg font-semibold text-foreground truncate">DEX Volume</h2>
-            <Link to="/dexs" className="flex-shrink-0">
-              <Button variant="ghost" size="sm" className="text-primary text-xs sm:text-sm">View All →</Button>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">DEX Volume</h2>
+            <Link to="/dexs">
+              <Button variant="ghost" size="sm" className="text-primary">View All →</Button>
             </Link>
           </div>
           <ErrorBoundary FallbackComponent={ErrorFallback}>
@@ -427,10 +427,10 @@ function DashboardContent() {
 
       {/* Yield Pools */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-2 min-w-0">
-          <h2 className="text-base sm:text-lg md:text-lg font-semibold text-foreground truncate">Top Yield Pools</h2>
-          <Link to="/yields" className="flex-shrink-0">
-            <Button variant="ghost" size="sm" className="text-primary text-xs sm:text-sm">View All →</Button>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground">Top Yield Pools</h2>
+          <Link to="/yields">
+            <Button variant="ghost" size="sm" className="text-primary">View All →</Button>
           </Link>
         </div>
         <ErrorBoundary FallbackComponent={ErrorFallback}>
@@ -461,15 +461,15 @@ function DashboardContent() {
       )}
       
       {/* Top Chains & Fees */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-4 lg:col-span-2">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <h2 className="text-base sm:text-lg md:text-lg font-semibold text-foreground truncate">Top Chains by TVL</h2>
-            <Link to="/chains" className="flex-shrink-0">
-              <Button variant="ghost" size="sm" className="text-primary text-xs sm:text-sm">View All →</Button>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Top Chains by TVL</h2>
+            <Link to="/chains">
+              <Button variant="ghost" size="sm" className="text-primary">View All →</Button>
             </Link>
           </div>
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
+          <div className="rounded-lg border border-border bg-card p-4">
             <ul className="space-y-2">
               {topChains.length === 0 && (
                 <li className="text-muted-foreground">No chain TVL data available</li>
@@ -493,7 +493,7 @@ function DashboardContent() {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-base sm:text-lg md:text-lg font-semibold text-foreground">Fees (24h)</h2>
+          <h2 className="text-lg font-semibold text-foreground">Fees (24h)</h2>
           <StatCard
             title={t("fees.fees24h")}
             value={formatCurrency(fees24h)}

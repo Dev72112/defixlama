@@ -1,10 +1,9 @@
-import { Protocol, formatCurrency, formatPercentage, getChangeColor, timeAgo } from "@/lib/api/defillama";
+import { Protocol, formatCurrency, formatPercentage, getChangeColor } from "@/lib/api/defillama";
 import { cn } from "@/lib/utils";
-import { ExternalLink, TrendingUp, TrendingDown, Shield, ShieldCheck, ArrowUp, ArrowDown } from "lucide-react";
+import { ExternalLink, TrendingUp, TrendingDown, Shield, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { WatchlistButton } from "@/components/WatchlistButton";
-import { useState, useMemo } from "react";
 
 interface ProtocolTableProps {
   protocols: Protocol[];
@@ -14,7 +13,6 @@ interface ProtocolTableProps {
   showAuditBadge?: boolean;
   limit?: number;
   className?: string;
-  dataUpdatedAt?: number;
 }
 
 // Simple sparkline component
@@ -53,76 +51,13 @@ export function ProtocolTable({
   showAuditBadge = false,
   limit,
   className,
-  dataUpdatedAt,
 }: ProtocolTableProps) {
-  const [sortBy, setSortBy] = useState<'tvl' | 'change_1d' | 'change_7d' | 'name'>('tvl');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-
-  // Sort protocols based on current sort state
-  const sortedProtocols = useMemo(() => {
-    const sorted = [...protocols].sort((a, b) => {
-      let aVal: any, bVal: any;
-
-      switch (sortBy) {
-        case 'tvl':
-          aVal = a.tvl || 0;
-          bVal = b.tvl || 0;
-          break;
-        case 'change_1d':
-          aVal = a.change_1d || 0;
-          bVal = b.change_1d || 0;
-          break;
-        case 'change_7d':
-          aVal = a.change_7d || 0;
-          bVal = b.change_7d || 0;
-          break;
-        case 'name':
-          aVal = a.name.toLowerCase();
-          bVal = b.name.toLowerCase();
-          break;
-        default:
-          return 0;
-      }
-
-      return sortDir === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
-    });
-    return sorted;
-  }, [protocols, sortBy, sortDir]);
-
-  const displayProtocols = limit ? sortedProtocols.slice(0, limit) : sortedProtocols;
-
-  const toggleSort = (column: 'tvl' | 'change_1d' | 'change_7d' | 'name') => {
-    if (sortBy === column) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortDir('desc');
-    }
-  };
+  const displayProtocols = limit ? protocols.slice(0, limit) : protocols;
 
   if (loading) {
     return (
       <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
-        {/* Mobile loading skeleton */}
-        <div className="sm:hidden divide-y divide-border">
-          {Array(5).fill(0).map((_, i) => (
-            <div key={i} className="p-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="skeleton h-8 w-8 rounded-full flex-shrink-0" />
-                <div className="space-y-1.5">
-                  <div className="skeleton h-3.5 w-24" />
-                  <div className="skeleton h-3 w-20" />
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                <div className="skeleton h-3.5 w-20" />
-                <div className="skeleton h-3 w-14" />
-              </div>
-            </div>
-          ))}
-        </div>
-        {/* Desktop loading skeleton */}
-        <table className="data-table w-full hidden sm:table">
+        <table className="data-table w-full">
           <thead>
             <tr className="bg-muted/30">
               <th className="w-12 hidden sm:table-cell">#</th>
@@ -165,122 +100,18 @@ export function ProtocolTable({
 
   return (
     <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
-      {/* ── MOBILE CARD LIST (hidden on sm+) ── */}
-      <div className="sm:hidden divide-y divide-border">
-        {displayProtocols.map((protocol, index) => {
-          const slug = protocol.slug || protocol.name.toLowerCase().replace(/\s+/g, "-");
-          const changeColor1d = getChangeColor(protocol.change_1d);
-          const changeColor7d = getChangeColor(protocol.change_7d);
-          const isPositive1d = protocol.change_1d !== undefined && protocol.change_1d >= 0;
-          const isPositive7d = protocol.change_7d !== undefined && protocol.change_7d >= 0;
-
-          return (
-            <div
-              key={protocol.id || protocol.name}
-              className="flex items-center justify-between gap-3 px-3 py-2.5 active:bg-muted/50 cursor-pointer transition-colors"
-              onClick={() => window.location.href = `/protocols/${slug}`}
-              role="button"
-              tabIndex={0}
-            >
-              {/* Left — logo + name + category */}
-              <div className="flex items-center gap-2.5 min-w-0">
-                {protocol.logo ? (
-                  <img
-                    src={protocol.logo}
-                    alt={protocol.name}
-                    className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${protocol.name}&background=1a1a2e&color=2dd4bf&size=32`;
-                    }}
-                  />
-                ) : (
-                  <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                    {protocol.name.charAt(0)}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="font-medium text-sm text-foreground truncate leading-tight">
-                    {protocol.name}
-                  </p>
-                  {showCategory && (
-                    <p className="text-[11px] text-muted-foreground truncate leading-tight">
-                      {protocol.category || "DeFi"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Right — tvl + changes stacked */}
-              <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                <span className="font-mono text-sm font-medium text-foreground">
-                  {formatCurrency(protocol.tvl)}
-                </span>
-                <span className={cn("inline-flex items-center gap-0.5 font-mono text-[11px]", changeColor1d)}>
-                  {isPositive1d
-                    ? <TrendingUp className="h-3 w-3" />
-                    : <TrendingDown className="h-3 w-3" />
-                  }
-                  {formatPercentage(protocol.change_1d)}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── DESKTOP TABLE (hidden below sm) ── */}
-      <table className="data-table w-full hidden sm:table">
+      <table className="data-table w-full">
         <thead>
-          <tr className="sticky top-0 bg-card z-20 backdrop-blur-sm bg-muted/30 border-b border-border">
+          <tr className="bg-muted/30">
             <th className="w-10 hidden sm:table-cell"></th>
             <th className="w-12 hidden sm:table-cell">#</th>
-            <th
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => toggleSort('name')}
-            >
-              <div className="flex items-center gap-1">
-                Name
-                {sortBy === 'name' && (
-                  sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
-                )}
-              </div>
-            </th>
+            <th>Name</th>
             {showCategory && <th className="hidden md:table-cell">Category</th>}
             {showAuditBadge && <th className="hidden lg:table-cell text-center">Audit</th>}
-            <th
-              className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => toggleSort('tvl')}
-            >
-              <div className="flex items-center justify-end gap-1">
-                TVL
-                {sortBy === 'tvl' && (
-                  sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
-                )}
-              </div>
-            </th>
+            <th className="text-right">TVL</th>
             {showSparkline && <th className="text-right hidden lg:table-cell">7d Trend</th>}
-            <th
-              className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => toggleSort('change_1d')}
-            >
-              <div className="flex items-center justify-end gap-1">
-                24h
-                {sortBy === 'change_1d' && (
-                  sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
-                )}
-              </div>
-            </th>
-            <th
-              className="text-right hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => toggleSort('change_7d')}
-            >
-              <div className="flex items-center justify-end gap-1">
-                7d
-                {sortBy === 'change_7d' && (
-                  sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
-                )}
-              </div>
-            </th>
+            <th className="text-right">24h</th>
+            <th className="text-right hidden sm:table-cell">7d</th>
           </tr>
         </thead>
         <tbody>
@@ -375,7 +206,7 @@ export function ProtocolTable({
               {showSparkline && (
                 <td className="text-right hidden lg:table-cell">
                   <div className="flex justify-end">
-                    <Sparkline
+                    <Sparkline 
                       data={[
                         protocol.tvl * (1 - (protocol.change_7d || 0) / 100),
                         protocol.tvl * (1 - (protocol.change_7d || 0) / 100 * 0.7),
@@ -383,8 +214,8 @@ export function ProtocolTable({
                         protocol.tvl * (1 - (protocol.change_7d || 0) / 100 * 0.3),
                         protocol.tvl * (1 - (protocol.change_7d || 0) / 100 * 0.1),
                         protocol.tvl
-                      ]}
-                      positive={(protocol.change_7d || 0) >= 0}
+                      ]} 
+                      positive={(protocol.change_7d || 0) >= 0} 
                     />
                   </div>
                 </td>
@@ -424,13 +255,6 @@ export function ProtocolTable({
           })}
         </tbody>
       </table>
-
-      {/* Updated timestamp footer */}
-      {dataUpdatedAt && (
-        <div className="px-4 py-2 border-t border-border bg-muted/20 text-xs text-muted-foreground">
-          Updated {timeAgo(Math.floor(dataUpdatedAt / 1000))}
-        </div>
-      )}
     </div>
   );
 }

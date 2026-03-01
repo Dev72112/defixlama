@@ -186,7 +186,7 @@ export default function ChainDetail() {
         <div className="space-y-6 animate-fade-in">
           <div className="skeleton h-8 w-32" />
           <div className="skeleton h-12 w-64" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array(4).fill(0).map((_, i) => (
               <div key={i} className="skeleton h-24 rounded-lg" />
             ))}
@@ -254,7 +254,7 @@ export default function ChainDetail() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total TVL" value={formatCurrency(chain.tvl)} icon={Layers} />
           <StatCard title="Rank" value={`#${rank}`} icon={TrendingUp} />
           <StatCard
@@ -329,7 +329,7 @@ export default function ChainDetail() {
         {/* TVL History Chart */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">TVL History (90 Days)</h3>
-          <div className="h-[300px] sm:h-[350px] md:h-[400px]">
+          <div className="h-[300px] md:h-[380px]">
             {historyLoading ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 Loading chart data...
@@ -386,7 +386,7 @@ export default function ChainDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-lg border border-border bg-card p-4 md:p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Market Share (Top 10)</h3>
-            <div className="h-[300px] sm:h-[350px] md:h-[400px]">
+            <div className="h-[300px]">
               {pieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -424,7 +424,7 @@ export default function ChainDetail() {
                 </div>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2">
               {pieData.slice(0, 6).map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-2 text-sm">
                   <div

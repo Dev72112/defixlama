@@ -59,15 +59,6 @@ const moreItems: NavItem[] = [
 ];
 
 const advancedItems: NavItem[] = [
-  { labelKey: "Risk Dashboard", href: "/risk-dashboard", icon: ShieldCheck, badge: "PRO" },
-  { labelKey: "Alert Config", href: "/alert-config", icon: Bell, badge: "PRO" },
-  { labelKey: "API Access", href: "/api-access", icon: Database, badge: "PRO" },
-  { labelKey: "Backtester", href: "/backtester", icon: TrendingUp, badge: "PRO" },
-  { labelKey: "Predictions", href: "/predictions", icon: TrendingUp, badge: "PRO" },
-  { labelKey: "Protocol Comparison", href: "/protocol-comparison", icon: Activity, badge: "PRO" },
-  { labelKey: "Governance", href: "/governance", icon: Activity, badge: "PRO" },
-  { labelKey: "Community Sentiment", href: "/community-sentiment", icon: Activity, badge: "PRO" },
-  { labelKey: "Watchlist Exports", href: "/watchlist-exports", icon: Activity, badge: "PRO" },
   { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "PRO" },
   { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO" },
   { labelKey: "Yield Intelligence", href: "/yield-intelligence", icon: TrendingUp, badge: "PRO" },

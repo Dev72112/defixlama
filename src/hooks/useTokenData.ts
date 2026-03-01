@@ -36,9 +36,9 @@ function incrementFailure(api: keyof typeof apiFailures) {
 }
 
 // Hook to fetch live token prices with multi-source fallback
-export function useTokenPrices(chainId: string = "all") {
+export function useTokenPrices() {
   return useQuery({
-    queryKey: ["token-prices", chainId],
+    queryKey: ["token-prices"],
     queryFn: async () => {
       let prices: TokenPrice[] = [];
       let source = "none";
@@ -71,11 +71,10 @@ export function useTokenPrices(chainId: string = "all") {
       
       // Map to our format
       const mapped = prices.map(mapTokenData);
-
-      // Add community tokens - only for xlayer chain or if "all" chains selected
+      
+      // Add community tokens - fetch sequentially to avoid rate limiting
       const communityTokens: any[] = [];
-      const communityTokensToFetch = chainId === "xlayer" || chainId === "all" ? XLAYER_COMMUNITY_TOKENS : [];
-      for (const t of communityTokensToFetch) {
+      for (const t of XLAYER_COMMUNITY_TOKENS) {
         let price = 0;
         let change24h = 0;
         let volume24h = 0;
@@ -127,18 +126,11 @@ export function useTokenPrices(chainId: string = "all") {
       // Fetch admin-added token listings from database
       let dbListings: any[] = [];
       try {
-        let query = supabase
+        const { data, error } = await supabase
           .from('token_listings')
           .select('*')
           .eq('is_active', true);
-
-        // Filter by chain if not "all"
-        if (chainId !== "all") {
-          query = query.eq('chain', chainId);
-        }
-
-        const { data, error } = await query;
-
+        
         if (!error && data) {
           dbListings = await Promise.all(
             data.map(async (listing) => {

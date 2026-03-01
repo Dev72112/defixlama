@@ -102,7 +102,7 @@ function ProtocolDetailContent() {
       <Layout>
         <div className="space-y-6 animate-fade-in">
           <div className="skeleton h-8 w-48" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array(4).fill(0).map((_, i) => (
               <div key={i} className="skeleton h-24 rounded-lg" />
             ))}
@@ -197,7 +197,7 @@ function ProtocolDetailContent() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Value Locked"
             value={formatCurrency(protocol.tvl || 0)}
