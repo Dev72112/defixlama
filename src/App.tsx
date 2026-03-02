@@ -41,11 +41,17 @@ const MarketStructure = lazyLoad(() => import("./pages/MarketStructure"));
 const YieldIntelligence = lazyLoad(() => import("./pages/YieldIntelligence"));
 const Correlations = lazyLoad(() => import("./pages/Correlations"));
 
-// New premium pages
+// Premium pages
 const Backtester = lazyLoad(() => import("./pages/Backtester"));
 const RiskDashboard = lazyLoad(() => import("./pages/RiskDashboard"));
 const ApiAccess = lazyLoad(() => import("./pages/ApiAccess"));
 const Billing = lazyLoad(() => import("./pages/Billing"));
+const AlertConfig = lazyLoad(() => import("./pages/AlertConfig"));
+const Predictions = lazyLoad(() => import("./pages/Predictions"));
+const ProtocolComparison = lazyLoad(() => import("./pages/ProtocolComparison"));
+const GovernancePage = lazyLoad(() => import("./pages/Governance"));
+const CommunitySentiment = lazyLoad(() => import("./pages/CommunitySentiment"));
+const WatchlistExports = lazyLoad(() => import("./pages/WatchlistExports"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,6 +103,12 @@ const App = () => (
             <Route path="/risk-dashboard" element={<RiskDashboard />} />
             <Route path="/api-access" element={<ApiAccess />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/alert-config" element={<AlertConfig />} />
+            <Route path="/predictions" element={<Predictions />} />
+            <Route path="/protocol-comparison" element={<ProtocolComparison />} />
+            <Route path="/governance" element={<GovernancePage />} />
+            <Route path="/community-sentiment" element={<CommunitySentiment />} />
+            <Route path="/watchlist-exports" element={<WatchlistExports />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BackToTopFab />
