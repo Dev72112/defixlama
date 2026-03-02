@@ -35,7 +35,6 @@ export default function Tokens() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
   const navigate = useNavigate();
-  const navigate = useNavigate();
 
   // Filter tokens by chain and search query
   const chainFilteredTokens = (tokens || []).filter((t: any) => {
