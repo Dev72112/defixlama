@@ -14,6 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerts: {
+        Row: {
+          condition: string
+          created_at: string
+          enabled: boolean
+          id: string
+          last_triggered_at: string | null
+          symbol: string
+          threshold: number
+          triggered: boolean
+          type: Database["public"]["Enums"]["alert_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          condition?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_triggered_at?: string | null
+          symbol: string
+          threshold?: number
+          triggered?: boolean
+          type: Database["public"]["Enums"]["alert_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          condition?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_triggered_at?: string | null
+          symbol?: string
+          threshold?: number
+          triggered?: boolean
+          type?: Database["public"]["Enums"]["alert_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_keys: {
+        Row: {
+          created_at: string
+          daily_limit: number
+          id: string
+          key_hash: string
+          name: string
+          permissions: string[] | null
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          key_hash: string
+          name?: string
+          permissions?: string[] | null
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          key_hash?: string
+          name?: string
+          permissions?: string[] | null
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_usage: {
+        Row: {
+          date: string
+          id: string
+          key_id: string
+          request_count: number
+        }
+        Insert: {
+          date?: string
+          id?: string
+          key_id: string
+          request_count?: number
+        }
+        Update: {
+          date?: string
+          id?: string
+          key_id?: string
+          request_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback: {
         Row: {
           admin_notes: string | null
@@ -47,6 +151,51 @@ export type Database = {
           title?: string
           type?: Database["public"]["Enums"]["feedback_type"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      portfolio_positions: {
+        Row: {
+          created_at: string
+          entry_price: number
+          id: string
+          name: string
+          notes: string | null
+          position_type: string
+          quantity: number
+          symbol: string
+          tags: string[] | null
+          token_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_price?: number
+          id?: string
+          name: string
+          notes?: string | null
+          position_type?: string
+          quantity?: number
+          symbol: string
+          tags?: string[] | null
+          token_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_price?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          position_type?: string
+          quantity?: number
+          symbol?: string
+          tags?: string[] | null
+          token_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -98,6 +247,48 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: Json
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -185,6 +376,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          default_chain: string
+          id: string
+          language: string
+          notification_settings: Json
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_chain?: string
+          id?: string
+          language?: string
+          notification_settings?: Json
+          theme?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_chain?: string
+          id?: string
+          language?: string
+          notification_settings?: Json
+          theme?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -202,6 +426,39 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      watchlist: {
+        Row: {
+          created_at: string
+          id: string
+          is_public: boolean
+          item_id: string
+          name: string
+          symbol: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          item_id: string
+          name: string
+          symbol: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          item_id?: string
+          name?: string
+          symbol?: string
+          type?: string
           user_id?: string
         }
         Relationships: []
@@ -233,6 +490,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
+      alert_type: "tvl_drop" | "risk_score" | "governance" | "hack" | "price"
       app_role: "admin" | "moderator" | "user"
       feedback_status:
         | "pending"
@@ -243,6 +501,8 @@ export type Database = {
         | "wont_fix"
         | "duplicate"
       feedback_type: "bug" | "error" | "feature_request" | "listing" | "other"
+      subscription_status: "active" | "canceled" | "past_due" | "trialing"
+      subscription_tier: "free" | "pro" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -370,6 +630,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_type: ["tvl_drop", "risk_score", "governance", "hack", "price"],
       app_role: ["admin", "moderator", "user"],
       feedback_status: [
         "pending",
@@ -381,6 +642,8 @@ export const Constants = {
         "duplicate",
       ],
       feedback_type: ["bug", "error", "feature_request", "listing", "other"],
+      subscription_status: ["active", "canceled", "past_due", "trialing"],
+      subscription_tier: ["free", "pro", "enterprise"],
     },
   },
 } as const
