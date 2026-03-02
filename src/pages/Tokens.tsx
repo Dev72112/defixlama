@@ -333,7 +333,7 @@ export default function Tokens() {
                       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </td>
                   </tr>
-                });
+                );
               })}
               {totalPages > 1 && (
                 <tr>
