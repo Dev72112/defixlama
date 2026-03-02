@@ -40,7 +40,7 @@ export default function CommunitySentiment() {
         sentimentScore: clampedScore,
         volumeMomentum: Math.round(volumeMomentum * 10) / 10,
         tvlMomentum: Math.round(tvlMomentum * 100) / 100,
-        trend: clampedScore > 15 ? "bullish" : clampedScore < -15 ? "bearish" : "neutral",
+        trend: (clampedScore > 15 ? "bullish" : clampedScore < -15 ? "bearish" : "neutral") as SentimentEntry["trend"],
         socialActivity: Math.round(Math.random() * 80 + 20),
       };
     }).sort((a, b) => b.sentimentScore - a.sentimentScore);
