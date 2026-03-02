@@ -13,6 +13,15 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -27,6 +36,8 @@ export default function Stablecoins() {
   const [searchQuery, setSearchQuery] = useState("");
   const [pegFilter, setPegFilter] = useState("all");
   const [sortBy, setSortBy] = useState("marketcap");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   // Extract peg types
   const pegTypes = useMemo(() => {
@@ -65,8 +76,18 @@ export default function Stablecoins() {
       }
     });
     
-    return filtered.slice(0, 50);
+    return filtered;
   }, [stablecoins, searchQuery, selectedChain, pegFilter, sortBy]);
+
+  // Paginated data
+  const totalPages = Math.ceil(filteredStablecoins.length / itemsPerPage);
+  const paginatedStablecoins = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredStablecoins.slice(start, start + itemsPerPage);
+  }, [filteredStablecoins, currentPage, itemsPerPage]);
+
+  // Reset page when filters change
+  useMemo(() => { setCurrentPage(1); }, [searchQuery, pegFilter, sortBy, selectedChain]);
 
   // Calculate metrics
   const totalMarketCap = filteredStablecoins.reduce((acc, s) => {
@@ -244,10 +265,30 @@ export default function Stablecoins() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredStablecoins.map((stablecoin) => (
+            {paginatedStablecoins.map((stablecoin) => (
               <StablecoinCard key={stablecoin.id} stablecoin={stablecoin} />
             ))}
           </div>
+          {totalPages > 1 && (
+            <Pagination className="mt-6">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
+                  .map((p, idx, arr) => (
+                    <PaginationItem key={p}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && <PaginationEllipsis />}
+                      <PaginationLink isActive={p === currentPage} onClick={() => setCurrentPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                    </PaginationItem>
+                  ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         )}
       </div>
     </Layout>

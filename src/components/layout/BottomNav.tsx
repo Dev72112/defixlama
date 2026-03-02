@@ -19,6 +19,11 @@ import {
   X,
   Waves,
   Landmark,
+  Brain,
+  GitCompare,
+  Vote,
+  MessageCircle,
+  Star,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -61,6 +66,12 @@ const moreTabs: NavTab[] = [
   { labelKey: "Backtester", href: "/backtester", icon: BarChart3, badge: "PRO" },
   { labelKey: "Risk Dashboard", href: "/risk-dashboard", icon: Shield, badge: "PRO" },
   { labelKey: "API Access", href: "/api-access", icon: Database, badge: "PRO" },
+  { labelKey: "Alert Config", href: "/alert-config", icon: Bell, badge: "PRO" },
+  { labelKey: "Predictions", href: "/predictions", icon: Brain, badge: "PRO" },
+  { labelKey: "Comparison", href: "/protocol-comparison", icon: GitCompare, badge: "PRO" },
+  { labelKey: "Governance", href: "/governance", icon: Vote, badge: "PRO" },
+  { labelKey: "Sentiment", href: "/community-sentiment", icon: MessageCircle, badge: "PRO" },
+  { labelKey: "Watchlist Export", href: "/watchlist-exports", icon: Star, badge: "PRO" },
   { labelKey: "Billing", href: "/billing", icon: Wallet },
 ];
 

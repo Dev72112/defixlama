@@ -3,7 +3,16 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight, GitCompare, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/api/defillama";
@@ -23,6 +32,9 @@ export default function Tokens() {
   const { data: tokens, isLoading, isError, error, refetch } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState("");
   const [showComparison, setShowComparison] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
+  const navigate = useNavigate();
   const navigate = useNavigate();
 
   // Filter tokens by chain and search query
@@ -223,7 +235,11 @@ export default function Tokens() {
                     />
                   </td>
                 </tr>
-              ) : filteredTokens.map((token, index) => {
+              ) : (() => {
+                const totalPages = Math.ceil(filteredTokens.length / itemsPerPage);
+                const paginatedTokens = filteredTokens.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                return (<>
+                {paginatedTokens.map((token, index) => {
                 const routeId = getTokenRouteId(token);
                 const isCommunity = token.isCommunityToken;
                 return (
@@ -249,7 +265,7 @@ export default function Tokens() {
                       />
                     </td>
                     <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
-                      {index + 1}
+                      {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td>
                       <div className="flex items-center gap-3">
@@ -318,7 +334,34 @@ export default function Tokens() {
                     </td>
                   </tr>
                 );
+                );
               })}
+              {totalPages > 1 && (
+                <tr>
+                  <td colSpan={8} className="py-4">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                        </PaginationItem>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter((p) => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
+                          .map((p, idx, arr) => (
+                            <PaginationItem key={p}>
+                              {idx > 0 && arr[idx - 1] !== p - 1 && <PaginationEllipsis />}
+                              <PaginationLink isActive={p === currentPage} onClick={() => setCurrentPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                            </PaginationItem>
+                          ))}
+                        <PaginationItem>
+                          <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </td>
+                </tr>
+              )}
+              </>);
+              })()}
             </tbody>
           </table>
         </div>

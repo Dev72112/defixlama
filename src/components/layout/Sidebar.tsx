@@ -22,6 +22,12 @@ import {
   ShieldCheck,
   Waves,
   Landmark,
+  Brain,
+  GitCompare,
+  Vote,
+  MessageCircle,
+  Star,
+  Settings,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -65,6 +71,12 @@ const advancedItems: NavItem[] = [
   { labelKey: "Correlations", href: "/correlations", icon: Activity, badge: "PRO" },
   { labelKey: "Backtester", href: "/backtester", icon: BarChart3, badge: "PRO" },
   { labelKey: "Risk Dashboard", href: "/risk-dashboard", icon: Shield, badge: "PRO" },
+  { labelKey: "Alert Config", href: "/alert-config", icon: Bell, badge: "PRO" },
+  { labelKey: "Predictions", href: "/predictions", icon: Brain, badge: "PRO" },
+  { labelKey: "Protocol Comparison", href: "/protocol-comparison", icon: GitCompare, badge: "PRO" },
+  { labelKey: "Governance", href: "/governance", icon: Vote, badge: "PRO" },
+  { labelKey: "Sentiment", href: "/community-sentiment", icon: MessageCircle, badge: "PRO" },
+  { labelKey: "Watchlist Exports", href: "/watchlist-exports", icon: Star, badge: "PRO" },
 ];
 
 interface SidebarProps {
