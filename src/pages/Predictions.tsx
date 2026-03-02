@@ -4,14 +4,14 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useProtocols } from "@/hooks/useDefiData";
+import { useAllProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { TrendingUp, TrendingDown, Brain, Target, BarChart3, Activity } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area } from "recharts";
 import { cn } from "@/lib/utils";
 
 export default function Predictions() {
-  const { data: protocols, isLoading } = useProtocols();
+  const { data: protocols, isLoading } = useAllProtocols();
 
   // Generate predictions based on TVL trends
   const predictions = useMemo(() => {

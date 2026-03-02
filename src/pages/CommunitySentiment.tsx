@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useProtocols } from "@/hooks/useDefiData";
+import { useAllProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { MessageCircle, TrendingUp, TrendingDown, Flame, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
@@ -22,7 +22,7 @@ interface SentimentEntry {
 }
 
 export default function CommunitySentiment() {
-  const { data: protocols, isLoading } = useProtocols();
+  const { data: protocols, isLoading } = useAllProtocols();
 
   const sentimentData = useMemo<SentimentEntry[]>(() => {
     if (!protocols) return [];

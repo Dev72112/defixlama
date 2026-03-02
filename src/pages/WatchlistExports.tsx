@@ -116,7 +116,7 @@ export default function WatchlistExports() {
                         </td>
                         <td className="text-center">
                           <button
-                            onClick={() => removeFromWatchlist(item.id)}
+                            onClick={() => removeFromWatchlist(item.id, item.type)}
                             className="text-muted-foreground hover:text-destructive transition-colors"
                           >
                             <Trash2 className="h-4 w-4" />

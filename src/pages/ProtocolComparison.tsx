@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useProtocols } from "@/hooks/useDefiData";
+import { useAllProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { GitCompare, Plus, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const COMPARE_COLORS = ["hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))"];
 
 export default function ProtocolComparison() {
-  const { data: protocols, isLoading } = useProtocols();
+  const { data: protocols, isLoading } = useAllProtocols();
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>(["aave", "lido"]);
 
   const protocolList = useMemo(() => {
