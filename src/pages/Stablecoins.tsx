@@ -264,31 +264,33 @@ export default function Stablecoins() {
             <p className="text-muted-foreground">{t('stablecoins.noStablecoinsFound')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedStablecoins.map((stablecoin) => (
-              <StablecoinCard key={stablecoin.id} stablecoin={stablecoin} />
-            ))}
-          </div>
-          {totalPages > 1 && (
-            <Pagination className="mt-6">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                </PaginationItem>
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((p) => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
-                  .map((p, idx, arr) => (
-                    <PaginationItem key={p}>
-                      {idx > 0 && arr[idx - 1] !== p - 1 && <PaginationEllipsis />}
-                      <PaginationLink isActive={p === currentPage} onClick={() => setCurrentPage(p)} className="cursor-pointer">{p}</PaginationLink>
-                    </PaginationItem>
-                  ))}
-                <PaginationItem>
-                  <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedStablecoins.map((stablecoin) => (
+                <StablecoinCard key={stablecoin.id} stablecoin={stablecoin} />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <Pagination className="mt-6">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
+                    .map((p, idx, arr) => (
+                      <PaginationItem key={p}>
+                        {idx > 0 && arr[idx - 1] !== p - 1 && <PaginationEllipsis />}
+                        <PaginationLink isActive={p === currentPage} onClick={() => setCurrentPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                      </PaginationItem>
+                    ))}
+                  <PaginationItem>
+                    <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </>
         )}
       </div>
     </Layout>
