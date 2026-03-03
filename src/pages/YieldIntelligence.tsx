@@ -11,6 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieCha
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 export default function YieldIntelligence() {
   const { selectedChain } = useChain();
@@ -24,6 +25,8 @@ export default function YieldIntelligence() {
 
   const [ilPriceChange, setIlPriceChange] = useState(50);
   const [historyRange, setHistoryRange] = useState<DateRange>("30d");
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   // KPIs
   const kpis = useMemo(() => {
@@ -151,34 +154,60 @@ export default function YieldIntelligence() {
           ) : riskAdjusted.length === 0 ? (
             <ChartEmptyState message="No yield pools with sufficient data" height="h-[200px]" />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Pool</th>
-                    <th>Project</th>
-                    <th>Chain</th>
-                    <th className="text-right">APY</th>
-                    <th className="text-right">TVL</th>
-                    <th className="text-right">Risk Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {riskAdjusted.slice(0, 20).map((r, i) => (
-                    <tr key={i}>
-                      <td className="text-muted-foreground">{i + 1}</td>
-                      <td className="font-medium text-foreground">{r.pool}</td>
-                      <td className="text-muted-foreground">{r.project}</td>
-                      <td className="text-muted-foreground">{r.chain}</td>
-                      <td className="text-right font-mono text-success">{r.apy.toFixed(2)}%</td>
-                      <td className="text-right font-mono">{formatCurrency(r.tvl)}</td>
-                      <td className="text-right font-mono text-primary">{r.riskScore.toFixed(2)}</td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Pool</th>
+                      <th>Project</th>
+                      <th>Chain</th>
+                      <th className="text-right">APY</th>
+                      <th className="text-right">TVL</th>
+                      <th className="text-right">Risk Score</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {riskAdjusted.slice((page - 1) * pageSize, page * pageSize).map((r, i) => (
+                      <tr key={i}>
+                        <td className="text-muted-foreground">{(page - 1) * pageSize + i + 1}</td>
+                        <td className="font-medium text-foreground">{r.pool}</td>
+                        <td className="text-muted-foreground">{r.project}</td>
+                        <td className="text-muted-foreground">{r.chain}</td>
+                        <td className="text-right font-mono text-success">{r.apy.toFixed(2)}%</td>
+                        <td className="text-right font-mono">{formatCurrency(r.tvl)}</td>
+                        <td className="text-right font-mono text-primary">{r.riskScore.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {riskAdjusted.length > pageSize && (
+                <div className="mt-4">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                      </PaginationItem>
+                      {Array.from({ length: Math.ceil(riskAdjusted.length / pageSize) }, (_, i) => i + 1)
+                        .filter((p) => p === 1 || p === Math.ceil(riskAdjusted.length / pageSize) || Math.abs(p - page) <= 1)
+                        .map((p, idx, arr) => (
+                          <span key={p}>
+                            {idx > 0 && arr[idx - 1] !== p - 1 && <PaginationItem><PaginationEllipsis /></PaginationItem>}
+                            <PaginationItem>
+                              <PaginationLink isActive={p === page} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                            </PaginationItem>
+                          </span>
+                        ))}
+                      <PaginationItem>
+                        <PaginationNext onClick={() => setPage((p) => Math.min(Math.ceil(riskAdjusted.length / pageSize), p + 1))} className={page >= Math.ceil(riskAdjusted.length / pageSize) ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
 

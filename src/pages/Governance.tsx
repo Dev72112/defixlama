@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useAllProtocols } from "@/hooks/useDefiData";
+import { useChain } from "@/contexts/ChainContext";
+import { useChainProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { Vote, Users, Clock, CheckCircle, XCircle, BarChart3 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
@@ -22,7 +23,8 @@ interface GovernanceProtocol {
 }
 
 export default function Governance() {
-  const { data: protocols, isLoading } = useAllProtocols();
+  const { selectedChain } = useChain();
+  const { data: protocols, isLoading } = useChainProtocols(selectedChain.id);
 
   const governanceData = useMemo<GovernanceProtocol[]>(() => {
     if (!protocols) return [];
@@ -61,7 +63,7 @@ export default function Governance() {
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Governance Tracker</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} Governance Tracker</h1>
               <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
             </div>
             <p className="text-muted-foreground mt-1">Track on-chain governance proposals and voting activity</p>
