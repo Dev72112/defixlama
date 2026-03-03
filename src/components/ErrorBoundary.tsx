@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { captureException, addBreadcrumb } from "@/lib/errorTracking/tracking";
 
 interface Props {
   children: ReactNode;
@@ -22,8 +23,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error) {
-    console.error("ErrorBoundary caught:", error);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    captureException(error, {
+      componentStack: errorInfo.componentStack || undefined,
+      source: "ErrorBoundary",
+    });
+    addBreadcrumb("ErrorBoundary caught an error", "error", { message: error.message });
   }
 
   handleReset = () => {
@@ -42,11 +47,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 <p className="text-sm text-muted-foreground mb-4">
                   {this.state.error?.message || "An unexpected error occurred while rendering this section."}
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={this.handleReset}
-                >
+                <Button variant="outline" size="sm" onClick={this.handleReset}>
                   Try Again
                 </Button>
               </div>

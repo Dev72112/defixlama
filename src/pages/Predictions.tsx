@@ -4,14 +4,16 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useAllProtocols } from "@/hooks/useDefiData";
+import { useChain } from "@/contexts/ChainContext";
+import { useChainProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { TrendingUp, TrendingDown, Brain, Target, BarChart3, Activity } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area } from "recharts";
 import { cn } from "@/lib/utils";
 
 export default function Predictions() {
-  const { data: protocols, isLoading } = useAllProtocols();
+  const { selectedChain } = useChain();
+  const { data: protocols, isLoading } = useChainProtocols(selectedChain.id);
 
   // Generate predictions based on TVL trends
   const predictions = useMemo(() => {
@@ -62,7 +64,7 @@ export default function Predictions() {
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">TVL Predictions</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} TVL Predictions</h1>
               <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
             </div>
             <p className="text-muted-foreground mt-1">AI-powered TVL trend forecasts based on historical data</p>
