@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { captureException, captureMessage, addBreadcrumb, getTrackedErrors, clearTrackedErrors, exportErrorLog } from "@/lib/errorTracking/tracking";
+import { captureException, captureMessage, addBreadcrumb, getTrackedErrors, clearErrors, exportErrorLog } from "@/lib/errorTracking/tracking";
 
 describe("Error Tracking", () => {
   beforeEach(() => {
-    clearTrackedErrors();
+    clearErrors();
   });
 
   it("captures exceptions with stack traces", () => {
@@ -12,7 +12,7 @@ describe("Error Tracking", () => {
     const errors = getTrackedErrors();
     expect(errors.length).toBe(1);
     expect(errors[0].message).toBe("Test error");
-    expect(errors[0].type).toBe("exception");
+    expect(errors[0].severity).toBe("error");
   });
 
   it("captures messages", () => {
@@ -20,15 +20,16 @@ describe("Error Tracking", () => {
     const errors = getTrackedErrors();
     expect(errors.length).toBe(1);
     expect(errors[0].message).toBe("Something happened");
-    expect(errors[0].level).toBe("warning");
+    expect(errors[0].severity).toBe("warning");
   });
 
-  it("adds breadcrumbs", () => {
-    addBreadcrumb("navigation", "Went to /dashboard");
-    addBreadcrumb("click", "Clicked button");
-    captureMessage("After breadcrumbs");
+  it("adds breadcrumbs to context", () => {
+    addBreadcrumb("Went to /dashboard", "navigation");
+    addBreadcrumb("Clicked button", "click");
+    captureException(new Error("After breadcrumbs"));
     const errors = getTrackedErrors();
-    expect(errors[0].breadcrumbs?.length).toBeGreaterThanOrEqual(2);
+    const ctx = errors[0].context as any;
+    expect(ctx?.breadcrumbs?.length).toBeGreaterThanOrEqual(2);
   });
 
   it("limits stored errors to prevent memory leaks", () => {
@@ -36,12 +37,12 @@ describe("Error Tracking", () => {
       captureMessage(`Error ${i}`);
     }
     const errors = getTrackedErrors();
-    expect(errors.length).toBeLessThanOrEqual(100);
+    expect(errors.length).toBeLessThanOrEqual(50);
   });
 
   it("clears tracked errors", () => {
     captureMessage("test");
-    clearTrackedErrors();
+    clearErrors();
     expect(getTrackedErrors().length).toBe(0);
   });
 
@@ -53,7 +54,7 @@ describe("Error Tracking", () => {
   });
 
   it("handles non-Error objects in captureException", () => {
-    captureException("string error" as any);
+    captureException("string error");
     const errors = getTrackedErrors();
     expect(errors.length).toBe(1);
   });

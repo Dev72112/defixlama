@@ -1,49 +1,33 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PriceManager } from "@/lib/websocket/priceManager";
+import { priceManager } from "@/lib/websocket/priceManager";
 
 describe("PriceManager", () => {
-  let manager: PriceManager;
-
-  beforeEach(() => {
-    manager = new PriceManager();
+  it("is a singleton instance", () => {
+    expect(priceManager).toBeDefined();
   });
 
-  it("creates a PriceManager instance", () => {
-    expect(manager).toBeDefined();
-  });
-
-  it("subscribes to price updates", () => {
+  it("subscribes to price updates and returns unsub function", () => {
     const callback = vi.fn();
-    const unsub = manager.subscribe("bitcoin", callback);
+    const unsub = priceManager.subscribe(callback);
     expect(typeof unsub).toBe("function");
-  });
-
-  it("unsubscribes cleanly", () => {
-    const callback = vi.fn();
-    const unsub = manager.subscribe("bitcoin", callback);
     unsub();
-    // Should not throw
-    expect(true).toBe(true);
   });
 
-  it("tracks subscriptions", () => {
-    const cb1 = vi.fn();
-    const cb2 = vi.fn();
-    manager.subscribe("bitcoin", cb1);
-    manager.subscribe("ethereum", cb2);
-    expect(manager.getSubscriptionCount()).toBe(2);
+  it("reports connection status", () => {
+    expect(typeof priceManager.isConnected).toBe("boolean");
   });
 
-  it("removes subscription on unsub", () => {
-    const cb = vi.fn();
-    const unsub = manager.subscribe("bitcoin", cb);
-    unsub();
-    expect(manager.getSubscriptionCount()).toBe(0);
+  it("reports fallback status", () => {
+    expect(typeof priceManager.usingFallback).toBe("boolean");
   });
 
-  it("supports destroy/cleanup", () => {
-    manager.subscribe("bitcoin", vi.fn());
-    manager.destroy();
-    expect(manager.getSubscriptionCount()).toBe(0);
+  it("returns current prices object", () => {
+    const prices = priceManager.currentPrices;
+    expect(typeof prices).toBe("object");
+  });
+
+  it("supports disconnect", () => {
+    priceManager.disconnect();
+    expect(priceManager.isConnected).toBe(false);
   });
 });

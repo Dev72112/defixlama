@@ -12,7 +12,7 @@ describe("Keyboard Shortcuts", () => {
     const shortcuts = getAllShortcuts();
     for (const s of shortcuts) {
       expect(s.keys).toBeDefined();
-      expect(s.label).toBeDefined();
+      expect(s.description).toBeDefined();
       expect(s.category).toBeDefined();
     }
   });
