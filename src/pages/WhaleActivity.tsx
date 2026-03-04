@@ -9,8 +9,9 @@ import { AccumulationHeatmap } from "@/components/dashboard/AccumulationHeatmap"
 import { CrossChainFlowMatrix } from "@/components/dashboard/CrossChainFlowMatrix";
 import { CategoryTreemap } from "@/components/dashboard/CategoryTreemap";
 import { Waves, TrendingUp, TrendingDown, BarChart3, AlertTriangle, Gauge, Zap, Filter, Search } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Input } from "@/components/ui/input";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
 
 const CHART_COLORS = [
@@ -34,6 +35,8 @@ const SEVERITY_STYLES: Record<string, string> = {
   extreme: "bg-red-500/10 text-red-300 border-red-500/20",
 };
 
+const PAGE_SIZE = 10;
+
 export default function WhaleActivity() {
   const { selectedChain } = useChain();
   const protocols = useChainProtocols(selectedChain.id);
@@ -42,6 +45,7 @@ export default function WhaleActivity() {
   const [severityFilter, setSeverityFilter] = useState<Severity>("all");
   const [whaleSearch, setWhaleSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [alertPage, setAlertPage] = useState(1);
 
   const protocolList = protocols.data ?? [];
 
@@ -60,7 +64,6 @@ export default function WhaleActivity() {
       }));
   }, [protocolList]);
 
-  // HHI (Herfindahl-Hirschman Index)
   const hhi = useMemo(() => {
     const totalTvl = protocolList.reduce((acc, p) => acc + (p.tvl || 0), 0);
     if (totalTvl === 0) return { value: 0, label: "—", color: "text-muted-foreground" };
@@ -74,7 +77,6 @@ export default function WhaleActivity() {
     return { value: Math.round(index), label, color };
   }, [protocolList]);
 
-  // Capital velocity
   const capitalVelocity = useMemo(() => {
     const totalTvl = protocolList.reduce((acc, p) => acc + (p.tvl || 0), 0);
     if (totalTvl === 0) return { value: 0, pct: "0%" };
@@ -86,12 +88,10 @@ export default function WhaleActivity() {
     return { value: totalFlow, pct: ((totalFlow / totalTvl) * 100).toFixed(2) + "%" };
   }, [protocolList]);
 
-  // Whale alerts with severity
   const whaleAlerts = useMemo(() => {
     return protocolList
       .filter((p) => p.tvl && p.tvl > 500000 && Math.abs(p.change_1d || 0) > 5)
       .sort((a, b) => Math.abs(b.change_1d || 0) - Math.abs(a.change_1d || 0))
-      .slice(0, 20)
       .map((p) => ({
         ...p,
         severity: getSeverity(p.change_1d || 0),
@@ -106,12 +106,14 @@ export default function WhaleActivity() {
     return alerts;
   }, [whaleAlerts, severityFilter, whaleSearch, categoryFilter]);
 
+  const alertTotalPages = Math.ceil(filteredAlerts.length / PAGE_SIZE);
+  const paginatedAlerts = filteredAlerts.slice((alertPage - 1) * PAGE_SIZE, alertPage * PAGE_SIZE);
+
   const whaleCategories = useMemo(() => {
     const cats = new Set(protocolList.map((p) => p.category || "Other"));
     return Array.from(cats).sort();
   }, [protocolList]);
 
-  // Summary stats
   const stats = useMemo(() => {
     const totalTvl = protocolList.reduce((acc, p) => acc + (p.tvl || 0), 0);
     const top5Tvl = [...protocolList].sort((a, b) => (b.tvl || 0) - (a.tvl || 0)).slice(0, 5).reduce((acc, p) => acc + (p.tvl || 0), 0);
@@ -148,15 +150,11 @@ export default function WhaleActivity() {
           ].map((s) => (
             <div key={s.label} className="stat-card">
               {isLoading ? (
-                <>
-                  <div className="skeleton h-4 w-20 mb-2" />
-                  <div className="skeleton h-6 w-24" />
-                </>
+                <><div className="skeleton h-4 w-20 mb-2" /><div className="skeleton h-6 w-24" /></>
               ) : (
                 <>
                   <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
-                    <s.icon className="h-3.5 w-3.5" />
-                    {s.label}
+                    <s.icon className="h-3.5 w-3.5" />{s.label}
                   </div>
                   <div className={`text-lg font-bold ${s.color || "text-foreground"}`}>{s.value}</div>
                   {"sub" in s && s.sub && <div className="text-[10px] text-muted-foreground mt-0.5">{s.sub}</div>}
@@ -204,7 +202,7 @@ export default function WhaleActivity() {
         {/* TVL Flow Analysis Table */}
         <TVLFlowTable protocols={protocolList} loading={isLoading} />
 
-        {/* Enhanced Whale Alert Feed */}
+        {/* Enhanced Whale Alert Feed with Pagination */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <AlertTriangle className="h-4 w-4 text-warning" />
@@ -215,7 +213,7 @@ export default function WhaleActivity() {
               {(["all", "moderate", "major", "extreme"] as Severity[]).map((s) => (
                 <button
                   key={s}
-                  onClick={() => setSeverityFilter(s)}
+                  onClick={() => { setSeverityFilter(s); setAlertPage(1); }}
                   className={cn(
                     "px-2 py-0.5 rounded text-[10px] font-medium transition-colors capitalize",
                     severityFilter === s ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
@@ -226,20 +224,19 @@ export default function WhaleActivity() {
               ))}
             </div>
           </div>
-          {/* Search + Category filter */}
           <div className="flex flex-wrap gap-2 mb-3">
             <div className="relative flex-1 min-w-[200px] max-w-xs">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search protocols..."
                 value={whaleSearch}
-                onChange={(e) => setWhaleSearch(e.target.value)}
+                onChange={(e) => { setWhaleSearch(e.target.value); setAlertPage(1); }}
                 className="pl-8 h-8 text-sm"
               />
             </div>
             <select
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              onChange={(e) => { setCategoryFilter(e.target.value); setAlertPage(1); }}
               className="h-8 text-xs rounded-md border border-border bg-card px-2 text-foreground"
             >
               <option value="all">All Categories</option>
@@ -248,11 +245,11 @@ export default function WhaleActivity() {
           </div>
           {isLoading ? (
             <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-14 w-full" />)}</div>
-          ) : filteredAlerts.length === 0 ? (
+          ) : paginatedAlerts.length === 0 ? (
             <p className="text-center text-muted-foreground py-6 text-sm">No movements matching filter</p>
           ) : (
             <div className="space-y-2">
-              {filteredAlerts.map((p) => {
+              {paginatedAlerts.map((p) => {
                 const isPos = (p.change_1d || 0) >= 0;
                 return (
                   <div key={p.id || p.name} className={cn("flex items-center gap-3 p-3 rounded-lg border", SEVERITY_STYLES[p.severity])}>
@@ -262,7 +259,7 @@ export default function WhaleActivity() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-foreground text-sm truncate">{p.name}</span>
-                        <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold uppercase", SEVERITY_STYLES[p.severity])}>
+                        <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold uppercase hidden sm:inline", SEVERITY_STYLES[p.severity])}>
                           {p.severity}
                         </span>
                       </div>
@@ -277,6 +274,23 @@ export default function WhaleActivity() {
                 );
               })}
             </div>
+          )}
+          {alertTotalPages > 1 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setAlertPage(p => Math.max(1, p - 1))} className={alertPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+                {Array.from({ length: Math.min(alertTotalPages, 5) }, (_, i) => i + 1).map(p => (
+                  <PaginationItem key={p}>
+                    <PaginationLink isActive={alertPage === p} onClick={() => setAlertPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => setAlertPage(p => Math.min(alertTotalPages, p + 1))} className={alertPage === alertTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           )}
         </div>
       </div>

@@ -9,7 +9,10 @@ import { DateRangeSelector, DateRange, filterByDateRange } from "@/components/da
 import { Activity, GitCompare, AlertTriangle, TrendingUp, TrendingDown, BarChart3, History } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 15;
 
 export default function Correlations() {
   const { selectedChain } = useChain();
@@ -21,8 +24,8 @@ export default function Correlations() {
   const protocolList = protocols.data ?? [];
   const isLoading = protocols.isLoading;
   const [historyRange, setHistoryRange] = useState<DateRange>("30d");
+  const [sectorPage, setSectorPage] = useState(1);
 
-  // Top 15 protocols for correlation matrix
   const top15 = useMemo(() => {
     return [...protocolList]
       .filter((p) => p.tvl && p.tvl > 0 && (p.change_1d !== undefined || p.change_7d !== undefined))
@@ -30,7 +33,6 @@ export default function Correlations() {
       .slice(0, 15);
   }, [protocolList]);
 
-  // Co-movement matrix (simplified — same-direction movement in 1d)
   const coMovement = useMemo(() => {
     if (top15.length < 2) return [];
     return top15.map((p1) => ({
@@ -45,7 +47,6 @@ export default function Correlations() {
     }));
   }, [top15]);
 
-  // Sector rotation tracker
   const sectorRotation = useMemo(() => {
     const map = new Map<string, { tvl: number; change1h: number[]; change1d: number[]; change7d: number[]; count: number }>();
     for (const p of protocolList) {
@@ -58,7 +59,6 @@ export default function Correlations() {
       if (typeof p.change_7d === "number") existing.change7d.push(p.change_7d);
       map.set(cat, existing);
     }
-
     return Array.from(map.entries())
       .map(([cat, data]) => ({
         category: cat,
@@ -72,11 +72,12 @@ export default function Correlations() {
       .sort((a, b) => Math.abs(b.avg1d) - Math.abs(a.avg1d));
   }, [protocolList]);
 
-  // Divergence alerts — protocols whose 1d change diverges > 2x from category avg
+  const sectorTotalPages = Math.ceil(sectorRotation.length / PAGE_SIZE);
+  const sectorPageData = sectorRotation.slice((sectorPage - 1) * PAGE_SIZE, sectorPage * PAGE_SIZE);
+
   const divergenceAlerts = useMemo(() => {
     const catAvg = new Map<string, number>();
     for (const s of sectorRotation) catAvg.set(s.category, s.avg1d);
-
     return protocolList
       .filter((p) => {
         const cat = p.category || "Other";
@@ -94,7 +95,6 @@ export default function Correlations() {
       }));
   }, [protocolList, sectorRotation]);
 
-  // Category momentum chart
   const categoryMomentum = useMemo(() => {
     return sectorRotation
       .filter((s) => s.tvl > 0)
@@ -136,8 +136,14 @@ export default function Correlations() {
                   <tr>
                     <th className="p-1 text-muted-foreground text-left" />
                     {top15.map((p) => (
-                      <th key={p.name} className="p-1 text-muted-foreground font-normal" style={{ writingMode: "vertical-rl", maxWidth: 30 }}>
+                      <th key={p.name} className="p-1 text-muted-foreground font-normal hidden sm:table-cell" style={{ writingMode: "vertical-rl", maxWidth: 30 }}>
                         {p.name.length > 10 ? p.name.slice(0, 8) + "…" : p.name}
+                      </th>
+                    ))}
+                    {/* Mobile: show abbreviated headers */}
+                    {top15.map((p, i) => (
+                      <th key={`m-${p.name}`} className="p-0.5 text-muted-foreground font-normal sm:hidden" style={{ writingMode: "vertical-rl", maxWidth: 20 }}>
+                        {i + 1}
                       </th>
                     ))}
                   </tr>
@@ -149,7 +155,7 @@ export default function Correlations() {
                       {row.cells.map((cell, ci) => (
                         <td key={ci} className="p-0.5">
                           <div className={cn(
-                            "w-5 h-5 rounded-sm",
+                            "w-5 h-5 sm:w-5 sm:h-5 rounded-sm",
                             ri === ci ? "bg-muted" :
                             cell === "up" ? "bg-success/40" :
                             cell === "down" ? "bg-destructive/40" :
@@ -170,7 +176,7 @@ export default function Correlations() {
           )}
         </div>
 
-        {/* Sector Rotation Tracker */}
+        {/* Sector Rotation Tracker with pagination */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-1">
             <Activity className="h-4 w-4 text-primary" />
@@ -182,32 +188,51 @@ export default function Correlations() {
           ) : sectorRotation.length === 0 ? (
             <ChartEmptyState />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th className="text-right">Protocols</th>
-                    <th className="text-right">TVL</th>
-                    <th className="text-right">1h Avg</th>
-                    <th className="text-right">1d Avg</th>
-                    <th className="text-right">7d Avg</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sectorRotation.slice(0, 15).map((s) => (
-                    <tr key={s.category}>
-                      <td className="font-medium text-foreground">{s.category}</td>
-                      <td className="text-right text-muted-foreground">{s.count}</td>
-                      <td className="text-right font-mono">{formatCurrency(s.tvl)}</td>
-                      <td className={cn("text-right font-mono", getChangeColor(s.avg1h))}>{formatPercentage(s.avg1h)}</td>
-                      <td className={cn("text-right font-mono font-bold", getChangeColor(s.avg1d))}>{formatPercentage(s.avg1d)}</td>
-                      <td className={cn("text-right font-mono", getChangeColor(s.avg7d))}>{formatPercentage(s.avg7d)}</td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th className="text-right hidden sm:table-cell">Protocols</th>
+                      <th className="text-right hidden sm:table-cell">TVL</th>
+                      <th className="text-right hidden md:table-cell">1h Avg</th>
+                      <th className="text-right">1d Avg</th>
+                      <th className="text-right hidden sm:table-cell">7d Avg</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {sectorPageData.map((s) => (
+                      <tr key={s.category}>
+                        <td className="font-medium text-foreground">{s.category}</td>
+                        <td className="text-right text-muted-foreground hidden sm:table-cell">{s.count}</td>
+                        <td className="text-right font-mono hidden sm:table-cell">{formatCurrency(s.tvl)}</td>
+                        <td className={cn("text-right font-mono hidden md:table-cell", getChangeColor(s.avg1h))}>{formatPercentage(s.avg1h)}</td>
+                        <td className={cn("text-right font-mono font-bold", getChangeColor(s.avg1d))}>{formatPercentage(s.avg1d)}</td>
+                        <td className={cn("text-right font-mono hidden sm:table-cell", getChangeColor(s.avg7d))}>{formatPercentage(s.avg7d)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {sectorTotalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious onClick={() => setSectorPage(p => Math.max(1, p - 1))} className={sectorPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                    </PaginationItem>
+                    {Array.from({ length: Math.min(sectorTotalPages, 5) }, (_, i) => i + 1).map(p => (
+                      <PaginationItem key={p}>
+                        <PaginationLink isActive={sectorPage === p} onClick={() => setSectorPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext onClick={() => setSectorPage(p => Math.min(sectorTotalPages, p + 1))} className={sectorPage === sectorTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </div>
 
@@ -274,7 +299,7 @@ export default function Correlations() {
           </div>
         </div>
 
-        {/* Historical TVL Trend for Correlation Context */}
+        {/* Historical TVL Trend */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
