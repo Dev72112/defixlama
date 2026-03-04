@@ -1,12 +1,12 @@
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { useBacktesting, useProtocolList } from "@/hooks/useBacktesting";
+import { useChain } from "@/contexts/ChainContext";
 import { formatCurrency } from "@/lib/api/defillama";
-import { useState, useDeferredValue } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import {
   Calculator, TrendingUp, TrendingDown, Shield, BarChart3,
   Search, Loader2,
@@ -20,10 +20,20 @@ import { cn } from "@/lib/utils";
 export default function Backtester() {
   const { params, updateParams, result, isLoading } = useBacktesting();
   const { data: protocols = [], isLoading: loadingProtocols } = useProtocolList();
+  const { selectedChain } = useChain();
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
 
-  const filtered = protocols.filter(
+  // Chain-aware filtering
+  const chainFiltered = useMemo(() => {
+    if (selectedChain.id === "all") return protocols;
+    return protocols.filter((p: any) =>
+      p.chains?.some((c: string) => c.toLowerCase() === selectedChain.id.toLowerCase()) ||
+      p.chain?.toLowerCase() === selectedChain.id.toLowerCase()
+    );
+  }, [protocols, selectedChain.id]);
+
+  const filtered = chainFiltered.filter(
     (p: any) =>
       p.name.toLowerCase().includes(deferredSearch.toLowerCase()) ||
       p.slug.toLowerCase().includes(deferredSearch.toLowerCase())
@@ -38,7 +48,7 @@ export default function Backtester() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
               <Calculator className="h-7 w-7 text-primary" />
-              Backtester
+              {selectedChain.name} Backtester
               <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -52,9 +62,8 @@ export default function Backtester() {
           <Card className="p-6 space-y-6">
             <h3 className="text-lg font-semibold">Strategy Builder</h3>
 
-            {/* Protocol Selector */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Protocol</label>
+              <label className="text-sm font-medium">Protocol ({chainFiltered.length} on {selectedChain.name})</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -92,7 +101,6 @@ export default function Backtester() {
               </div>
             </div>
 
-            {/* Investment Amount */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Initial Investment</label>
               <Input
@@ -104,7 +112,6 @@ export default function Backtester() {
               />
             </div>
 
-            {/* Duration Slider */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Duration: {params.durationDays} days</label>
               <Slider
@@ -141,7 +148,6 @@ export default function Backtester() {
               </div>
             ) : (
               <>
-                {/* Stat cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="rounded-lg border border-border p-3 bg-card">
                     <p className="text-xs text-muted-foreground">Projected Value</p>
@@ -163,7 +169,6 @@ export default function Backtester() {
                   </div>
                 </div>
 
-                {/* Chart */}
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={result.dailyReturns}>
@@ -177,11 +182,7 @@ export default function Backtester() {
                       <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickCount={6} />
                       <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
+                        contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
                         formatter={(value: number) => [formatCurrency(value), "Portfolio Value"]}
                       />
                       <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#backtestGrad)" strokeWidth={2} />

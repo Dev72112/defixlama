@@ -1,14 +1,15 @@
 import { Layout } from "@/components/layout/Layout";
 import { TierGate } from "@/components/TierGate";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
-import { Vote, Users, Clock, CheckCircle, XCircle, BarChart3 } from "lucide-react";
+import { Vote, Users, Clock, CheckCircle, BarChart3 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
 
 interface GovernanceProtocol {
@@ -22,16 +23,19 @@ interface GovernanceProtocol {
   category: string;
 }
 
+const PAGE_SIZE = 15;
+
 export default function Governance() {
   const { selectedChain } = useChain();
   const { data: protocols, isLoading } = useChainProtocols(selectedChain.id);
+  const [page, setPage] = useState(1);
 
   const governanceData = useMemo<GovernanceProtocol[]>(() => {
     if (!protocols) return [];
     const govCategories = ["Lending", "DEXes", "Liquid Staking", "CDP", "Bridge", "Yield"];
     return protocols
       .filter((p: any) => govCategories.includes(p.category))
-      .slice(0, 25)
+      .slice(0, 50)
       .map((p: any) => ({
         name: p.name,
         slug: p.slug,
@@ -57,6 +61,9 @@ export default function Governance() {
     participation: Math.round(g.participationRate),
   }));
 
+  const totalPages = Math.ceil(governanceData.length / PAGE_SIZE);
+  const pageData = governanceData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <TierGate requiredTier="pro">
       <Layout>
@@ -76,7 +83,6 @@ export default function Governance() {
             <StatCard title="Avg Participation" value={`${avgParticipation.toFixed(1)}%`} icon={BarChart3} loading={isLoading} />
           </div>
 
-          {/* Proposals Chart */}
           <Card className="p-4">
             <h3 className="font-semibold text-foreground mb-3">Top Protocols by Governance Activity</h3>
             <div className="h-[250px]">
@@ -92,7 +98,6 @@ export default function Governance() {
             </div>
           </Card>
 
-          {/* Governance Table */}
           <Card className="p-4">
             <h3 className="font-semibold text-foreground mb-3">Protocol Governance Overview</h3>
             <div className="overflow-x-auto">
@@ -100,11 +105,11 @@ export default function Governance() {
                 <thead>
                   <tr className="bg-muted/30">
                     <th className="text-left">Protocol</th>
-                    <th className="text-right">TVL</th>
+                    <th className="text-right hidden sm:table-cell">TVL</th>
                     <th className="text-right">Proposals</th>
                     <th className="text-right">Active</th>
-                    <th className="text-right">Participation</th>
-                    <th className="text-center">Category</th>
+                    <th className="text-right hidden sm:table-cell">Participation</th>
+                    <th className="text-center hidden md:table-cell">Category</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -113,10 +118,10 @@ export default function Governance() {
                       <tr key={i}><td colSpan={6}><div className="skeleton h-8 w-full" /></td></tr>
                     ))
                   ) : (
-                    governanceData.map((g) => (
+                    pageData.map((g) => (
                       <tr key={g.slug} className="hover:bg-muted/30 transition-colors">
                         <td className="font-medium text-foreground">{g.name}</td>
-                        <td className="text-right font-mono text-foreground">{formatCurrency(g.tvl)}</td>
+                        <td className="text-right font-mono text-foreground hidden sm:table-cell">{formatCurrency(g.tvl)}</td>
                         <td className="text-right font-mono text-foreground">{g.proposalCount}</td>
                         <td className="text-right">
                           {g.activeProposals > 0 ? (
@@ -127,10 +132,10 @@ export default function Governance() {
                             <span className="text-muted-foreground">0</span>
                           )}
                         </td>
-                        <td className={cn("text-right font-mono", g.participationRate >= 40 ? "text-success" : g.participationRate >= 20 ? "text-warning" : "text-destructive")}>
+                        <td className={cn("text-right font-mono hidden sm:table-cell", g.participationRate >= 40 ? "text-success" : g.participationRate >= 20 ? "text-warning" : "text-destructive")}>
                           {g.participationRate.toFixed(1)}%
                         </td>
-                        <td className="text-center">
+                        <td className="text-center hidden md:table-cell">
                           <Badge variant="outline" className="text-xs">{g.category}</Badge>
                         </td>
                       </tr>
@@ -139,6 +144,23 @@ export default function Governance() {
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <Pagination className="mt-4">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                  </PaginationItem>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
+                    <PaginationItem key={p}>
+                      <PaginationLink isActive={page === p} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </Card>
         </div>
       </Layout>

@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { CategoryTreemap } from "@/components/dashboard/CategoryTreemap";
 import { ProtocolLifecycle } from "@/components/dashboard/ProtocolLifecycle";
 import { Input } from "@/components/ui/input";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
 
 const COLORS = [
@@ -15,6 +16,8 @@ const COLORS = [
   "hsl(280, 80%, 60%)", "hsl(348, 83%, 47%)", "hsl(200, 70%, 50%)",
   "hsl(30, 90%, 55%)", "hsl(160, 60%, 40%)",
 ];
+
+const PAGE_SIZE = 20;
 
 export default function MarketStructure() {
   const { selectedChain } = useChain();
@@ -28,6 +31,8 @@ export default function MarketStructure() {
   const dexList = dexVolumes.data ?? [];
   const feeList = fees.data ?? [];
   const [feeSearch, setFeeSearch] = useState("");
+  const [feePage, setFeePage] = useState(1);
+  const [chainPage, setChainPage] = useState(1);
 
   // DEX volume concentration
   const dexConcentration = useMemo(() => {
@@ -60,12 +65,10 @@ export default function MarketStructure() {
     ];
   }, [protocolList]);
 
-  // Volume-to-TVL ratio
   const totalDexVol = dexList.reduce((acc, d) => acc + (d.total24h || 0), 0);
   const currentTvl = tvlData.data?.tvl || 0;
   const vtRatio = currentTvl > 0 && totalDexVol > 0 ? (totalDexVol / currentTvl) * 100 : 0;
 
-  // Protocol diversity (Shannon index)
   const diversityData = useMemo(() => {
     const map = new Map<string, number>();
     for (const p of protocolList) map.set(p.category || "Other", (map.get(p.category || "Other") || 0) + 1);
@@ -79,7 +82,6 @@ export default function MarketStructure() {
   }, [protocolList]);
   const diversityScore = diversityData.maxShannon > 0 ? (diversityData.shannon / diversityData.maxShannon) * 100 : 0;
 
-  // Liquidity Fragmentation (Gini coefficient)
   const gini = useMemo(() => {
     const volumes = dexList.map((d) => d.total24h || 0).filter((v) => v > 0).sort((a, b) => a - b);
     const n = volumes.length;
@@ -90,10 +92,10 @@ export default function MarketStructure() {
     for (let i = 0; i < n; i++) sum += (2 * (i + 1) - n - 1) * volumes[i];
     return sum / (n * n * mean);
   }, [dexList]);
-  const fragmentation = 1 - gini; // Higher = more fragmented/spread
+  const fragmentation = 1 - gini;
 
-  // Fee-to-TVL efficiency with search
-  const feeEfficiency = useMemo(() => {
+  // Fee-to-TVL efficiency — full list with pagination
+  const allFeeEfficiency = useMemo(() => {
     const protocolMap = new Map(protocolList.map((p) => [p.name.toLowerCase(), p.tvl || 0]));
     let results = feeList
       .filter((f: any) => (f.total24h || f.total_24h || 0) > 0)
@@ -106,19 +108,19 @@ export default function MarketStructure() {
           fullName,
           fees: feeVal,
           tvl: matchedTvl,
-          ratio: matchedTvl > 0 ? (feeVal / matchedTvl) * 10000 : 0, // bps
+          ratio: matchedTvl > 0 ? (feeVal / matchedTvl) * 10000 : 0,
         };
       })
       .filter((f) => f.ratio > 0);
-    
     if (feeSearch) {
       results = results.filter((f) => f.fullName.toLowerCase().includes(feeSearch.toLowerCase()));
     }
-    
-    return results
-      .sort((a, b) => b.ratio - a.ratio)
-      .slice(0, 10);
+    return results.sort((a, b) => b.ratio - a.ratio);
   }, [feeList, protocolList, feeSearch]);
+
+  const feeEfficiency = allFeeEfficiency.slice(0, 10); // chart top 10
+  const feeTotalPages = Math.ceil(allFeeEfficiency.length / PAGE_SIZE);
+  const feePageData = allFeeEfficiency.slice((feePage - 1) * PAGE_SIZE, feePage * PAGE_SIZE);
 
   // Fee distribution
   const feeDistribution = useMemo(() => {
@@ -132,17 +134,16 @@ export default function MarketStructure() {
       }));
   }, [feeList]);
 
-  // Cross-chain Vol/TVL comparison
-  const crossChainVtl = useMemo(() => {
+  // Cross-chain top chains with pagination
+  const allCrossChainVtl = useMemo(() => {
     const chains = chainsTVL.data ?? [];
-    // We'd need per-chain DEX volumes which we don't have here easily, 
-    // so show top chains by TVL with their TVL as placeholder
     return chains
       .filter((c) => c.tvl && c.tvl > 0)
-      .sort((a, b) => (b.tvl || 0) - (a.tvl || 0))
-      .slice(0, 10)
-      .map((c) => ({ name: c.name, tvl: c.tvl || 0 }));
+      .sort((a, b) => (b.tvl || 0) - (a.tvl || 0));
   }, [chainsTVL.data]);
+
+  const chainTotalPages = Math.ceil(allCrossChainVtl.length / PAGE_SIZE);
+  const chainPageData = allCrossChainVtl.slice((chainPage - 1) * PAGE_SIZE, chainPage * PAGE_SIZE);
 
   const isLoading = protocols.isLoading || dexVolumes.isLoading;
 
@@ -234,7 +235,7 @@ export default function MarketStructure() {
           </div>
         </div>
 
-        {/* Fee-to-TVL Efficiency */}
+        {/* Fee-to-TVL Efficiency Chart */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex flex-wrap items-center gap-3 mb-1">
             <h3 className="text-base font-semibold text-foreground">Fee-to-TVL Efficiency (bps)</h3>
@@ -243,7 +244,7 @@ export default function MarketStructure() {
               <Input
                 placeholder="Search..."
                 value={feeSearch}
-                onChange={(e) => setFeeSearch(e.target.value)}
+                onChange={(e) => { setFeeSearch(e.target.value); setFeePage(1); }}
                 className="pl-8 h-8 text-sm"
               />
             </div>
@@ -269,6 +270,52 @@ export default function MarketStructure() {
             </ResponsiveContainer>
           )}
         </div>
+
+        {/* Fee Efficiency Table with pagination */}
+        {allFeeEfficiency.length > 10 && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <h3 className="text-base font-semibold text-foreground mb-3">All Fee Efficiency Rankings</h3>
+            <div className="overflow-x-auto">
+              <table className="data-table w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left">Protocol</th>
+                    <th className="text-right">24h Fees</th>
+                    <th className="text-right hidden sm:table-cell">TVL</th>
+                    <th className="text-right">Efficiency (bps)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {feePageData.map((f) => (
+                    <tr key={f.fullName}>
+                      <td className="font-medium text-foreground">{f.fullName}</td>
+                      <td className="text-right font-mono">{formatCurrency(f.fees)}</td>
+                      <td className="text-right font-mono hidden sm:table-cell">{formatCurrency(f.tvl)}</td>
+                      <td className="text-right font-mono font-bold text-primary">{f.ratio.toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {feeTotalPages > 1 && (
+              <Pagination className="mt-4">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious onClick={() => setFeePage(p => Math.max(1, p - 1))} className={feePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                  </PaginationItem>
+                  {Array.from({ length: Math.min(feeTotalPages, 5) }, (_, i) => i + 1).map(p => (
+                    <PaginationItem key={p}>
+                      <PaginationLink isActive={feePage === p} onClick={() => setFeePage(p)} className="cursor-pointer">{p}</PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext onClick={() => setFeePage(p => Math.min(feeTotalPages, p + 1))} className={feePage === feeTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </div>
+        )}
 
         {/* Category Capital Flow Treemap */}
         <CategoryTreemap protocols={protocolList} loading={isLoading} />
@@ -301,28 +348,54 @@ export default function MarketStructure() {
         {/* Protocol Lifecycle Distribution */}
         <ProtocolLifecycle protocols={protocolList} loading={isLoading} />
 
-        {/* Top Chains by TVL */}
+        {/* Top Chains by TVL with pagination */}
         <div className="rounded-lg border border-border bg-card p-4">
           <h3 className="text-base font-semibold text-foreground mb-1">Top Chains by TVL</h3>
           <p className="text-xs text-muted-foreground mb-3">Cross-chain capital concentration</p>
           {chainsTVL.isLoading ? (
             <div className="skeleton h-[220px] w-full rounded-lg" />
-          ) : crossChainVtl.length === 0 ? (
+          ) : allCrossChainVtl.length === 0 ? (
             <p className="text-center text-muted-foreground py-12 text-sm">No chain data</p>
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={crossChainVtl} margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} angle={-30} textAnchor="end" height={50} />
-                <YAxis tickFormatter={(v) => formatCurrency(v)} tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} />
-                <Tooltip
-                  formatter={(v: number) => [formatCurrency(v), "TVL"]}
-                  contentStyle={{ backgroundColor: "hsl(0 0% 3%)", border: "1px solid hsl(0 0% 8%)", borderRadius: "8px", color: "hsl(0 0% 93%)", fontSize: "12px" }}
-                />
-                <Bar dataKey="tvl" radius={[4, 4, 0, 0]}>
-                  {crossChainVtl.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <div className="overflow-x-auto">
+                <table className="data-table w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left">#</th>
+                      <th className="text-left">Chain</th>
+                      <th className="text-right">TVL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {chainPageData.map((c, i) => (
+                      <tr key={c.name}>
+                        <td className="text-muted-foreground">{(chainPage - 1) * PAGE_SIZE + i + 1}</td>
+                        <td className="font-medium text-foreground">{c.name}</td>
+                        <td className="text-right font-mono">{formatCurrency(c.tvl || 0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {chainTotalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious onClick={() => setChainPage(p => Math.max(1, p - 1))} className={chainPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                    </PaginationItem>
+                    {Array.from({ length: Math.min(chainTotalPages, 5) }, (_, i) => i + 1).map(p => (
+                      <PaginationItem key={p}>
+                        <PaginationLink isActive={chainPage === p} onClick={() => setChainPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext onClick={() => setChainPage(p => Math.min(chainTotalPages, p + 1))} className={chainPage === chainTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useChain } from "@/contexts/ChainContext";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/api/defillama";
 import { CACHE_TIERS } from "@/lib/cacheConfig";
@@ -12,6 +14,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
   Tooltip, CartesianGrid, Cell,
 } from "recharts";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
 
 function useHackHistory() {
@@ -27,32 +30,34 @@ function useHackHistory() {
   });
 }
 
-function useProtocolRisks() {
+function useProtocolRisks(chainId: string) {
   return useQuery({
-    queryKey: ["protocol-risks"],
+    queryKey: ["protocol-risks", chainId],
     queryFn: async () => {
       const res = await fetch("https://api.llama.fi/protocols");
       if (!res.ok) throw new Error("Failed to fetch protocols");
-      const protocols = (await res.json()) as any[];
+      let protocols = (await res.json()) as any[];
+
+      if (chainId !== "all") {
+        protocols = protocols.filter((p) =>
+          p.chains?.some((c: string) => c.toLowerCase() === chainId.toLowerCase()) ||
+          p.chain?.toLowerCase() === chainId.toLowerCase()
+        );
+      }
 
       return protocols
         .filter((p) => p.tvl > 1_000_000)
         .slice(0, 100)
         .map((p) => {
-          // Simple risk score: lower TVL = higher risk, negative change = higher risk
           let riskScore = 50;
           if (p.tvl < 10_000_000) riskScore += 20;
           else if (p.tvl < 100_000_000) riskScore += 10;
           else riskScore -= 10;
-
           if (p.change_1d < -5) riskScore += 15;
           else if (p.change_1d < -2) riskScore += 5;
-
           if (p.audits && p.audits.length > 0) riskScore -= 15;
           if (p.audit_links && p.audit_links.length > 0) riskScore -= 10;
-
           riskScore = Math.max(0, Math.min(100, riskScore));
-
           return {
             name: p.name,
             slug: p.slug,
@@ -71,11 +76,15 @@ function useProtocolRisks() {
   });
 }
 
-export default function RiskDashboard() {
-  const { data: hacks = [], isLoading: loadingHacks } = useHackHistory();
-  const { data: risks = [], isLoading: loadingRisks } = useProtocolRisks();
+const PAGE_SIZE = 20;
 
-  // Aggregate hacks by month for chart
+export default function RiskDashboard() {
+  const { selectedChain } = useChain();
+  const { data: hacks = [], isLoading: loadingHacks } = useHackHistory();
+  const { data: risks = [], isLoading: loadingRisks } = useProtocolRisks(selectedChain.id);
+  const [riskPage, setRiskPage] = useState(1);
+  const [hackPage, setHackPage] = useState(1);
+
   const hacksByMonth = hacks.reduce((acc: Record<string, number>, hack: any) => {
     const month = new Date(hack.date * 1000).toISOString().slice(0, 7);
     acc[month] = (acc[month] || 0) + (hack.amount || 0);
@@ -89,13 +98,19 @@ export default function RiskDashboard() {
 
   const totalLost = hacks.reduce((s: number, h: any) => s + (h.amount || 0), 0);
 
+  const riskTotalPages = Math.ceil(risks.length / PAGE_SIZE);
+  const riskPageData = risks.slice((riskPage - 1) * PAGE_SIZE, riskPage * PAGE_SIZE);
+
+  const hackTotalPages = Math.ceil(hacks.length / PAGE_SIZE);
+  const hackPageData = hacks.slice((hackPage - 1) * PAGE_SIZE, hackPage * PAGE_SIZE);
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
             <Shield className="h-7 w-7 text-primary" />
-            Risk Dashboard
+            {selectedChain.name} Risk Dashboard
             <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -141,11 +156,7 @@ export default function RiskDashboard() {
                   <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                   <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `$${(v / 1e6).toFixed(0)}M`} />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
+                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
                     formatter={(value: number) => [formatCurrency(value), "Funds Lost"]}
                   />
                   <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
@@ -159,7 +170,7 @@ export default function RiskDashboard() {
           )}
         </Card>
 
-        {/* Risk Table */}
+        {/* Risk Table with pagination */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-warning" />
@@ -170,81 +181,117 @@ export default function RiskDashboard() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full data-table">
-                <thead>
-                  <tr>
-                    <th>Protocol</th>
-                    <th className="text-right">TVL</th>
-                    <th className="text-right">Risk Score</th>
-                    <th className="text-center">Risk Level</th>
-                    <th className="text-center">Audited</th>
-                    <th className="text-right">24h Change</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {risks.slice(0, 50).map((r) => (
-                    <tr key={r.slug}>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          {r.logo && <img src={r.logo} alt="" className="h-5 w-5 rounded-full" />}
-                          <span className="font-medium">{r.name}</span>
-                          <span className="text-xs text-muted-foreground">{r.category}</span>
-                        </div>
-                      </td>
-                      <td className="text-right font-mono">{formatCurrency(r.tvl)}</td>
-                      <td className="text-right font-mono">{r.riskScore}</td>
-                      <td className="text-center">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            r.riskLevel === "High" && "border-destructive text-destructive",
-                            r.riskLevel === "Medium" && "border-warning text-warning",
-                            r.riskLevel === "Low" && "border-success text-success"
-                          )}
-                        >
-                          {r.riskLevel}
-                        </Badge>
-                      </td>
-                      <td className="text-center">
-                        {r.audited ? (
-                          <CheckCircle2 className="h-4 w-4 text-success mx-auto" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-destructive/50 mx-auto" />
-                        )}
-                      </td>
-                      <td className={cn("text-right font-mono", (r.change_1d || 0) >= 0 ? "text-success" : "text-destructive")}>
-                        {r.change_1d != null ? `${r.change_1d >= 0 ? "+" : ""}${r.change_1d.toFixed(2)}%` : "-"}
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full data-table">
+                  <thead>
+                    <tr>
+                      <th>Protocol</th>
+                      <th className="text-right hidden sm:table-cell">TVL</th>
+                      <th className="text-right">Risk Score</th>
+                      <th className="text-center">Risk Level</th>
+                      <th className="text-center hidden sm:table-cell">Audited</th>
+                      <th className="text-right hidden md:table-cell">24h Change</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {riskPageData.map((r) => (
+                      <tr key={r.slug}>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            {r.logo && <img src={r.logo} alt="" className="h-5 w-5 rounded-full" />}
+                            <span className="font-medium">{r.name}</span>
+                            <span className="text-xs text-muted-foreground hidden sm:inline">{r.category}</span>
+                          </div>
+                        </td>
+                        <td className="text-right font-mono hidden sm:table-cell">{formatCurrency(r.tvl)}</td>
+                        <td className="text-right font-mono">{r.riskScore}</td>
+                        <td className="text-center">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              r.riskLevel === "High" && "border-destructive text-destructive",
+                              r.riskLevel === "Medium" && "border-warning text-warning",
+                              r.riskLevel === "Low" && "border-success text-success"
+                            )}
+                          >
+                            {r.riskLevel}
+                          </Badge>
+                        </td>
+                        <td className="text-center hidden sm:table-cell">
+                          {r.audited ? (
+                            <CheckCircle2 className="h-4 w-4 text-success mx-auto" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-destructive/50 mx-auto" />
+                          )}
+                        </td>
+                        <td className={cn("text-right font-mono hidden md:table-cell", (r.change_1d || 0) >= 0 ? "text-success" : "text-destructive")}>
+                          {r.change_1d != null ? `${r.change_1d >= 0 ? "+" : ""}${r.change_1d.toFixed(2)}%` : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {riskTotalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious onClick={() => setRiskPage(p => Math.max(1, p - 1))} className={riskPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                    </PaginationItem>
+                    {Array.from({ length: Math.min(riskTotalPages, 5) }, (_, i) => i + 1).map(p => (
+                      <PaginationItem key={p}>
+                        <PaginationLink isActive={riskPage === p} onClick={() => setRiskPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext onClick={() => setRiskPage(p => Math.min(riskTotalPages, p + 1))} className={riskPage === riskTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </Card>
 
-        {/* Recent Hacks */}
+        {/* Recent Hacks with pagination */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Clock className="h-5 w-5 text-muted-foreground" />
             Recent Hacks
           </h3>
           <div className="space-y-3">
-            {hacks.slice(0, 15).map((hack: any, i: number) => (
+            {hackPageData.map((hack: any, i: number) => (
               <div key={i} className="flex items-center justify-between border-b border-border/50 pb-3">
-                <div>
-                  <p className="font-medium">{hack.name || "Unknown"}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium truncate">{hack.name || "Unknown"}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(hack.date * 1000).toLocaleDateString()} · {hack.technique || "N/A"}
+                    {new Date(hack.date * 1000).toLocaleDateString()} · <span className="hidden sm:inline">{hack.technique || "N/A"}</span>
                   </p>
                 </div>
-                <span className="text-destructive font-mono font-bold">
+                <span className="text-destructive font-mono font-bold ml-2 flex-shrink-0">
                   -{formatCurrency(hack.amount || 0)}
                 </span>
               </div>
             ))}
           </div>
+          {hackTotalPages > 1 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setHackPage(p => Math.max(1, p - 1))} className={hackPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+                {Array.from({ length: Math.min(hackTotalPages, 5) }, (_, i) => i + 1).map(p => (
+                  <PaginationItem key={p}>
+                    <PaginationLink isActive={hackPage === p} onClick={() => setHackPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => setHackPage(p => Math.min(hackTotalPages, p + 1))} className={hackPage === hackTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </Card>
       </div>
     </Layout>

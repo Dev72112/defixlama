@@ -3,10 +3,10 @@ import { TierGate } from "@/components/TierGate";
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useAllProtocols } from "@/hooks/useDefiData";
+import { useChain } from "@/contexts/ChainContext";
 import { formatCurrency } from "@/lib/api/defillama";
-import { GitCompare, Plus, X } from "lucide-react";
+import { GitCompare, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, Radar, Legend } from "recharts";
 import { cn } from "@/lib/utils";
@@ -15,12 +15,21 @@ const COMPARE_COLORS = ["hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(-
 
 export default function ProtocolComparison() {
   const { data: protocols, isLoading } = useAllProtocols();
+  const { selectedChain } = useChain();
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>(["aave", "lido"]);
 
+  // Chain-filtered protocol list for the dropdown
   const protocolList = useMemo(() => {
     if (!protocols) return [];
-    return protocols.map((p: any) => ({ slug: p.slug, name: p.name })).sort((a: any, b: any) => a.name.localeCompare(b.name));
-  }, [protocols]);
+    let list = protocols;
+    if (selectedChain.id !== "all") {
+      list = protocols.filter((p: any) =>
+        p.chains?.some((c: string) => c.toLowerCase() === selectedChain.id.toLowerCase()) ||
+        p.chain?.toLowerCase() === selectedChain.id.toLowerCase()
+      );
+    }
+    return list.map((p: any) => ({ slug: p.slug, name: p.name })).sort((a: any, b: any) => a.name.localeCompare(b.name));
+  }, [protocols, selectedChain.id]);
 
   const selectedProtocols = useMemo(() => {
     if (!protocols) return [];
@@ -37,7 +46,6 @@ export default function ProtocolComparison() {
     setSelectedSlugs((prev) => prev.filter((s) => s !== slug));
   };
 
-  // Bar chart data
   const barData = useMemo(() => {
     return selectedProtocols.map((p: any) => ({
       name: p.name,
@@ -47,12 +55,11 @@ export default function ProtocolComparison() {
     }));
   }, [selectedProtocols]);
 
-  // Radar chart data
   const radarData = useMemo(() => {
     const metrics = ["TVL Score", "Fee Revenue", "Volume", "Chain Coverage", "Category"];
     return metrics.map((metric) => {
       const entry: any = { metric };
-      selectedProtocols.forEach((p: any, i) => {
+      selectedProtocols.forEach((p: any) => {
         switch (metric) {
           case "TVL Score": entry[p.name] = Math.min(100, ((p.tvl || 0) / 1e10) * 100); break;
           case "Fee Revenue": entry[p.name] = Math.random() * 80 + 20; break;
@@ -71,13 +78,12 @@ export default function ProtocolComparison() {
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Protocol Comparison</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} Protocol Comparison</h1>
               <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
             </div>
             <p className="text-muted-foreground mt-1">Side-by-side metrics comparison (up to 4 protocols)</p>
           </div>
 
-          {/* Protocol Selector */}
           <Card className="p-4">
             <div className="flex flex-wrap items-center gap-3">
               {selectedSlugs.map((slug, i) => {
@@ -109,58 +115,58 @@ export default function ProtocolComparison() {
 
           {selectedProtocols.length >= 2 && (
             <>
-              {/* Metrics Comparison Table */}
-              <Card className="p-4 overflow-x-auto">
+              <Card className="p-4">
                 <h3 className="font-semibold text-foreground mb-3">Metrics Comparison</h3>
-                <table className="data-table w-full">
-                  <thead>
-                    <tr className="bg-muted/30">
-                      <th className="text-left">Metric</th>
-                      {selectedProtocols.map((p: any, i) => (
-                        <th key={p.slug} className="text-right">
-                          <span className="flex items-center justify-end gap-2">
-                            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: COMPARE_COLORS[i] }} />
-                            {p.name}
-                          </span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="hover:bg-muted/30">
-                      <td className="text-muted-foreground">TVL</td>
-                      {selectedProtocols.map((p: any) => (
-                        <td key={p.slug} className="text-right font-mono text-foreground">{formatCurrency(p.tvl || 0)}</td>
-                      ))}
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="text-muted-foreground">Category</td>
-                      {selectedProtocols.map((p: any) => (
-                        <td key={p.slug} className="text-right text-foreground">{p.category || "DeFi"}</td>
-                      ))}
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="text-muted-foreground">Chains</td>
-                      {selectedProtocols.map((p: any) => (
-                        <td key={p.slug} className="text-right text-foreground">{p.chains?.length || 1}</td>
-                      ))}
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="text-muted-foreground">7d Change</td>
-                      {selectedProtocols.map((p: any) => {
-                        const change = p.change_7d || 0;
-                        return (
-                          <td key={p.slug} className={cn("text-right font-mono", change >= 0 ? "text-success" : "text-destructive")}>
-                            {change >= 0 ? "+" : ""}{change.toFixed(2)}%
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="data-table w-full">
+                    <thead>
+                      <tr className="bg-muted/30">
+                        <th className="text-left">Metric</th>
+                        {selectedProtocols.map((p: any, i) => (
+                          <th key={p.slug} className="text-right">
+                            <span className="flex items-center justify-end gap-2">
+                              <div className="h-2 w-2 rounded-full hidden sm:block" style={{ backgroundColor: COMPARE_COLORS[i] }} />
+                              <span className="truncate max-w-[80px] sm:max-w-none">{p.name}</span>
+                            </span>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="hover:bg-muted/30">
+                        <td className="text-muted-foreground">TVL</td>
+                        {selectedProtocols.map((p: any) => (
+                          <td key={p.slug} className="text-right font-mono text-foreground">{formatCurrency(p.tvl || 0)}</td>
+                        ))}
+                      </tr>
+                      <tr className="hover:bg-muted/30">
+                        <td className="text-muted-foreground">Category</td>
+                        {selectedProtocols.map((p: any) => (
+                          <td key={p.slug} className="text-right text-foreground">{p.category || "DeFi"}</td>
+                        ))}
+                      </tr>
+                      <tr className="hover:bg-muted/30">
+                        <td className="text-muted-foreground">Chains</td>
+                        {selectedProtocols.map((p: any) => (
+                          <td key={p.slug} className="text-right text-foreground">{p.chains?.length || 1}</td>
+                        ))}
+                      </tr>
+                      <tr className="hover:bg-muted/30">
+                        <td className="text-muted-foreground">7d Change</td>
+                        {selectedProtocols.map((p: any) => {
+                          const change = p.change_7d || 0;
+                          return (
+                            <td key={p.slug} className={cn("text-right font-mono", change >= 0 ? "text-success" : "text-destructive")}>
+                              {change >= 0 ? "+" : ""}{change.toFixed(2)}%
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </Card>
 
-              {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="p-4">
                   <h3 className="font-semibold text-foreground mb-3">TVL Comparison</h3>
