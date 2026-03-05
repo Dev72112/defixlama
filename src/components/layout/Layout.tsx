@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useChain } from "@/contexts/ChainContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export function Layout({ children }: LayoutProps) {
   });
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { selectedChain, isChainSwitching, isAllChains } = useChain();
 
   useEffect(() => {
     try { localStorage.setItem("sidebar-collapsed", String(sidebarCollapsed)); } catch {}
@@ -58,12 +60,30 @@ export function Layout({ children }: LayoutProps) {
         sidebarCollapsed ? "lg:pl-16" : "lg:pl-[220px]"
       )}>
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        
+        {/* Chain indicator + switching overlay */}
+        {!isAllChains && (
+          <div className="px-4 lg:px-6 pt-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              Showing data for: <span className="font-medium text-foreground">{selectedChain.name}</span>
+              {isChainSwitching && <span className="text-primary ml-1">Loading...</span>}
+            </div>
+          </div>
+        )}
+        
         {isMobile ? (
           <PullToRefresh onRefresh={handleRefresh}>
-            <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden pb-24">{children}</main>
+            <main className={cn(
+              "p-4 lg:p-6 w-full max-w-full overflow-x-hidden pb-24 transition-opacity duration-200",
+              isChainSwitching && "opacity-50"
+            )}>{children}</main>
           </PullToRefresh>
         ) : (
-          <main className="p-4 lg:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
+          <main className={cn(
+            "p-4 lg:p-6 w-full max-w-full overflow-x-hidden transition-opacity duration-200",
+            isChainSwitching && "opacity-50"
+          )}>{children}</main>
         )}
       </div>
 
