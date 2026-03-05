@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { TierGate } from "@/components/TierGate";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { Vote, Users, Clock, CheckCircle, BarChart3 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 import { cn } from "@/lib/utils";
 
 interface GovernanceProtocol {
@@ -26,9 +27,12 @@ interface GovernanceProtocol {
 const PAGE_SIZE = 15;
 
 export default function Governance() {
-  const { selectedChain } = useChain();
+  const { selectedChain, chainSwitchKey } = useChain();
   const { data: protocols, isLoading } = useChainProtocols(selectedChain.id);
   const [page, setPage] = useState(1);
+
+  // Reset pagination on chain change
+  useEffect(() => { setPage(1); }, [chainSwitchKey]);
 
   const governanceData = useMemo<GovernanceProtocol[]>(() => {
     if (!protocols) return [];
@@ -64,6 +68,19 @@ export default function Governance() {
   const totalPages = Math.ceil(governanceData.length / PAGE_SIZE);
   const pageData = governanceData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const columns: ResponsiveColumn<GovernanceProtocol>[] = [
+    { key: "name", label: "Protocol", priority: "always", render: (g) => <span className="font-medium text-foreground">{g.name}</span> },
+    { key: "tvl", label: "TVL", priority: "desktop", align: "right", render: (g) => <span className="font-mono text-foreground">{formatCurrency(g.tvl)}</span> },
+    { key: "proposalCount", label: "Proposals", priority: "always", align: "right", render: (g) => <span className="font-mono text-foreground">{g.proposalCount}</span> },
+    { key: "activeProposals", label: "Active", priority: "always", align: "right", render: (g) => g.activeProposals > 0 ? (
+      <span className="inline-flex items-center gap-1 text-success"><CheckCircle className="h-3 w-3" /> {g.activeProposals}</span>
+    ) : <span className="text-muted-foreground">0</span> },
+    { key: "participationRate", label: "Participation", priority: "expanded", align: "right", render: (g) => (
+      <span className={cn("font-mono", g.participationRate >= 40 ? "text-success" : g.participationRate >= 20 ? "text-warning" : "text-destructive")}>{g.participationRate.toFixed(1)}%</span>
+    ) },
+    { key: "category", label: "Category", priority: "expanded", align: "center", render: (g) => <Badge variant="outline" className="text-xs">{g.category}</Badge> },
+  ];
+
   return (
     <TierGate requiredTier="pro">
       <Layout>
@@ -98,70 +115,33 @@ export default function Governance() {
             </div>
           </Card>
 
-          <Card className="p-4">
+          <div>
             <h3 className="font-semibold text-foreground mb-3">Protocol Governance Overview</h3>
-            <div className="overflow-x-auto">
-              <table className="data-table w-full">
-                <thead>
-                  <tr className="bg-muted/30">
-                    <th className="text-left">Protocol</th>
-                    <th className="text-right hidden sm:table-cell">TVL</th>
-                    <th className="text-right">Proposals</th>
-                    <th className="text-right">Active</th>
-                    <th className="text-right hidden sm:table-cell">Participation</th>
-                    <th className="text-center hidden md:table-cell">Category</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    Array(5).fill(0).map((_, i) => (
-                      <tr key={i}><td colSpan={6}><div className="skeleton h-8 w-full" /></td></tr>
-                    ))
-                  ) : (
-                    pageData.map((g) => (
-                      <tr key={g.slug} className="hover:bg-muted/30 transition-colors">
-                        <td className="font-medium text-foreground">{g.name}</td>
-                        <td className="text-right font-mono text-foreground hidden sm:table-cell">{formatCurrency(g.tvl)}</td>
-                        <td className="text-right font-mono text-foreground">{g.proposalCount}</td>
-                        <td className="text-right">
-                          {g.activeProposals > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-success">
-                              <CheckCircle className="h-3 w-3" /> {g.activeProposals}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">0</span>
-                          )}
-                        </td>
-                        <td className={cn("text-right font-mono hidden sm:table-cell", g.participationRate >= 40 ? "text-success" : g.participationRate >= 20 ? "text-warning" : "text-destructive")}>
-                          {g.participationRate.toFixed(1)}%
-                        </td>
-                        <td className="text-center hidden md:table-cell">
-                          <Badge variant="outline" className="text-xs">{g.category}</Badge>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {totalPages > 1 && (
-              <Pagination className="mt-4">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+            <ResponsiveDataTable
+              columns={columns}
+              data={pageData}
+              keyField="slug"
+              loading={isLoading}
+            />
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
+                  <PaginationItem key={p}>
+                    <PaginationLink isActive={page === p} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
                   </PaginationItem>
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
-                    <PaginationItem key={p}>
-                      <PaginationLink isActive={page === p} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </Card>
+                ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </Layout>
     </TierGate>

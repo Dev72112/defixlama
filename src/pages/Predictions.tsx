@@ -7,20 +7,30 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
-import { TrendingUp, TrendingDown, Brain, Target, BarChart3, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Brain, Target, BarChart3 } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area } from "recharts";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 import { cn } from "@/lib/utils";
+
+interface PredictionEntry {
+  name: string;
+  slug: string;
+  tvl: number;
+  change7d: number;
+  momentum: string;
+  confidence: number;
+  predictedChange: number;
+  predictedTvl: number;
+}
 
 export default function Predictions() {
   const { selectedChain } = useChain();
   const { data: protocols, isLoading } = useChainProtocols(selectedChain.id);
 
-  // Generate predictions based on TVL trends
-  const predictions = useMemo(() => {
+  const predictions = useMemo<PredictionEntry[]>(() => {
     if (!protocols) return [];
     return protocols.slice(0, 20).map((p: any) => {
       const change7d = p.change_7d || (Math.random() - 0.5) * 20;
-      const change30d = p.change_1m || change7d * 3;
       const momentum = change7d > 0 ? "bullish" : "bearish";
       const confidence = Math.min(95, Math.max(30, 50 + Math.abs(change7d) * 2));
       const predictedChange = change7d * 0.7 + (Math.random() - 0.3) * 5;
@@ -29,7 +39,6 @@ export default function Predictions() {
         slug: p.slug,
         tvl: p.tvl || 0,
         change7d,
-        change30d,
         momentum,
         confidence: Math.round(confidence),
         predictedChange: Math.round(predictedChange * 100) / 100,
@@ -38,7 +47,6 @@ export default function Predictions() {
     }).sort((a, b) => Math.abs(b.predictedChange) - Math.abs(a.predictedChange));
   }, [protocols]);
 
-  // Chart data: simulated 30-day forecast
   const forecastData = useMemo(() => {
     const top = predictions[0];
     if (!top) return [];
@@ -57,6 +65,23 @@ export default function Predictions() {
 
   const bullishCount = predictions.filter((p) => p.momentum === "bullish").length;
   const avgConfidence = predictions.length > 0 ? Math.round(predictions.reduce((a, b) => a + b.confidence, 0) / predictions.length) : 0;
+
+  const columns: ResponsiveColumn<PredictionEntry>[] = [
+    { key: "name", label: "Protocol", priority: "always", render: (p) => <span className="font-medium text-foreground">{p.name}</span> },
+    { key: "tvl", label: "Current TVL", priority: "always", align: "right", render: (p) => <span className="font-mono text-foreground">{formatCurrency(p.tvl)}</span> },
+    { key: "change7d", label: "7d Change", priority: "expanded", align: "right", render: (p) => (
+      <span className={cn("font-mono", p.change7d >= 0 ? "text-success" : "text-destructive")}>{p.change7d >= 0 ? "+" : ""}{p.change7d.toFixed(2)}%</span>
+    ) },
+    { key: "predictedChange", label: "Predicted", priority: "always", align: "right", render: (p) => (
+      <span className={cn("font-mono font-medium", p.predictedChange >= 0 ? "text-success" : "text-destructive")}>{p.predictedChange >= 0 ? "+" : ""}{p.predictedChange}%</span>
+    ) },
+    { key: "confidence", label: "Confidence", priority: "expanded", align: "right", render: (p) => (
+      <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", p.confidence >= 70 ? "bg-success/10 text-success" : p.confidence >= 50 ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground")}>{p.confidence}%</span>
+    ) },
+    { key: "momentum", label: "Signal", priority: "always", align: "center", render: (p) => (
+      p.momentum === "bullish" ? <TrendingUp className="h-4 w-4 text-success inline" /> : <TrendingDown className="h-4 w-4 text-destructive inline" />
+    ) },
+  ];
 
   return (
     <TierGate requiredTier="pro">
@@ -77,7 +102,6 @@ export default function Predictions() {
             <StatCard title="Avg Confidence" value={`${avgConfidence}%`} icon={Target} loading={isLoading} />
           </div>
 
-          {/* Forecast Chart */}
           {predictions.length > 0 && (
             <Card className="p-4">
               <h3 className="font-semibold text-foreground mb-1">{predictions[0]?.name} — 30-Day TVL Forecast</h3>
@@ -98,56 +122,15 @@ export default function Predictions() {
             </Card>
           )}
 
-          {/* Predictions Table */}
-          <Card className="p-4">
+          <div>
             <h3 className="font-semibold text-foreground mb-3">Top Predicted Movers</h3>
-            <div className="overflow-x-auto">
-              <table className="data-table w-full">
-                <thead>
-                  <tr className="bg-muted/30">
-                    <th className="text-left">Protocol</th>
-                    <th className="text-right">Current TVL</th>
-                    <th className="text-right">7d Change</th>
-                    <th className="text-right">Predicted Change</th>
-                    <th className="text-right">Confidence</th>
-                    <th className="text-center">Signal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    Array(5).fill(0).map((_, i) => (
-                      <tr key={i}><td colSpan={6}><div className="skeleton h-8 w-full" /></td></tr>
-                    ))
-                  ) : (
-                    predictions.map((p) => (
-                      <tr key={p.slug} className="hover:bg-muted/30 transition-colors">
-                        <td className="font-medium text-foreground">{p.name}</td>
-                        <td className="text-right font-mono text-foreground">{formatCurrency(p.tvl)}</td>
-                        <td className={cn("text-right font-mono", p.change7d >= 0 ? "text-success" : "text-destructive")}>
-                          {p.change7d >= 0 ? "+" : ""}{p.change7d.toFixed(2)}%
-                        </td>
-                        <td className={cn("text-right font-mono font-medium", p.predictedChange >= 0 ? "text-success" : "text-destructive")}>
-                          {p.predictedChange >= 0 ? "+" : ""}{p.predictedChange}%
-                        </td>
-                        <td className="text-right">
-                          <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", p.confidence >= 70 ? "bg-success/10 text-success" : p.confidence >= 50 ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground")}>
-                            {p.confidence}%
-                          </span>
-                        </td>
-                        <td className="text-center">
-                          {p.momentum === "bullish" ? (
-                            <TrendingUp className="h-4 w-4 text-success inline" />
-                          ) : (
-                            <TrendingDown className="h-4 w-4 text-destructive inline" />
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+            <ResponsiveDataTable
+              columns={columns}
+              data={predictions}
+              keyField="slug"
+              loading={isLoading}
+            />
+          </div>
 
           <p className="text-xs text-muted-foreground text-center">
             Predictions are based on historical TVL trends and momentum analysis. Not financial advice.

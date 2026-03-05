@@ -4,9 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { Download, FileJson, FileSpreadsheet, Trash2, Eye, EyeOff, Star } from "lucide-react";
+import { Download, FileJson, FileSpreadsheet, Trash2, Star } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
+
+interface WatchlistItem {
+  id: string;
+  symbol: string;
+  name: string;
+  type: string;
+}
 
 export default function WatchlistExports() {
   const { watchlist, removeFromWatchlist } = useWatchlist();
@@ -43,6 +50,20 @@ export default function WatchlistExports() {
     toast({ title: "Exported", description: `${watchlist.length} items exported as JSON` });
   };
 
+  const columns: ResponsiveColumn<WatchlistItem>[] = [
+    { key: "symbol", label: "Symbol", priority: "always", render: (item) => <span className="font-mono font-medium text-foreground">{item.symbol}</span> },
+    { key: "name", label: "Name", priority: "always", render: (item) => <span className="text-foreground">{item.name}</span> },
+    { key: "type", label: "Type", priority: "always", align: "center", render: (item) => <Badge variant="outline" className="text-xs capitalize">{item.type}</Badge> },
+    { key: "actions", label: "Actions", priority: "always", align: "center", render: (item) => (
+      <button
+        onClick={(e) => { e.stopPropagation(); removeFromWatchlist(item.id, item.type); }}
+        className="text-muted-foreground hover:text-destructive transition-colors"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    ) },
+  ];
+
   return (
     <TierGate requiredTier="pro">
       <Layout>
@@ -65,7 +86,6 @@ export default function WatchlistExports() {
             </div>
           </div>
 
-          {/* Summary */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Card className="p-4 text-center">
               <Star className="h-5 w-5 text-primary mx-auto mb-1" />
@@ -86,49 +106,16 @@ export default function WatchlistExports() {
             </Card>
           </div>
 
-          {/* Watchlist Table */}
-          <Card className="p-4">
+          <div>
             <h3 className="font-semibold text-foreground mb-3">Your Watchlist</h3>
-            {watchlist.length === 0 ? (
-              <div className="text-center py-12">
-                <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">Your watchlist is empty.</p>
-                <p className="text-sm text-muted-foreground mt-1">Add tokens, protocols, or DEXes from their detail pages.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="data-table w-full">
-                  <thead>
-                    <tr className="bg-muted/30">
-                      <th className="text-left">Symbol</th>
-                      <th className="text-left">Name</th>
-                      <th className="text-center">Type</th>
-                      <th className="text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {watchlist.map((item) => (
-                      <tr key={item.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="font-mono font-medium text-foreground">{item.symbol}</td>
-                        <td className="text-foreground">{item.name}</td>
-                        <td className="text-center">
-                          <Badge variant="outline" className="text-xs capitalize">{item.type}</Badge>
-                        </td>
-                        <td className="text-center">
-                          <button
-                            onClick={() => removeFromWatchlist(item.id, item.type)}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
+            <ResponsiveDataTable
+              columns={columns}
+              data={watchlist as WatchlistItem[]}
+              keyField="id"
+              emptyMessage="Your watchlist is empty. Add tokens, protocols, or DEXes from their detail pages."
+              emptyIcon={<Star className="h-12 w-12 text-muted-foreground" />}
+            />
+          </div>
         </div>
       </Layout>
     </TierGate>
