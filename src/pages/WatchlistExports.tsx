@@ -56,7 +56,7 @@ export default function WatchlistExports() {
     { key: "type", label: "Type", priority: "always", align: "center", render: (item) => <Badge variant="outline" className="text-xs capitalize">{item.type}</Badge> },
     { key: "actions", label: "Actions", priority: "always", align: "center", render: (item) => (
       <button
-        onClick={(e) => { e.stopPropagation(); removeFromWatchlist(item.id, item.type); }}
+        onClick={(e) => { e.stopPropagation(); removeFromWatchlist(item.id, item.type as "token" | "protocol" | "dex"); }}
         className="text-muted-foreground hover:text-destructive transition-colors"
       >
         <Trash2 className="h-4 w-4" />
