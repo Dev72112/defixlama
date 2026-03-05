@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
@@ -66,6 +67,31 @@ export default function AlertConfig() {
     toast({ title: "Alert Removed" });
   };
 
+  const columns: ResponsiveColumn<AlertRule>[] = [
+    { key: "type", label: "Type", priority: "always", render: (alert) => {
+      const alertType = ALERT_TYPES.find((at) => at.type === alert.type);
+      const Icon = alertType?.icon || Bell;
+      return (
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-primary" />
+          <span className="font-medium text-foreground">{alertType?.label}</span>
+        </div>
+      );
+    } },
+    { key: "symbol", label: "Symbol", priority: "always", render: (alert) => <span className="font-mono text-foreground">{alert.symbol}</span> },
+    { key: "threshold", label: "Threshold", priority: "always", align: "right", render: (alert) => <span className="text-muted-foreground">{alert.threshold}%</span> },
+    { key: "enabled", label: "Status", priority: "always", align: "center", render: (alert) => (
+      <button onClick={(e) => { e.stopPropagation(); toggleAlert(alert.id); }} className="text-muted-foreground hover:text-foreground transition-colors">
+        {alert.enabled ? <ToggleRight className="h-6 w-6 text-primary" /> : <ToggleLeft className="h-6 w-6" />}
+      </button>
+    ) },
+    { key: "actions", label: "", priority: "always", align: "center", render: (alert) => (
+      <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-muted-foreground hover:text-destructive transition-colors">
+        <Trash2 className="h-4 w-4" />
+      </button>
+    ) },
+  ];
+
   return (
     <TierGate requiredTier="pro">
       <Layout>
@@ -85,7 +111,7 @@ export default function AlertConfig() {
           </div>
 
           {/* Alert Types Overview */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {ALERT_TYPES.map((at) => {
               const Icon = at.icon;
               const count = alerts.filter((a) => a.type === at.type && a.enabled).length;
@@ -114,7 +140,7 @@ export default function AlertConfig() {
                 </SelectContent>
               </Select>
               <Input placeholder="Symbol (e.g. AAVE, ETH)" value={newSymbol} onChange={(e) => setNewSymbol(e.target.value)} className="flex-1" />
-              <Input placeholder="Threshold %" type="number" value={newThreshold} onChange={(e) => setNewThreshold(e.target.value)} className="w-32" />
+              <Input placeholder="Threshold %" type="number" value={newThreshold} onChange={(e) => setNewThreshold(e.target.value)} className="w-full sm:w-32" />
               <Button onClick={addAlert} className="gap-2">
                 <Plus className="h-4 w-4" /> Add Alert
               </Button>
@@ -122,38 +148,15 @@ export default function AlertConfig() {
           </Card>
 
           {/* Active Alerts */}
-          <Card className="p-4">
+          <div>
             <h3 className="font-semibold text-foreground mb-3">Your Alerts ({alerts.length})</h3>
-            <div className="space-y-2">
-              {alerts.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No alerts configured. Create one above.</p>
-              ) : (
-                alerts.map((alert) => {
-                  const alertType = ALERT_TYPES.find((at) => at.type === alert.type);
-                  const Icon = alertType?.icon || Bell;
-                  return (
-                    <div key={alert.id} className={cn("flex items-center justify-between p-3 rounded-lg border border-border", alert.enabled ? "bg-card" : "bg-muted/30 opacity-60")}>
-                      <div className="flex items-center gap-3">
-                        <Icon className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{alertType?.label} — {alert.symbol}</p>
-                          <p className="text-xs text-muted-foreground">Threshold: {alert.threshold}%</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => toggleAlert(alert.id)} className="text-muted-foreground hover:text-foreground transition-colors">
-                          {alert.enabled ? <ToggleRight className="h-6 w-6 text-primary" /> : <ToggleLeft className="h-6 w-6" />}
-                        </button>
-                        <button onClick={() => removeAlert(alert.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </Card>
+            <ResponsiveDataTable
+              columns={columns}
+              data={alerts}
+              keyField="id"
+              emptyMessage="No alerts configured. Create one above."
+            />
+          </div>
         </div>
       </Layout>
     </TierGate>

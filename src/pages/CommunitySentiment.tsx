@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { TierGate } from "@/components/TierGate";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { MessageCircle, TrendingUp, TrendingDown, Flame, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 import { cn } from "@/lib/utils";
 
 interface SentimentEntry {
@@ -26,9 +27,11 @@ interface SentimentEntry {
 const PAGE_SIZE = 15;
 
 export default function CommunitySentiment() {
-  const { selectedChain } = useChain();
+  const { selectedChain, chainSwitchKey } = useChain();
   const { data: protocols, isLoading } = useChainProtocols(selectedChain.id);
   const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [chainSwitchKey]);
 
   const sentimentData = useMemo<SentimentEntry[]>(() => {
     if (!protocols) return [];
@@ -62,6 +65,39 @@ export default function CommunitySentiment() {
 
   const totalPages = Math.ceil(sentimentData.length / PAGE_SIZE);
   const pageData = sentimentData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const columns: ResponsiveColumn<SentimentEntry>[] = [
+    { key: "name", label: "Protocol", priority: "always", render: (s) => <span className="font-medium text-foreground">{s.name}</span> },
+    { key: "tvl", label: "TVL", priority: "desktop", align: "right", render: (s) => <span className="font-mono text-foreground">{formatCurrency(s.tvl)}</span> },
+    { key: "sentimentScore", label: "Score", priority: "always", align: "right", render: (s) => (
+      <span className={cn("font-mono font-medium", s.sentimentScore >= 0 ? "text-success" : "text-destructive")}>
+        {s.sentimentScore >= 0 ? "+" : ""}{s.sentimentScore}
+      </span>
+    ) },
+    { key: "tvlMomentum", label: "TVL Mom.", priority: "expanded", align: "right", render: (s) => (
+      <span className={cn("font-mono", s.tvlMomentum >= 0 ? "text-success" : "text-destructive")}>
+        {s.tvlMomentum >= 0 ? "+" : ""}{s.tvlMomentum}%
+      </span>
+    ) },
+    { key: "volumeMomentum", label: "Vol Mom.", priority: "expanded", align: "right", render: (s) => (
+      <span className={cn("font-mono", s.volumeMomentum >= 0 ? "text-success" : "text-destructive")}>
+        {s.volumeMomentum >= 0 ? "+" : ""}{s.volumeMomentum}%
+      </span>
+    ) },
+    { key: "socialActivity", label: "Social", priority: "expanded", align: "right", render: (s) => (
+      <div className="flex items-center justify-end gap-2">
+        <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+          <div className="h-full rounded-full bg-primary" style={{ width: `${s.socialActivity}%` }} />
+        </div>
+        <span className="text-xs text-muted-foreground">{s.socialActivity}</span>
+      </div>
+    ) },
+    { key: "trend", label: "Trend", priority: "always", align: "center", render: (s) => (
+      s.trend === "bullish" ? <TrendingUp className="h-4 w-4 text-success inline" /> :
+      s.trend === "bearish" ? <TrendingDown className="h-4 w-4 text-destructive inline" /> :
+      <Minus className="h-4 w-4 text-muted-foreground inline" />
+    ) },
+  ];
 
   return (
     <TierGate requiredTier="pro">
@@ -101,81 +137,33 @@ export default function CommunitySentiment() {
             </div>
           </Card>
 
-          <Card className="p-4">
+          <div>
             <h3 className="font-semibold text-foreground mb-3">Detailed Sentiment Analysis</h3>
-            <div className="overflow-x-auto">
-              <table className="data-table w-full">
-                <thead>
-                  <tr className="bg-muted/30">
-                    <th className="text-left">Protocol</th>
-                    <th className="text-right hidden sm:table-cell">TVL</th>
-                    <th className="text-right">Score</th>
-                    <th className="text-right hidden sm:table-cell">TVL Mom.</th>
-                    <th className="text-right hidden md:table-cell">Vol Mom.</th>
-                    <th className="text-right hidden md:table-cell">Social</th>
-                    <th className="text-center">Trend</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    Array(5).fill(0).map((_, i) => (
-                      <tr key={i}><td colSpan={7}><div className="skeleton h-8 w-full" /></td></tr>
-                    ))
-                  ) : (
-                    pageData.map((s) => (
-                      <tr key={s.slug} className="hover:bg-muted/30 transition-colors">
-                        <td className="font-medium text-foreground">{s.name}</td>
-                        <td className="text-right font-mono text-foreground hidden sm:table-cell">{formatCurrency(s.tvl)}</td>
-                        <td className={cn("text-right font-mono font-medium", s.sentimentScore >= 0 ? "text-success" : "text-destructive")}>
-                          {s.sentimentScore >= 0 ? "+" : ""}{s.sentimentScore}
-                        </td>
-                        <td className={cn("text-right font-mono hidden sm:table-cell", s.tvlMomentum >= 0 ? "text-success" : "text-destructive")}>
-                          {s.tvlMomentum >= 0 ? "+" : ""}{s.tvlMomentum}%
-                        </td>
-                        <td className={cn("text-right font-mono hidden md:table-cell", s.volumeMomentum >= 0 ? "text-success" : "text-destructive")}>
-                          {s.volumeMomentum >= 0 ? "+" : ""}{s.volumeMomentum}%
-                        </td>
-                        <td className="text-right hidden md:table-cell">
-                          <div className="flex items-center justify-end gap-2">
-                            <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full rounded-full bg-primary" style={{ width: `${s.socialActivity}%` }} />
-                            </div>
-                            <span className="text-xs text-muted-foreground">{s.socialActivity}</span>
-                          </div>
-                        </td>
-                        <td className="text-center">
-                          {s.trend === "bullish" ? (
-                            <TrendingUp className="h-4 w-4 text-success inline" />
-                          ) : s.trend === "bearish" ? (
-                            <TrendingDown className="h-4 w-4 text-destructive inline" />
-                          ) : (
-                            <Minus className="h-4 w-4 text-muted-foreground inline" />
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {totalPages > 1 && (
-              <Pagination className="mt-4">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+            <ResponsiveDataTable
+              columns={columns}
+              data={pageData}
+              keyField="slug"
+              loading={isLoading}
+            />
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
+                  <PaginationItem key={p}>
+                    <PaginationLink isActive={page === p} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
                   </PaginationItem>
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(p => (
-                    <PaginationItem key={p}>
-                      <PaginationLink isActive={page === p} onClick={() => setPage(p)} className="cursor-pointer">{p}</PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </Card>
+                ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </Layout>
     </TierGate>

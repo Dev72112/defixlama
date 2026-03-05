@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { Chain, SUPPORTED_CHAINS, ALL_CHAINS, getChainById, getFeaturedChain } from "@/lib/chains";
 
 interface ChainContextType {
@@ -8,6 +8,8 @@ interface ChainContextType {
   isXLayer: boolean;
   chains: Chain[];
   allChainsOption: Chain;
+  isChainSwitching: boolean;
+  chainSwitchKey: number;
 }
 
 const ChainContext = createContext<ChainContextType | undefined>(undefined);
@@ -23,23 +25,37 @@ export function ChainProvider({ children }: { children: ReactNode }) {
         if (chain) return chain;
       }
     } catch (e) {}
-    // Default to All Chains for new users
     return ALL_CHAINS;
   });
 
+  const [isChainSwitching, setIsChainSwitching] = useState(false);
+  const [chainSwitchKey, setChainSwitchKey] = useState(0);
+  const switchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
   const setSelectedChain = useCallback((chain: Chain) => {
+    if (chain.id === selectedChain.id) return;
+    
+    // Start transition
+    setIsChainSwitching(true);
     setSelectedChainState(chain);
+    setChainSwitchKey((k) => k + 1);
+    
     try {
       localStorage.setItem(STORAGE_KEY, chain.id);
     } catch (e) {}
-  }, []);
 
-  // Persist selection changes
+    // End transition after data has time to refetch
+    if (switchTimeoutRef.current) clearTimeout(switchTimeoutRef.current);
+    switchTimeoutRef.current = setTimeout(() => {
+      setIsChainSwitching(false);
+    }, 400);
+  }, [selectedChain.id]);
+
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, selectedChain.id);
-    } catch (e) {}
-  }, [selectedChain]);
+    return () => {
+      if (switchTimeoutRef.current) clearTimeout(switchTimeoutRef.current);
+    };
+  }, []);
 
   const value: ChainContextType = {
     selectedChain,
@@ -48,6 +64,8 @@ export function ChainProvider({ children }: { children: ReactNode }) {
     isXLayer: selectedChain.id === "xlayer",
     chains: SUPPORTED_CHAINS,
     allChainsOption: ALL_CHAINS,
+    isChainSwitching,
+    chainSwitchKey,
   };
 
   return (
@@ -65,5 +83,4 @@ export function useChain() {
   return context;
 }
 
-// Export the featured chain for spotlights
 export { getFeaturedChain };

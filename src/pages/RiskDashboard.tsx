@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +84,9 @@ export default function RiskDashboard() {
   const { data: risks = [], isLoading: loadingRisks } = useProtocolRisks(selectedChain.id);
   const [riskPage, setRiskPage] = useState(1);
   const [hackPage, setHackPage] = useState(1);
+
+  // Reset pagination on chain change
+  useEffect(() => { setRiskPage(1); setHackPage(1); }, [selectedChain.id]);
 
   const hacksByMonth = hacks.reduce((acc: Record<string, number>, hack: any) => {
     const month = new Date(hack.date * 1000).toISOString().slice(0, 7);

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols, useChainTVLHistory, useGlobalTVLHistory } from "@/hooks/useDefiData";
@@ -25,6 +25,8 @@ export default function Correlations() {
   const isLoading = protocols.isLoading;
   const [historyRange, setHistoryRange] = useState<DateRange>("30d");
   const [sectorPage, setSectorPage] = useState(1);
+
+  useEffect(() => { setSectorPage(1); }, [chainId]);
 
   const top15 = useMemo(() => {
     return [...protocolList]

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols, useChainDexVolumes, useChainFees, useChainsTVL, useChainTVLData } from "@/hooks/useDefiData";
@@ -33,6 +33,8 @@ export default function MarketStructure() {
   const [feeSearch, setFeeSearch] = useState("");
   const [feePage, setFeePage] = useState(1);
   const [chainPage, setChainPage] = useState(1);
+
+  useEffect(() => { setFeePage(1); setChainPage(1); }, [selectedChain.id]);
 
   // DEX volume concentration
   const dexConcentration = useMemo(() => {
