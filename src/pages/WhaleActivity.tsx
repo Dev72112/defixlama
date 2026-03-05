@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols, useChainsTVL, useChainDexVolumes } from "@/hooks/useDefiData";
@@ -46,6 +46,8 @@ export default function WhaleActivity() {
   const [whaleSearch, setWhaleSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [alertPage, setAlertPage] = useState(1);
+
+  useEffect(() => { setAlertPage(1); }, [selectedChain.id]);
 
   const protocolList = protocols.data ?? [];
 
