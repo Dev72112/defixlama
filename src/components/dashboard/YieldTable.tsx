@@ -70,8 +70,8 @@ export function YieldTable({
           <tr className="bg-muted/30">
             <th className="w-12 hidden sm:table-cell">#</th>
             <th>Pool</th>
-            <th className="hidden sm:table-cell">Project</th>
-            <th className="text-right">TVL</th>
+            <th className="hidden md:table-cell">Project</th>
+            <th className="text-right hidden sm:table-cell">TVL</th>
             <th className="text-right">APY</th>
           </tr>
         </thead>
@@ -101,12 +101,12 @@ export function YieldTable({
                     </div>
                   </div>
                 </td>
-                <td className="hidden sm:table-cell">
+                <td className="hidden md:table-cell">
                   <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground capitalize">
                     {pool.project}
                   </span>
                 </td>
-                <td className="text-right font-mono font-medium text-foreground">
+                <td className="text-right font-mono font-medium text-foreground hidden sm:table-cell">
                   {formatCurrency(pool.tvlUsd)}
                 </td>
                 <td className="text-right">

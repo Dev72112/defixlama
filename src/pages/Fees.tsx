@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { BarChart3, TrendingUp, Search, DollarSign, Activity, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
@@ -47,6 +47,7 @@ function FeesContent() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("fees24h");
   const navigate = useNavigate();
+  useEffect(() => { setPage(1); }, [selectedChain.id]);
 
   // Pagination
   const [page, setPage] = useState(1);

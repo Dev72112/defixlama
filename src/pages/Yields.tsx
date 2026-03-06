@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { TrendingUp, Droplets, Search, Activity, Percent, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Select,
@@ -40,6 +40,7 @@ export default function Yields() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  useEffect(() => { setPage(1); }, [chainId]);
 
   // Get unique projects
   const projects = useMemo(() => {

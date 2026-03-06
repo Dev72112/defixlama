@@ -234,8 +234,8 @@ export default function Portfolio() {
                   <thead>
                     <tr className="text-left text-sm text-muted-foreground border-b border-border">
                       <th className="pb-3">{t("common.token")}</th>
-                      <th className="pb-3 text-right">{t("portfolio.quantity")}</th>
-                      <th className="pb-3 text-right">{t("common.price")}</th>
+                      <th className="pb-3 text-right hidden sm:table-cell">{t("portfolio.quantity")}</th>
+                      <th className="pb-3 text-right hidden sm:table-cell">{t("common.price")}</th>
                       <th className="pb-3 text-right">{t("portfolio.totalValue")}</th>
                       <th className="pb-3 text-right">{t("portfolio.totalPnl")}</th>
                       <th className="pb-3 w-10"></th>
@@ -255,10 +255,10 @@ export default function Portfolio() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 text-right font-mono">
+                        <td className="py-3 text-right font-mono hidden sm:table-cell">
                           {holding.quantity.toLocaleString()}
                         </td>
-                        <td className="py-3 text-right font-mono">
+                        <td className="py-3 text-right font-mono hidden sm:table-cell">
                           ${holding.currentPrice.toFixed(holding.currentPrice >= 1 ? 2 : 6)}
                         </td>
                         <td className="py-3 text-right font-mono font-medium">

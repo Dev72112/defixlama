@@ -159,25 +159,25 @@ export default function YieldIntelligence() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>#</th>
+                      <th className="hidden sm:table-cell">#</th>
                       <th>Pool</th>
-                      <th>Project</th>
-                      <th>Chain</th>
+                      <th className="hidden md:table-cell">Project</th>
+                      <th className="hidden lg:table-cell">Chain</th>
                       <th className="text-right">APY</th>
                       <th className="text-right">TVL</th>
-                      <th className="text-right">Risk Score</th>
+                      <th className="text-right hidden sm:table-cell">Risk Score</th>
                     </tr>
                   </thead>
                   <tbody>
                     {riskAdjusted.slice((page - 1) * pageSize, page * pageSize).map((r, i) => (
                       <tr key={i}>
-                        <td className="text-muted-foreground">{(page - 1) * pageSize + i + 1}</td>
+                        <td className="text-muted-foreground hidden sm:table-cell">{(page - 1) * pageSize + i + 1}</td>
                         <td className="font-medium text-foreground">{r.pool}</td>
-                        <td className="text-muted-foreground">{r.project}</td>
-                        <td className="text-muted-foreground">{r.chain}</td>
+                        <td className="text-muted-foreground hidden md:table-cell">{r.project}</td>
+                        <td className="text-muted-foreground hidden lg:table-cell">{r.chain}</td>
                         <td className="text-right font-mono text-success">{r.apy.toFixed(2)}%</td>
                         <td className="text-right font-mono">{formatCurrency(r.tvl)}</td>
-                        <td className="text-right font-mono text-primary">{r.riskScore.toFixed(2)}</td>
+                        <td className="text-right font-mono text-primary hidden sm:table-cell">{r.riskScore.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>

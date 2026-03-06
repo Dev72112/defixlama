@@ -3,7 +3,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight, GitCompare, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Pagination,
   PaginationContent,
@@ -35,6 +35,8 @@ export default function Tokens() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
   const navigate = useNavigate();
+  const { selectedChain: chainForReset } = useChain();
+  useEffect(() => { setCurrentPage(1); }, [chainForReset.id]);
 
   // Filter tokens by chain and search query
   const chainFilteredTokens = (tokens || []).filter((t: any) => {
