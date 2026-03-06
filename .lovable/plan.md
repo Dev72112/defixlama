@@ -1,266 +1,134 @@
 
 
-# defiXlama: Epic Product Expansion -- Advanced Analytics, Detail Page Upgrades, and Subscription Infrastructure
+# Recovery Round 5 — Complete Pass: Chain Fixes, Mobile Tables, PRO Tabs, Free Tabs, Bottom Nav
 
-This plan covers three major workstreams: (1) expanding Whale Activity and Market Structure into premium-grade analytics pages, (2) adding entirely new tracking features, (3) enriching all detail pages, and (4) building a subscription paywall with a 3-month free trial notice.
+## Current State Assessment
 
----
+**Chain selector**: Already integrated on 19/21 data pages. Missing pages (Portfolio, Donations, Admin, etc.) are user-specific — no chain filtering needed. The `isChainSwitching` + `chainSwitchKey` mechanism exists. The main remaining issue is that paginated pages without a `useEffect` reset on chain change can show empty pages.
 
-## Workstream 1: Expand Whale Activity Page
+**Mobile table overflow**: `ResponsiveDataTable` exists but is only used on 5 pages (Governance, CommunitySentiment, Predictions, WatchlistExports, AlertConfig). **16 table instances** across pages and dashboard components still use raw `<table>` with only `overflow-x-auto` — which still scrolls horizontally on 375px screens. These need either `ResponsiveDataTable` migration or `hidden sm:table-cell` + card fallback treatment.
 
-The current page has basic TVL concentration charts and a simple alert feed. To make it subscription-worthy, we add deep behavioral analytics.
+**PRO pages**: All 6 exist but are single-view, no tab structure. Need the 3-tab overhaul from the plan.
 
-### New Sections to Add:
-
-**1. Herfindahl-Hirschman Index (HHI) Score**
-- Compute the HHI from protocol TVL shares to measure ecosystem concentration
-- Display as a gauge/score card with interpretation (competitive / moderate / concentrated)
-- Data source: existing `useChainProtocols`
-
-**2. Capital Velocity Tracker**
-- Calculate the ratio of 24h inflows+outflows relative to total TVL -- measures how fast capital is rotating
-- Show as a metric card with a small sparkline trend (use 7d protocol change data)
-- Data source: existing protocol `change_1d` fields
-
-**3. Accumulation vs Distribution Heatmap**
-- Grid of top 20 protocols showing 1h, 1d, 7d changes as colored cells (green = accumulation, red = distribution)
-- Creates an at-a-glance view of where capital is moving over multiple timeframes
-- Data source: existing protocol `change_1h`, `change_1d`, `change_7d`
-
-**4. Cross-Chain Capital Flow Matrix**
-- For protocols deployed on multiple chains, show which chains are gaining vs losing TVL
-- Use `chainTvls` field from protocol data to decompose TVL by chain
-- Display as a table: Protocol | Chain A | Chain B | ... with color-coded flow direction
-
-**5. Whale Alert Feed Enhancements**
-- Add severity levels (>5% = moderate, >15% = major, >30% = extreme)
-- Add estimated dollar value of movement (TVL * change%)
-- Add category tags and protocol logos
-- Add filtering by severity and category
-
-### Files to modify:
-- `src/pages/WhaleActivity.tsx` -- major expansion
-- New: `src/components/dashboard/AccumulationHeatmap.tsx`
-- New: `src/components/dashboard/CrossChainFlowMatrix.tsx`
+**Free pages**: Tokens, Protocols, Yields, Stablecoins — no tab structure yet.
 
 ---
 
-## Workstream 2: Expand Market Structure Page
+## Batch 1 (this implementation): Chain Polish + Mobile Table Fix
 
-Current page has DEX volume concentration and fee distribution. Needs deeper liquidity and structural analysis.
+### 1A. Chain Pagination Reset
 
-### New Sections to Add:
+Add `useEffect(() => setPage(1), [selectedChain.id])` to these pages that have pagination but may be missing the reset:
+- `Tokens.tsx` (uses `currentPage`)
+- `Fees.tsx` (uses `currentPage`)
+- `Chains.tsx` (uses `page`)
+- `Security.tsx` (uses `currentPage`)
+- `Stablecoins.tsx` (uses `currentPage`)
+- `Dexs.tsx` (uses `currentPage`)
+- `Yields.tsx` (uses `currentPage`)
 
-**1. Liquidity Fragmentation Index**
-- Measure how spread out DEX volume is across protocols (inverse of concentration)
-- Use existing DEX volume data to compute Gini coefficient
-- Display as a metric with health interpretation
+### 1B. Mobile Table Card Conversion
 
-**2. Fee-to-TVL Efficiency Ratio**
-- For each protocol, calculate fees/TVL ratio -- higher = more capital-efficient
-- Top 10 most efficient protocols as a ranked bar chart
-- Data source: combine `useChainFees` with `useChainProtocols`
+Convert all remaining raw `<table>` pages to use `ResponsiveDataTable` or apply proper mobile column hiding. Priority targets:
 
-**3. Category Capital Flow Treemap**
-- Visual treemap showing TVL by category with change colors overlaid
-- Categories: DEX, Lending, Derivatives, Bridge, Yield, Liquid Staking, CDP, etc.
-- Data source: existing protocol category + TVL data
+**Full pages (convert to ResponsiveDataTable):**
+1. `Tokens.tsx` — hide #, watchlist, volume, mcap on mobile; show name+price+change
+2. `Fees.tsx` — hide #, 7d fees on mobile; show name+24h fees+change
+3. `Chains.tsx` — hide #, market share on mobile; show name+TVL
+4. `Stablecoins.tsx` — hide #, mcap, peg on mobile; show name+price+change
+5. `Dexs.tsx` — hide #, change on mobile; show name+volume
+6. `Yields.tsx` — hide chain, IL risk on mobile; show pool+TVL+APY
+7. `Security.tsx` — hide chain, audits count on mobile; show name+score+status
+8. `Portfolio.tsx` — hide quantity, price on mobile; show token+value+PnL
+9. `Correlations.tsx` — correlation matrix stays overflow-x-auto (matrix inherently wide)
+10. `MarketStructure.tsx` — fee table + lifecycle table: hide non-essential cols
+11. `RiskDashboard.tsx` — hack table: hide chain on mobile
+12. `YieldIntelligence.tsx` — hide chain, IL on mobile
 
-**4. Volume-to-TVL Cross-Chain Comparison**
-- Compare Vol/TVL ratio across the top 10 chains
-- Bar chart showing which chains have the most active trading relative to locked capital
-- Data source: `useChainsTVL` + per-chain DEX volumes
+**Dashboard components (add hidden columns):**
+13. `ProtocolTable.tsx` — hide category, 7d change
+14. `DexTable.tsx` — hide change column
+15. `YieldTable.tsx` — hide chain, project columns on mobile
+16. `TVLFlowTable.tsx` — already has `hidden sm:table-cell`, verify
+17. `AccumulationHeatmap.tsx` — keep overflow-x-auto (heatmap needs width)
+18. `CrossChainFlowMatrix.tsx` — keep overflow-x-auto (matrix needs width)
 
-**5. Protocol Lifecycle Distribution**
-- Categorize protocols by age (using `listedAt` timestamp): <30d, 30-90d, 90d-1y, >1y
-- Show TVL distribution by age cohort -- reveals ecosystem maturity
-- Data source: existing protocol `listedAt` field
+For full pages: migrate to `ResponsiveDataTable` with column priority config.
+For dashboard components: add `hidden sm:table-cell` to non-essential columns (lighter touch since these are embedded widgets).
 
-### Files to modify:
-- `src/pages/MarketStructure.tsx` -- major expansion
-- New: `src/components/dashboard/CategoryTreemap.tsx`
-- New: `src/components/dashboard/ProtocolLifecycle.tsx`
+### Files for Batch 1
+| Action | File |
+|--------|------|
+| Modify | `src/pages/Tokens.tsx` — ResponsiveDataTable + pagination reset |
+| Modify | `src/pages/Fees.tsx` — ResponsiveDataTable + pagination reset |
+| Modify | `src/pages/Chains.tsx` — ResponsiveDataTable + pagination reset |
+| Modify | `src/pages/Stablecoins.tsx` — ResponsiveDataTable + pagination reset |
+| Modify | `src/pages/Dexs.tsx` — ResponsiveDataTable + pagination reset |
+| Modify | `src/pages/Yields.tsx` — ResponsiveDataTable + pagination reset |
+| Modify | `src/pages/Security.tsx` — ResponsiveDataTable + pagination reset |
+| Modify | `src/pages/Portfolio.tsx` — ResponsiveDataTable for holdings |
+| Modify | `src/pages/MarketStructure.tsx` — hidden cols on fee/lifecycle tables |
+| Modify | `src/pages/RiskDashboard.tsx` — hidden cols on hack table |
+| Modify | `src/pages/YieldIntelligence.tsx` — hidden cols |
+| Modify | `src/components/dashboard/ProtocolTable.tsx` — hidden cols mobile |
+| Modify | `src/components/dashboard/DexTable.tsx` — hidden cols mobile |
+| Modify | `src/components/dashboard/YieldTable.tsx` — hidden cols mobile |
 
----
-
-## Workstream 3: New Tracking Pages
-
-### Page 1: Yield Intelligence (`/yield-intelligence`)
-Advanced yield analytics beyond the basic yields table.
-
-**Sections:**
-- **Risk-Adjusted Yield Ranking**: Sort pools by APY / TVL volatility ratio
-- **Yield Curve by Category**: Average APY by protocol category over time
-- **Impermanent Loss Estimator**: Input-based tool showing IL for common pairs
-- **Yield Concentration**: Which protocols capture most of the yield TVL
-- **Stablecoin vs Volatile Yields**: Split yield pools by underlying asset type
-
-Data source: existing `useChainYieldPools`
-
-### Page 2: Correlation Matrix (`/correlations`)
-Show how protocol TVLs move together.
-
-**Sections:**
-- **TVL Correlation Heatmap**: Matrix showing correlation coefficients between top 20 protocol TVL changes
-- **Sector Rotation Tracker**: Which categories are gaining/losing share simultaneously
-- **Divergence Alerts**: Protocols whose TVL movements diverge from their category average
-
-Data source: existing protocol change data (`change_1h`, `change_1d`, `change_7d`)
-
-### Files to create:
-- `src/pages/YieldIntelligence.tsx`
-- `src/pages/Correlations.tsx`
-- New components as needed
-
-### Navigation updates:
-- `src/components/layout/Sidebar.tsx` -- add under "Advanced Analytics" section
-- `src/components/layout/BottomNav.tsx` -- add to More drawer
-- `src/App.tsx` -- add routes
+**14 files modified, 0 new files**
 
 ---
 
-## Workstream 4: Expand All Detail Pages
+## Batch 2: PRO Pages 3-Tab Overhaul
 
-### ProtocolDetail.tsx (830 lines -- already rich, add):
-- **Fee Revenue Section**: If the protocol appears in fees data, show 24h/7d/30d fee breakdown
-- **Cross-Chain TVL Breakdown**: Use `chainTvls` to show TVL per chain as a stacked bar
-- **Competitor Comparison Table**: Show the protocol vs top 5 in same category side by side (TVL, changes, fees)
-- Fix hardcoded "XLayer" in description fallback (line 169)
+Rewrite all 6 PRO pages with Radix `Tabs` component, 3 tabs each:
 
-### DexDetail.tsx (728 lines -- add):
-- **Market Share Trend**: Show DEX's share of total volume (current vs 7d ago vs 30d ago)
-- **Chain Coverage Map**: Visual grid of which chains this DEX operates on
-- **Volume Efficiency**: Volume/TVL ratio compared to category average
+| Page | Tab 1 | Tab 2 | Tab 3 |
+|------|-------|-------|-------|
+| AlertConfig | Active Alerts (existing + progress bars) | Alert History (triggered log) | Smart Suggestions (AI-based) |
+| Predictions | Price Predictions (bull/base/bear) | TVL Predictions (inflow/outflow) | Accuracy Tracker (historical %) |
+| ProtocolComparison | Compare (existing + winner highlight) | Historical (date range slider) | Export (CSV/PDF selector) |
+| Governance | Active Proposals (deadline countdown) | Voting History (Won/Lost badges) | Power Analysis (distribution chart) |
+| CommunitySentiment | Current Sentiment (Fear & Greed gauge) | Trend Analysis (sentiment vs price) | Source Breakdown (%) |
+| WatchlistExports | Quick Export (format + columns picker) | Scheduled (automation UI) | History (past exports) |
 
-### ChainDetail.tsx (601 lines -- add):
-- **Ecosystem Composition**: Treemap of protocol categories on this chain
-- **Growth Velocity**: Rate of new protocol deployments (using `listedAt` data)
-- **Top Yield Pools on Chain**: Quick table of best yields available
+Each tab lazy-loads content. Mobile: tabs scroll horizontally. All tabs use existing data hooks + simulated/derived analytics where real APIs don't exist.
 
-### TokenDetail.tsx (624 lines):
-- Already comprehensive -- add market dominance percentage vs total crypto market cap
-- Add link to protocol detail if token has a matching protocol
-
-### StablecoinDetail.tsx (523 lines -- add):
-- **Peg Deviation History**: If available, show how close to $1 the stablecoin has stayed
-- **Chain Dominance Shift**: Which chains are gaining share of this stablecoin's supply
-
-### FeeDetail.tsx (612 lines -- add):
-- **Fee Efficiency Score**: Fees relative to TVL -- higher = more productive protocol
-- **Fee Category Rank**: Where this protocol ranks within its category for fee generation
-
-### SecurityDetail.tsx (626 lines -- add):
-- **Risk Score Composite**: Combine audit status, TVL volatility, age, and category into a single risk rating
-- **Similar Protocol Comparison**: Security posture comparison with category peers
-
-### Files to modify:
-- `src/pages/ProtocolDetail.tsx`
-- `src/pages/DexDetail.tsx`
-- `src/pages/ChainDetail.tsx`
-- `src/pages/TokenDetail.tsx`
-- `src/pages/StablecoinDetail.tsx`
-- `src/pages/FeeDetail.tsx`
-- `src/pages/SecurityDetail.tsx`
+**6 files rewritten**
 
 ---
 
-## Workstream 5: Subscription Infrastructure
+## Batch 3: Free Page Tabs + Bottom Nav Polish
 
-### Approach:
-Use Stripe for $20/month subscription. All advanced analytics pages are gated behind a subscription check, but unlocked free for 3 months with a visible countdown banner.
+### Free Page Tabs
+Add URL-synced tabs (`?tab=xxx`) using `useSearchParams`:
 
-### Implementation:
+| Page | Tab 1 | Tab 2 | Tab 3 |
+|------|-------|-------|-------|
+| Tokens | Overview (existing table) | Top Movers (sorted by abs 24h change) | New Listings (community tokens) |
+| Protocols | All Protocols (existing) | By Category (filter chips) | Trending (7d change sort) |
+| Yields | All Pools (existing) | Highest APY (sorted desc) | Most Stable (stablecoin pools) |
+| Stablecoins | Overview (existing) | Peg Health (deviation coloring) | Flows (chain breakdown) |
 
-**1. Subscription Banner Component**
-- New: `src/components/SubscriptionBanner.tsx`
-- Shows on all advanced pages: "Free access until [date]. After that, $20/month."
-- Calm, informative design -- not aggressive upsell
-- Countdown shows days remaining
+Sticky tab bar, horizontal scroll on mobile, lazy tab content.
 
-**2. Subscription Gate Component**
-- New: `src/components/SubscriptionGate.tsx`
-- Wraps advanced page content
-- During free period: renders children + banner
-- After free period: checks Stripe subscription status
-- If not subscribed: shows a professional paywall with feature list and subscribe button
+### Bottom Nav Polish
+- Auto-hide on scroll down, show on scroll up (use `useRef` + scroll listener)
+- `padding-bottom: env(safe-area-inset-bottom)` for iOS
+- Content area gets `pb-20` on mobile to avoid overlap
+- PRO lock icon on Portfolio tab for unauthenticated users
 
-**3. Database Table**
-- `subscriptions` table: user_id, stripe_customer_id, stripe_subscription_id, status, current_period_end, created_at
-- RLS: users can only read their own subscription
-
-**4. Stripe Integration**
-- Enable Stripe via the Lovable Stripe tool
-- Create a $20/month "defiXlama Pro" product
-- Edge function for checkout session creation
-- Edge function for webhook handling (subscription created/updated/cancelled)
-
-**5. Free Trial Logic**
-- The free period is NOT a Stripe trial -- it's a hardcoded date (3 months from launch)
-- `const FREE_UNTIL = new Date('2026-05-13')` -- simple, no backend needed during free period
-- After that date, the gate checks subscription status
-
-**6. Pages Gated as "Pro":**
-- `/whale-activity`
-- `/market-structure`
-- `/yield-intelligence`
-- `/correlations`
-- All detail page "advanced sections" (fee efficiency, cross-chain flows, etc.) show a small "Pro" badge and are gated after the free period
-
-### Navigation Updates:
-- Sidebar shows a small "PRO" badge next to advanced nav items
-- Remove "SOON" badges, replace with "PRO" badges
-
-### Files to create:
-- `src/components/SubscriptionBanner.tsx`
-- `src/components/SubscriptionGate.tsx`
-- `src/hooks/useSubscription.ts`
-- Edge function: `supabase/functions/create-checkout/index.ts`
-- Edge function: `supabase/functions/stripe-webhook/index.ts`
-- DB migration: subscriptions table
-
-### Files to modify:
-- `src/pages/WhaleActivity.tsx` -- wrap with SubscriptionGate
-- `src/pages/MarketStructure.tsx` -- wrap with SubscriptionGate
-- `src/pages/YieldIntelligence.tsx` -- wrap with SubscriptionGate
-- `src/pages/Correlations.tsx` -- wrap with SubscriptionGate
-- `src/components/layout/Sidebar.tsx` -- update badges from "SOON" to "PRO"
-- `src/App.tsx` -- add new routes
+**6 files modified** (4 free pages + BottomNav + Layout)
 
 ---
 
-## Implementation Order
+## Total Scope
 
-Due to the scope, this should be done across multiple implementation rounds:
+| Batch | Files | Description |
+|-------|-------|-------------|
+| 1 | 14 modified | Chain pagination reset + mobile table cards |
+| 2 | 6 rewritten | PRO page 3-tab overhaul |
+| 3 | 6 modified | Free page tabs + bottom nav polish |
+| **Total** | **26 files** | |
 
-**Round 1 (this session):**
-- Expand WhaleActivity with HHI, accumulation heatmap, cross-chain flow matrix, enhanced alerts
-- Expand MarketStructure with fragmentation index, fee efficiency, lifecycle distribution, cross-chain Vol/TVL
-- Remove "SOON" badges, replace with "PRO" badges in sidebar
-
-**Round 2:**
-- Create YieldIntelligence and Correlations pages
-- Expand all 7 detail pages with advanced sections
-- Fix remaining hardcoded "XLayer" references in detail pages
-
-**Round 3:**
-- Enable Stripe integration
-- Build subscription infrastructure (banner, gate, database, edge functions)
-- Wire up Pro gating across all advanced pages
-
----
-
-## Technical Summary
-
-| Workstream | New Files | Modified Files | Complexity |
-|-----------|-----------|---------------|------------|
-| Whale Activity expansion | 2 components | 1 page | Medium |
-| Market Structure expansion | 2 components | 1 page | Medium |
-| New tracking pages | 2 pages + components | App.tsx, Sidebar, BottomNav | Medium |
-| Detail page expansion | 0 | 7 detail pages | High (many files) |
-| Subscription infrastructure | 3 components + 2 edge functions + 1 hook + DB migration | 4 pages + Sidebar | High |
-
-**Total new files**: ~12
-**Total modified files**: ~16
-**Stripe integration**: Required (via Lovable tool)
-**Database changes**: 1 new table (subscriptions)
+Recommend implementing Batch 1 first, verify on mobile, then Batch 2, then Batch 3.
 
