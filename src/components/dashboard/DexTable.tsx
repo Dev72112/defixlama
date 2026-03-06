@@ -73,7 +73,7 @@ export function DexTable({
             <th>Name</th>
             <th className="text-right">24h Volume</th>
             <th className="text-right hidden sm:table-cell">7d Volume</th>
-            <th className="text-right">24h Change</th>
+            <th className="text-right hidden md:table-cell">24h Change</th>
           </tr>
         </thead>
         <tbody>
@@ -136,7 +136,7 @@ export function DexTable({
                 <td className="text-right font-mono text-muted-foreground hidden sm:table-cell whitespace-nowrap">
                   {dex.total7d && dex.total7d > 0 ? formatCurrency(dex.total7d) : <span className="text-muted-foreground italic">No data</span>}
                 </td>
-                <td className="text-right whitespace-nowrap">
+                <td className="text-right whitespace-nowrap hidden md:table-cell">
                   <div
                     className={cn(
                       "inline-flex items-center gap-1 font-mono text-sm",

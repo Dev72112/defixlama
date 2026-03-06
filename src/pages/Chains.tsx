@@ -4,7 +4,7 @@ import { useChainsTVL } from "@/hooks/useDefiData";
 import { formatCurrency, ChainData } from "@/lib/api/defillama";
 import { Layers, TrendingUp, Search, PieChart, Globe, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Pagination,
@@ -36,6 +36,7 @@ export default function Chains() {
   const [pageSize, setPageSize] = useState(50);
 
   const [sortBy, setSortBy] = useState("tvl");
+  useEffect(() => { setPage(1); }, [searchQuery, sortBy]);
   
   // Filter and sort chains
   const filteredChains = useMemo(() => {

@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Protocol, formatCurrency } from "@/lib/api/defillama";
@@ -29,6 +29,7 @@ export default function Security() {
   const [currentPage, setCurrentPage] = useState(1);
   const [auditFilter, setAuditFilter] = useState<"all" | "audited" | "unaudited">("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  useEffect(() => { setCurrentPage(1); }, [selectedChain.id]);
 
   // Extract categories
   const categories = useMemo(() => {

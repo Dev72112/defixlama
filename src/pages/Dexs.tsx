@@ -7,7 +7,7 @@ import { useChainDexVolumes } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeftRight, TrendingUp, Activity, Search, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,7 @@ export default function Dexs() {
   const [sortBy, setSortBy] = useState("volume24h");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [chainId]);
 
   // Filter and sort DEXs
   const filteredDexes = useMemo(() => {

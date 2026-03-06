@@ -279,21 +279,21 @@ export default function MarketStructure() {
             <h3 className="text-base font-semibold text-foreground mb-3">All Fee Efficiency Rankings</h3>
             <div className="overflow-x-auto">
               <table className="data-table w-full">
-                <thead>
-                  <tr>
-                    <th className="text-left">Protocol</th>
-                    <th className="text-right">24h Fees</th>
-                    <th className="text-right hidden sm:table-cell">TVL</th>
-                    <th className="text-right">Efficiency (bps)</th>
-                  </tr>
-                </thead>
+                  <thead>
+                    <tr>
+                      <th className="text-left">Protocol</th>
+                      <th className="text-right">24h Fees</th>
+                      <th className="text-right hidden sm:table-cell">TVL</th>
+                      <th className="text-right hidden sm:table-cell">Efficiency (bps)</th>
+                    </tr>
+                  </thead>
                 <tbody>
                   {feePageData.map((f) => (
                     <tr key={f.fullName}>
-                      <td className="font-medium text-foreground">{f.fullName}</td>
+                      <td className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">{f.fullName}</td>
                       <td className="text-right font-mono">{formatCurrency(f.fees)}</td>
                       <td className="text-right font-mono hidden sm:table-cell">{formatCurrency(f.tvl)}</td>
-                      <td className="text-right font-mono font-bold text-primary">{f.ratio.toFixed(1)}</td>
+                      <td className="text-right font-mono font-bold text-primary hidden sm:table-cell">{f.ratio.toFixed(1)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -364,7 +364,7 @@ export default function MarketStructure() {
                 <table className="data-table w-full">
                   <thead>
                     <tr>
-                      <th className="text-left">#</th>
+                      <th className="text-left hidden sm:table-cell">#</th>
                       <th className="text-left">Chain</th>
                       <th className="text-right">TVL</th>
                     </tr>
@@ -372,7 +372,7 @@ export default function MarketStructure() {
                   <tbody>
                     {chainPageData.map((c, i) => (
                       <tr key={c.name}>
-                        <td className="text-muted-foreground">{(chainPage - 1) * PAGE_SIZE + i + 1}</td>
+                        <td className="text-muted-foreground hidden sm:table-cell">{(chainPage - 1) * PAGE_SIZE + i + 1}</td>
                         <td className="font-medium text-foreground">{c.name}</td>
                         <td className="text-right font-mono">{formatCurrency(c.tvl || 0)}</td>
                       </tr>
