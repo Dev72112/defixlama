@@ -231,5 +231,6 @@ export default function WhaleActivity() {
         </div>
       </div>
     </Layout>
+    </TierGate>
   );
 }

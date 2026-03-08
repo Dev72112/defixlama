@@ -295,5 +295,6 @@ export default function Correlations() {
         </div>
       </div>
     </Layout>
+    </TierGate>
   );
 }

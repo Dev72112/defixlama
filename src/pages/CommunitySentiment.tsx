@@ -100,7 +100,7 @@ export default function CommunitySentiment() {
   const fearGreedColor = fearGreedValue > 55 ? "text-success" : fearGreedValue > 45 ? "text-warning" : "text-destructive";
 
   return (
-    <TierGate requiredTier="pro">
+    <TierGate requiredTier="pro_plus">
       <Layout>
         <div className="space-y-6 animate-fade-in">
           <div>

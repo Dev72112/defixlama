@@ -270,5 +270,6 @@ export default function YieldIntelligence() {
         </Card>
       </div>
     </Layout>
+    </TierGate>
   );
 }

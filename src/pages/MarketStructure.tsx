@@ -144,6 +144,7 @@ export default function MarketStructure() {
   ];
 
   return (
+    <TierGate requiredTier="pro_plus">
     <Layout>
       <div className="space-y-6 page-enter">
         <div>

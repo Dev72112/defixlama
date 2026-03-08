@@ -203,5 +203,6 @@ export default function Backtester() {
         </Card>
       </div>
     </Layout>
+    </TierGate>
   );
 }

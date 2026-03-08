@@ -248,5 +248,6 @@ export default function RiskDashboard() {
         </Card>
       </div>
     </Layout>
+    </TierGate>
   );
 }

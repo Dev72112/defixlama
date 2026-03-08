@@ -105,5 +105,6 @@ export default function ApiAccess() {
         </Card>
       </div>
     </Layout>
+    </TierGate>
   );
 }
