@@ -155,8 +155,8 @@ export default function YieldIntelligence() {
             <ChartEmptyState message="No yield pools with sufficient data" height="h-[200px]" />
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="data-table">
+              <div className="overflow-hidden">
+                <table className="data-table w-full">
                   <thead>
                     <tr>
                       <th className="hidden sm:table-cell">#</th>
