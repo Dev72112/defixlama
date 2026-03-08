@@ -16,6 +16,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 
 export default function SecurityDetail() {
   const { id } = useParams<{ id: string }>();
