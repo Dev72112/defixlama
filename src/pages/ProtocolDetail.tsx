@@ -42,6 +42,7 @@ function ProtocolDetailContent() {
   const { data: protocols, isLoading: protocolsLoading } = useAllProtocols();
   const { data: tvlHistory, isLoading: historyLoading } = useProtocolTVLHistory(slug || null);
   const { data: protocolDetails, isLoading: detailsLoading } = useProtocolDetails(slug || null);
+  const [dateRange, setDateRange] = useState<DateRange>("90d");
 
   // Find protocol
   const protocol = protocols?.find((p) => p.slug === slug || p.name.toLowerCase().replace(/\s+/g, "-") === slug);
