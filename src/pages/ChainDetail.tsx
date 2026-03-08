@@ -17,7 +17,10 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeft, Globe, Layers, TrendingUp, Activity, ExternalLink, Sprout, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { DateRangeSelector, DateRange } from "@/components/dashboard/DateRangeSelector";
 
 export default function ChainDetail() {
   const { id } = useParams<{ id: string }>();
