@@ -259,9 +259,10 @@ export default function Billing() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {tiers.map((t) => {
             const Icon = t.icon;
+            const effectiveTier = isTrialActive && !hasActiveSubscription ? "free" : tier;
             const isCurrentTier = !isTrialActive && tier === t.tierKey;
-            const isDowngrade = TIER_RANK[t.tierKey] < TIER_RANK[tier];
-            const isDisabled = t.comingSoon || isCurrentTier || isDowngrade || (hasActiveSubscription && TIER_RANK[t.tierKey] <= TIER_RANK[tier]);
+            const isDowngrade = TIER_RANK[t.tierKey] < TIER_RANK[effectiveTier];
+            const isDisabled = t.comingSoon || isCurrentTier || isDowngrade || (hasActiveSubscription && TIER_RANK[t.tierKey] <= TIER_RANK[effectiveTier]);
             const isLoading = loadingTier === t.tierKey;
             const canUpgrade = !isDisabled && t.tierKey !== "free" && t.tierKey !== "enterprise";
 
