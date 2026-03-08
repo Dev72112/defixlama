@@ -171,6 +171,33 @@ export default function Backtester() {
                   </div>
                 </div>
 
+                {/* Strategy Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Annualized Return</p>
+                    <p className={cn("text-2xl font-bold", result.totalReturnPercent >= 0 ? "text-success" : "text-destructive")}>
+                      {((result.totalReturnPercent / (params.durationDays / 365)) || 0).toFixed(1)}%
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Extrapolated from {params.durationDays}d window</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Win Rate</p>
+                    <p className="text-2xl font-bold">
+                      {result.dailyReturns.length > 1
+                        ? ((result.dailyReturns.filter((d: any, i: number) => i > 0 && d.value >= result.dailyReturns[i - 1].value).length / (result.dailyReturns.length - 1)) * 100).toFixed(1)
+                        : "—"}%
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">% of days with positive returns</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Risk-Adjusted</p>
+                    <p className="text-2xl font-bold">
+                      {result.sharpeRatio > 2 ? "Excellent" : result.sharpeRatio > 1 ? "Good" : result.sharpeRatio > 0 ? "Moderate" : "Poor"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Sharpe {result.sharpeRatio.toFixed(2)} — {result.sharpeRatio > 1 ? "returns justify the risk" : "consider diversifying"}</p>
+                  </div>
+                </div>
+
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={result.dailyReturns}>
