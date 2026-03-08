@@ -142,6 +142,14 @@ export default function TokenDetail() {
   const priceChange24h = displayToken?.market_data?.price_change_percentage_24h || 0;
   const priceChange7d = displayToken?.market_data?.price_change_percentage_7d || 0;
 
+  // Live WebSocket price for supported tokens
+  const isWsSupported = WS_SUPPORTED_SYMBOLS.includes(tokenSymbol.toUpperCase());
+  const { price: livePrice, direction, animate, isLive } = useLivePrice(
+    tokenSymbol,
+    displayToken?.market_data?.current_price?.usd
+  );
+  const displayPrice = isWsSupported && livePrice > 0 ? livePrice : (displayToken?.market_data?.current_price?.usd || 0);
+
   // Show loading state
   if (isLoadingToken && !token && !oklinkInfo) {
     return (
