@@ -92,7 +92,7 @@ const tiers = [
 const TIER_RANK: Record<string, number> = { free: 0, pro: 1, pro_plus: 2, enterprise: 3 };
 
 export default function Billing() {
-  const { tier, isTrialActive, trialEndsAt, status, currentPeriodEnd, refetch } = useSubscription();
+  const { tier, isTrialActive, trialEndsAt, status, currentPeriodEnd, refetch, isExpired } = useSubscription();
   const { user } = useAuth();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
