@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard, Check, Crown, Zap, Shield, Sparkles, Loader2, ExternalLink,
+  CreditCard, Check, Crown, Zap, Shield, Sparkles, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -12,18 +12,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
-
-declare global {
-  interface Window {
-    Paddle?: {
-      Initialize: (config: { token: string; environment?: string }) => void;
-      Checkout: {
-        open: (config: { transactionId?: string; settings?: Record<string, unknown> }) => void;
-      };
-    };
-  }
-}
-
 
 const tiers = [
   {
@@ -103,46 +91,11 @@ const tiers = [
 const TIER_RANK: Record<string, number> = { free: 0, pro: 1, pro_plus: 2, enterprise: 3 };
 
 export default function Billing() {
-  const { tier, isTrialActive, trialEndsAt, paddleSubscriptionId, paddleCustomerId, status } = useSubscription();
+  const { tier, isTrialActive, trialEndsAt, status } = useSubscription();
   const { user } = useAuth();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [paddleReady, setPaddleReady] = useState(false);
 
-  // Initialize Paddle.js by fetching client token from backend
-  useEffect(() => {
-    const initPaddle = async () => {
-      if (paddleReady) return;
-      try {
-        const { data } = await supabase.functions.invoke("paddle-config");
-        const clientToken = data?.token;
-        if (!clientToken) return;
-
-        const tryInit = () => {
-          if (window.Paddle) {
-            window.Paddle.Initialize({ token: clientToken });
-            setPaddleReady(true);
-          }
-        };
-
-        if (window.Paddle) {
-          tryInit();
-        } else {
-          const interval = setInterval(() => {
-            if (window.Paddle) {
-              tryInit();
-              clearInterval(interval);
-            }
-          }, 200);
-          setTimeout(() => clearInterval(interval), 5000);
-        }
-      } catch (err) {
-        console.error("Failed to init Paddle:", err);
-      }
-    };
-
-    initPaddle();
-  }, [paddleReady]);
+  const hasActiveSubscription = status === "active";
 
   const handleUpgrade = async (tierKey: "pro" | "pro_plus") => {
     if (!user) {
@@ -158,11 +111,8 @@ export default function Billing() {
 
       if (error) throw error;
 
-      // Use Paddle.js overlay if available
-      if (data?.transactionId && paddleReady && window.Paddle) {
-        window.Paddle.Checkout.open({ transactionId: data.transactionId });
-      } else if (data?.checkoutUrl) {
-        window.open(data.checkoutUrl, "_blank");
+      if (data?.invoice_url) {
+        window.open(data.invoice_url, "_blank");
       } else {
         toast.error("Could not open checkout");
       }
@@ -173,28 +123,6 @@ export default function Billing() {
       setLoadingTier(null);
     }
   };
-
-  const handleManageSubscription = async () => {
-    setPortalLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("paddle-portal");
-
-      if (error) throw error;
-
-      if (data?.portalUrl) {
-        window.open(data.portalUrl, "_blank");
-      } else {
-        toast.error("Could not open subscription portal");
-      }
-    } catch (err: any) {
-      console.error("Portal error:", err);
-      toast.error(err.message || "Failed to open portal");
-    } finally {
-      setPortalLoading(false);
-    }
-  };
-
-  const hasActiveSubscription = status === "active" && paddleSubscriptionId;
 
   return (
     <Layout>
@@ -228,30 +156,13 @@ export default function Billing() {
               )}
               {hasActiveSubscription && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Active subscription via Paddle
+                  Active subscription — paid with crypto
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <Badge className="bg-primary/20 text-primary px-3 py-1 text-sm w-fit">
-                {hasActiveSubscription ? "Subscribed" : isTrialActive ? "Trial Active" : "Free"}
-              </Badge>
-              {hasActiveSubscription && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleManageSubscription}
-                  disabled={portalLoading}
-                >
-                  {portalLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                  )}
-                  Manage Subscription
-                </Button>
-              )}
-            </div>
+            <Badge className="bg-primary/20 text-primary px-3 py-1 text-sm w-fit">
+              {hasActiveSubscription ? "Subscribed" : isTrialActive ? "Trial Active" : "Free"}
+            </Badge>
           </div>
         </Card>
 
@@ -323,9 +234,9 @@ export default function Billing() {
 
         <Card className="p-4 bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            💳 Payments powered by Paddle.{" "}
+            🪙 Pay with 200+ cryptocurrencies via NOWPayments.{" "}
             {hasActiveSubscription
-              ? "Click 'Manage Subscription' above to update payment method, view invoices, or cancel."
+              ? "Your subscription is active. Renewals are manual — you'll receive a reminder before expiry."
               : "All Pro+ features are currently available during the free trial period."}
           </p>
         </Card>

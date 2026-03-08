@@ -23,7 +23,7 @@ export default function Privacy() {
           <h3>Information you provide:</h3>
           <ul>
             <li>Email address (for account creation)</li>
-            <li>Payment information (processed by Paddle, not stored by us)</li>
+            <li>Payment information (processed by NOWPayments, not stored by us)</li>
             <li>Wallet addresses (if connected, optional)</li>
             <li>Communication preferences</li>
           </ul>
@@ -43,7 +43,7 @@ export default function Privacy() {
           <h2>3. How We Use Your Information</h2>
           <ul>
             <li>Provide and improve the DefiXlama service</li>
-            <li>Process subscription payments via Paddle</li>
+            <li>Process subscription payments via NOWPayments (crypto)</li>
             <li>Send service notifications and updates</li>
             <li>Respond to support requests</li>
             <li>Ensure platform security</li>
