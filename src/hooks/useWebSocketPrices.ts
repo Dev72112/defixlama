@@ -50,8 +50,11 @@ class WebSocketManager {
   
   public prices: PriceUpdate = {};
   public isConnected = false;
+  public stableIsConnected = false; // debounced — won't flicker on brief disconnects
   public lastUpdate: number | null = null;
   public error: string | null = null;
+  private stableTimeout: NodeJS.Timeout | null = null;
+  private readonly STABLE_DELAY = 5000; // 5s before showing disconnect
 
   private constructor() {}
 
