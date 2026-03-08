@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { useTranslation } from "react-i18next";
 import { 
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, 
-  PieChart, DollarSign, Percent, Activity, Zap
+  PieChart, DollarSign, Zap
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -71,6 +71,11 @@ export default function Portfolio() {
   const liveTotalCost = liveHoldings.reduce((s, h) => s + h.costBasis, 0);
   const liveTotalPnl = liveTotalCost > 0 ? liveTotalValue - liveTotalCost : 0;
   const liveTotalPnlPct = liveTotalCost > 0 ? (liveTotalPnl / liveTotalCost) * 100 : 0;
+
+  // Best/worst performers
+  const holdingsWithPnl = liveHoldings.filter(h => h.costBasis > 0);
+  const bestPerformer = holdingsWithPnl.length > 0 ? holdingsWithPnl.reduce((best, h) => h.pnlPercent > best.pnlPercent ? h : best) : null;
+  const worstPerformer = holdingsWithPnl.length > 0 ? holdingsWithPnl.reduce((worst, h) => h.pnlPercent < worst.pnlPercent ? h : worst) : null;
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState("");
@@ -95,12 +100,14 @@ export default function Portfolio() {
     setPurchasePrice("");
   };
 
-  // Pie chart data
-  const pieData = holdings
+  // Pie chart data with percentage
+  const pieData = liveHoldings
     .filter(h => h.value > 0)
+    .sort((a, b) => b.value - a.value)
     .map(h => ({
       name: h.symbol,
       value: h.value,
+      percent: liveTotalValue > 0 ? ((h.value / liveTotalValue) * 100).toFixed(1) : "0",
     }));
 
   return (
@@ -185,15 +192,16 @@ export default function Portfolio() {
             icon={(liveTotalPnl || totalPnl) >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
-            title={t("portfolio.holdings")}
-            value={holdings.length.toString()}
-            icon={Activity}
+            title="Best Performer"
+            value={bestPerformer ? `${bestPerformer.symbol} (${bestPerformer.pnlPercent >= 0 ? "+" : ""}${bestPerformer.pnlPercent.toFixed(1)}%)` : "-"}
+            change={bestPerformer?.pnlPercent || 0}
+            icon={TrendingUp}
           />
           <StatCard
-            title={t("portfolio.pnlPercent")}
-            value={`${(liveTotalPnlPct || totalPnlPercent) >= 0 ? "+" : ""}${(liveTotalPnlPct || totalPnlPercent).toFixed(2)}%`}
-            change={liveTotalPnlPct || totalPnlPercent}
-            icon={Percent}
+            title="Worst Performer"
+            value={worstPerformer ? `${worstPerformer.symbol} (${worstPerformer.pnlPercent >= 0 ? "+" : ""}${worstPerformer.pnlPercent.toFixed(1)}%)` : "-"}
+            change={worstPerformer?.pnlPercent || 0}
+            icon={TrendingDown}
           />
         </div>
 
@@ -248,7 +256,10 @@ export default function Portfolio() {
                         borderRadius: "8px",
                       }}
                     />
-                    <Legend />
+                    <Legend formatter={(value: string, entry: any) => {
+                      const item = pieData.find(d => d.name === value);
+                      return `${value} (${item?.percent || 0}%)`;
+                    }} />
                   </RechartsPie>
                 </ResponsiveContainer>
               </div>
