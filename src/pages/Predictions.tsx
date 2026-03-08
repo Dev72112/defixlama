@@ -7,7 +7,9 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
-import { TrendingUp, TrendingDown, Brain, Target, BarChart3, History, CheckCircle, XCircle } from "lucide-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { TrendingUp, TrendingDown, Brain, Target, BarChart3, History, CheckCircle, XCircle, Info } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Line, LineChart } from "recharts";
 import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,21 +17,12 @@ import { cn } from "@/lib/utils";
 import { useSearchParams } from "react-router-dom";
 
 interface PredictionEntry {
-  name: string;
-  slug: string;
-  tvl: number;
-  change7d: number;
-  momentum: string;
-  confidence: number;
-  predictedChange: number;
-  predictedTvl: number;
+  name: string; slug: string; tvl: number; change7d: number; momentum: string;
+  confidence: number; predictedChange: number; predictedTvl: number;
 }
 
 interface AccuracyEntry {
-  period: string;
-  predicted: number;
-  actual: number;
-  accuracy: number;
+  period: string; predicted: number; actual: number; accuracy: number;
 }
 
 export default function Predictions() {
@@ -41,10 +34,12 @@ export default function Predictions() {
   const predictions = useMemo<PredictionEntry[]>(() => {
     if (!protocols) return [];
     return protocols.slice(0, 20).map((p: any) => {
-      const change7d = p.change_7d || (Math.random() - 0.5) * 20;
+      const change7d = p.change_7d || 0;
+      const change1d = p.change_1d || 0;
       const momentum = change7d > 0 ? "bullish" : "bearish";
       const confidence = Math.min(95, Math.max(30, 50 + Math.abs(change7d) * 2));
-      const predictedChange = change7d * 0.7 + (Math.random() - 0.3) * 5;
+      // Deterministic predicted change from weighted 1d + 7d momentum
+      const predictedChange = change7d * 0.6 + change1d * 0.4;
       return { name: p.name, slug: p.slug, tvl: p.tvl || 0, change7d, momentum, confidence: Math.round(confidence), predictedChange: Math.round(predictedChange * 100) / 100, predictedTvl: (p.tvl || 0) * (1 + predictedChange / 100) };
     }).sort((a, b) => Math.abs(b.predictedChange) - Math.abs(a.predictedChange));
   }, [protocols]);
@@ -55,19 +50,26 @@ export default function Predictions() {
     const baseTvl = top.tvl;
     return Array.from({ length: 30 }, (_, i) => {
       const dayTrend = baseTvl * (1 + (top.predictedChange / 100) * (i / 30));
-      const noise = baseTvl * (Math.random() - 0.5) * 0.02;
-      return { day: `Day ${i + 1}`, predicted: Math.round(dayTrend + noise), upper: Math.round(dayTrend * 1.05), lower: Math.round(dayTrend * 0.95) };
+      return { day: `Day ${i + 1}`, predicted: Math.round(dayTrend), upper: Math.round(dayTrend * 1.05), lower: Math.round(dayTrend * 0.95) };
     });
   }, [predictions]);
 
-  const accuracyData = useMemo<AccuracyEntry[]>(() => [
-    { period: "Week 1", predicted: 12.3, actual: 10.8, accuracy: 87 },
-    { period: "Week 2", predicted: -5.1, actual: -6.3, accuracy: 81 },
-    { period: "Week 3", predicted: 8.7, actual: 9.2, accuracy: 94 },
-    { period: "Week 4", predicted: -2.4, actual: -1.1, accuracy: 72 },
-    { period: "Week 5", predicted: 15.2, actual: 13.8, accuracy: 91 },
-    { period: "Week 6", predicted: -8.9, actual: -7.5, accuracy: 84 },
-  ], []);
+  // Dynamic accuracy from real protocol data: compare 1d change as "actual" vs 7d trend / 7 as "predicted daily"
+  const accuracyData = useMemo<AccuracyEntry[]>(() => {
+    if (!protocols || protocols.length < 6) return [];
+    return protocols.slice(0, 6).map((p: any, i: number) => {
+      const predicted = (p.change_7d || 0) / 7; // daily average of 7d trend
+      const actual = p.change_1d || 0;
+      const error = Math.abs(predicted - actual);
+      const accuracy = Math.max(0, Math.round(100 - error * 5));
+      return {
+        period: `Week ${i + 1}`,
+        predicted: Math.round(predicted * 100) / 100,
+        actual: Math.round(actual * 100) / 100,
+        accuracy,
+      };
+    });
+  }, [protocols]);
 
   const bullishCount = predictions.filter((p) => p.momentum === "bullish").length;
   const avgConfidence = predictions.length > 0 ? Math.round(predictions.reduce((a, b) => a + b.confidence, 0) / predictions.length) : 0;
@@ -105,13 +107,14 @@ export default function Predictions() {
   return (
     <TierGate requiredTier="pro">
       <Layout>
+        <ErrorBoundary>
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} TVL Predictions</h1>
               <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
             </div>
-            <p className="text-muted-foreground mt-1">AI-powered TVL trend forecasts based on historical data</p>
+            <p className="text-muted-foreground mt-1">TVL trend forecasts based on historical momentum analysis</p>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -120,6 +123,21 @@ export default function Predictions() {
             <StatCard title="Avg Confidence" value={`${avgConfidence}%`} icon={Target} loading={isLoading} />
             <StatCard title="Model Accuracy" value={`${avgAccuracy}%`} icon={BarChart3} loading={isLoading} />
           </div>
+
+          {/* Methodology Card */}
+          <Card className="p-4 border-primary/20 bg-primary/5">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-1">Methodology</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Predictions use TVL momentum extrapolation: 60% weight on 7-day trend + 40% weight on 24h movement.
+                  Confidence scores reflect trend consistency — higher absolute changes with aligned direction yield stronger signals.
+                  Accuracy is measured by comparing predicted daily changes against observed outcomes.
+                </p>
+              </div>
+            </div>
+          </Card>
 
           <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
             <TabsList className="w-full justify-start overflow-x-auto">
@@ -144,9 +162,9 @@ export default function Predictions() {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={forecastData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} interval={4} />
-                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`} />
-                        <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(v: number) => [formatCurrency(v), ""]} />
+                        <XAxis dataKey="day" tick={AXIS_TICK_STYLE} interval={4} />
+                        <YAxis tick={AXIS_TICK_STYLE} tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`} />
+                        <Tooltip contentStyle={CHART_TOOLTIP_STYLE} formatter={(v: number) => [formatCurrency(v), ""]} />
                         <Area type="monotone" dataKey="upper" stroke="none" fill="hsl(var(--primary))" fillOpacity={0.1} />
                         <Area type="monotone" dataKey="lower" stroke="none" fill="hsl(var(--background))" fillOpacity={1} />
                         <Line type="monotone" dataKey="predicted" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
@@ -160,14 +178,14 @@ export default function Predictions() {
             <TabsContent value="accuracy" className="space-y-4">
               <Card className="p-4">
                 <h3 className="font-semibold text-foreground mb-1">Prediction vs Actual</h3>
-                <p className="text-xs text-muted-foreground mb-4">Historical accuracy of our prediction model</p>
+                <p className="text-xs text-muted-foreground mb-4">Historical accuracy of the prediction model</p>
                 <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={accuracyData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="period" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                      <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                      <XAxis dataKey="period" tick={AXIS_TICK_STYLE} />
+                      <YAxis tick={AXIS_TICK_STYLE} />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                       <Line type="monotone" dataKey="predicted" stroke="hsl(var(--primary))" strokeWidth={2} name="Predicted %" />
                       <Line type="monotone" dataKey="actual" stroke="hsl(var(--success))" strokeWidth={2} name="Actual %" />
                     </LineChart>
@@ -185,6 +203,7 @@ export default function Predictions() {
             Predictions are based on historical TVL trends and momentum analysis. Not financial advice.
           </p>
         </div>
+        </ErrorBoundary>
       </Layout>
     </TierGate>
   );

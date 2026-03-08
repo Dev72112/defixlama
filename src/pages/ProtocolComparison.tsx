@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useAllProtocols } from "@/hooks/useDefiData";
 import { useChain } from "@/contexts/ChainContext";
 import { formatCurrency } from "@/lib/api/defillama";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import { GitCompare, X, Download, FileSpreadsheet, FileJson } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,19 +43,24 @@ export default function ProtocolComparison() {
   const addProtocol = (slug: string) => { if (selectedSlugs.length < 4 && !selectedSlugs.includes(slug)) setSelectedSlugs((prev) => [...prev, slug]); };
   const removeProtocol = (slug: string) => { setSelectedSlugs((prev) => prev.filter((s) => s !== slug)); };
 
-  const barData = useMemo(() => selectedProtocols.map((p: any) => ({ name: p.name, tvl: p.tvl || 0, fees24h: p.fees24h || Math.random() * 1e6, volume24h: p.volume24h || Math.random() * 1e8 })), [selectedProtocols]);
+  const barData = useMemo(() => selectedProtocols.map((p: any) => ({ name: p.name, tvl: p.tvl || 0 })), [selectedProtocols]);
 
+  // Deterministic radar data from real protocol properties
   const radarData = useMemo(() => {
-    const metrics = ["TVL Score", "Fee Revenue", "Volume", "Chain Coverage", "Category"];
+    const metrics = ["TVL Score", "Stability", "Growth", "Chain Coverage", "Maturity"];
     return metrics.map((metric) => {
       const entry: any = { metric };
       selectedProtocols.forEach((p: any) => {
         switch (metric) {
           case "TVL Score": entry[p.name] = Math.min(100, ((p.tvl || 0) / 1e10) * 100); break;
-          case "Fee Revenue": entry[p.name] = Math.random() * 80 + 20; break;
-          case "Volume": entry[p.name] = Math.random() * 90 + 10; break;
-          case "Chain Coverage": entry[p.name] = (p.chains?.length || 1) * 10; break;
-          case "Category": entry[p.name] = Math.random() * 70 + 30; break;
+          case "Stability": entry[p.name] = Math.min(100, Math.max(10, 80 - Math.abs(p.change_1d || 0) * 5)); break;
+          case "Growth": entry[p.name] = Math.min(100, Math.max(5, 50 + (p.change_7d || 0) * 2)); break;
+          case "Chain Coverage": entry[p.name] = Math.min(100, (p.chains?.length || 1) * 10); break;
+          case "Maturity": {
+            const ageDays = p.listedAt ? (Date.now() / 1000 - p.listedAt) / 86400 : 365;
+            entry[p.name] = Math.min(100, ageDays / 10);
+            break;
+          }
         }
       });
       return entry;
@@ -82,6 +89,7 @@ export default function ProtocolComparison() {
   return (
     <TierGate requiredTier="pro">
       <Layout>
+        <ErrorBoundary>
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
@@ -116,7 +124,7 @@ export default function ProtocolComparison() {
             <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
               <TabsList className="w-full justify-start overflow-x-auto">
                 <TabsTrigger value="compare" className="gap-1.5"><GitCompare className="h-3.5 w-3.5" /> Compare</TabsTrigger>
-                <TabsTrigger value="charts" className="gap-1.5"><BarChart className="h-3.5 w-3.5" /> Charts</TabsTrigger>
+                <TabsTrigger value="charts" className="gap-1.5">Charts</TabsTrigger>
                 <TabsTrigger value="export" className="gap-1.5"><Download className="h-3.5 w-3.5" /> Export</TabsTrigger>
               </TabsList>
 
@@ -150,7 +158,7 @@ export default function ProtocolComparison() {
                           return (
                             <tr key={metric.label} className="hover:bg-muted/30">
                               <td className="text-muted-foreground">{metric.label}</td>
-                              {selectedProtocols.map((p: any, i) => {
+                              {selectedProtocols.map((p: any) => {
                                 const val = metric.getter ? metric.getter(p) : null;
                                 const isBest = bestVal !== null && val === bestVal;
                                 return (
@@ -176,9 +184,9 @@ export default function ProtocolComparison() {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={barData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`} />
-                          <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(v: number) => [formatCurrency(v), "TVL"]} />
+                          <XAxis dataKey="name" tick={AXIS_TICK_STYLE} />
+                          <YAxis tick={AXIS_TICK_STYLE} tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`} />
+                          <Tooltip contentStyle={CHART_TOOLTIP_STYLE} formatter={(v: number) => [formatCurrency(v), "TVL"]} />
                           <Bar dataKey="tvl" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -190,7 +198,7 @@ export default function ProtocolComparison() {
                       <ResponsiveContainer width="100%" height="100%">
                         <RadarChart data={radarData}>
                           <PolarGrid stroke="hsl(var(--border))" />
-                          <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                          <PolarAngleAxis dataKey="metric" tick={AXIS_TICK_STYLE} />
                           {selectedProtocols.map((p: any, i) => <Radar key={p.slug} name={p.name} dataKey={p.name} stroke={COMPARE_COLORS[i]} fill={COMPARE_COLORS[i]} fillOpacity={0.15} />)}
                           <Legend />
                         </RadarChart>
@@ -219,6 +227,7 @@ export default function ProtocolComparison() {
             </Card>
           )}
         </div>
+        </ErrorBoundary>
       </Layout>
     </TierGate>
   );

@@ -7,6 +7,7 @@ import { useChain } from "@/contexts/ChainContext";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/api/defillama";
 import { CACHE_TIERS } from "@/lib/cacheConfig";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   Shield, AlertTriangle, CheckCircle2, XCircle,
   Loader2, Clock, TrendingDown,
@@ -111,14 +112,8 @@ export default function RiskDashboard() {
         </div>
       ),
     },
-    {
-      key: "tvl", label: "TVL", priority: "expanded", align: "right",
-      render: (r: any) => <span className="font-mono">{formatCurrency(r.tvl)}</span>,
-    },
-    {
-      key: "riskScore", label: "Risk Score", priority: "always", align: "right",
-      render: (r: any) => <span className="font-mono">{r.riskScore}</span>,
-    },
+    { key: "tvl", label: "TVL", priority: "expanded", align: "right", render: (r: any) => <span className="font-mono">{formatCurrency(r.tvl)}</span> },
+    { key: "riskScore", label: "Risk Score", priority: "always", align: "right", render: (r: any) => <span className="font-mono">{r.riskScore}</span> },
     {
       key: "riskLevel", label: "Risk Level", priority: "always", align: "center",
       render: (r: any) => (
@@ -129,10 +124,7 @@ export default function RiskDashboard() {
         )}>{r.riskLevel}</Badge>
       ),
     },
-    {
-      key: "audited", label: "Audited", priority: "expanded", align: "center",
-      render: (r: any) => r.audited ? <CheckCircle2 className="h-4 w-4 text-success mx-auto" /> : <XCircle className="h-4 w-4 text-destructive/50 mx-auto" />,
-    },
+    { key: "audited", label: "Audited", priority: "expanded", align: "center", render: (r: any) => r.audited ? <CheckCircle2 className="h-4 w-4 text-success mx-auto" /> : <XCircle className="h-4 w-4 text-destructive/50 mx-auto" /> },
     {
       key: "change_1d", label: "24h Change", priority: "expanded", align: "right",
       render: (r: any) => (
@@ -146,6 +138,7 @@ export default function RiskDashboard() {
   return (
     <TierGate requiredTier="pro">
     <Layout>
+      <ErrorBoundary>
       <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
@@ -234,9 +227,9 @@ export default function RiskDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hackChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `$${(v / 1e6).toFixed(0)}M`} />
-                  <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => [formatCurrency(value), "Funds Lost"]} />
+                  <XAxis dataKey="month" tick={AXIS_TICK_STYLE} />
+                  <YAxis tick={AXIS_TICK_STYLE} tickFormatter={(v) => `$${(v / 1e6).toFixed(0)}M`} />
+                  <Tooltip contentStyle={CHART_TOOLTIP_STYLE} formatter={(value: number) => [formatCurrency(value), "Funds Lost"]} />
                   <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                     {hackChartData.map((_, i) => (<Cell key={i} fill="hsl(var(--destructive))" opacity={0.8} />))}
                   </Bar>
@@ -251,14 +244,7 @@ export default function RiskDashboard() {
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-warning" />Protocol Risk Scores
           </h3>
-          <ResponsiveDataTable
-            columns={riskColumns}
-            data={riskPageData}
-            keyField={(r: any) => r.slug}
-            loading={loadingRisks}
-            loadingRows={5}
-            emptyMessage="No protocol risk data available"
-          />
+          <ResponsiveDataTable columns={riskColumns} data={riskPageData} keyField={(r: any) => r.slug} loading={loadingRisks} loadingRows={5} emptyMessage="No protocol risk data available" />
           {riskTotalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-4">
               <Button variant="ghost" size="sm" onClick={() => setRiskPage(p => Math.max(1, p - 1))} disabled={riskPage === 1}>Prev</Button>
@@ -295,6 +281,7 @@ export default function RiskDashboard() {
           )}
         </Card>
       </div>
+      </ErrorBoundary>
     </Layout>
     </TierGate>
   );

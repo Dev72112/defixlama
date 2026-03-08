@@ -5,6 +5,7 @@ import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols, useChainTVLHistory, useGlobalTVLHistory } from "@/hooks/useDefiData";
 import { formatCurrency, formatPercentage, getChangeColor } from "@/lib/api/defillama";
 import { ChartEmptyState } from "@/components/ChartEmptyState";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CHART_TOOLTIP_STYLE, CHART_COLORS, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import { DateRangeSelector, DateRange, filterByDateRange } from "@/components/dashboard/DateRangeSelector";
 import { Activity, GitCompare, AlertTriangle, TrendingUp, TrendingDown, BarChart3, History } from "lucide-react";
@@ -119,6 +120,7 @@ export default function Correlations() {
   return (
     <TierGate requiredTier="pro_plus">
     <Layout>
+      <ErrorBoundary>
       <div className="space-y-6 page-enter">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{selectedChain.name} Correlations</h1>
@@ -294,6 +296,7 @@ export default function Correlations() {
           )}
         </div>
       </div>
+      </ErrorBoundary>
     </Layout>
     </TierGate>
   );
