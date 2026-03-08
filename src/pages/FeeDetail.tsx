@@ -649,7 +649,48 @@ function FeeDetailContent() {
                 </Link>
               ))}
             </div>
-          </Card>
+        </Card>
+        )}
+
+        {/* PRO Analytics Sections */}
+        {feeEfficiency && (
+          <ProDetailSection title="Fee Efficiency Score">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Efficiency (bps)</p>
+                <p className="text-2xl font-bold text-primary">{feeEfficiency.bps.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">fees per $ TVL per day</p>
+              </div>
+              <div className="rounded-lg bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Rating</p>
+                <p className="text-2xl font-bold">{feeEfficiency.interpretation}</p>
+              </div>
+              <div className="rounded-lg bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Annualized Revenue</p>
+                <p className="text-2xl font-bold">{formatCurrency((item.total24h || 0) * 365)}</p>
+              </div>
+            </div>
+          </ProDetailSection>
+        )}
+
+        {categoryRank && (
+          <ProDetailSection title="Category Ranking">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Rank in {item.category}</p>
+                <p className="text-2xl font-bold text-primary">#{categoryRank.rank} of {categoryRank.total}</p>
+              </div>
+              <div className="rounded-lg bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Category Percentile</p>
+                <p className="text-2xl font-bold">
+                  {((categoryRank.total - categoryRank.rank + 1) / categoryRank.total * 100).toFixed(0)}%
+                </p>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden mt-2">
+                  <div className="h-full bg-primary" style={{ width: `${((categoryRank.total - categoryRank.rank + 1) / categoryRank.total) * 100}%` }} />
+                </div>
+              </div>
+            </div>
+          </ProDetailSection>
         )}
       </div>
     </Layout>
