@@ -13,6 +13,7 @@ export default function ApiAccess() {
   const [showKey, setShowKey] = useState(false);
 
   return (
+    <TierGate requiredTier="pro">
     <Layout>
       <div className="space-y-6 animate-fade-in">
         <div>
