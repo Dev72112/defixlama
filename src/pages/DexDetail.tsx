@@ -23,6 +23,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 
 export default function DexDetail() {
   const { id } = useParams<{ id: string }>();
