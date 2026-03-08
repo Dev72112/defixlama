@@ -118,6 +118,29 @@ export default function WhaleActivity() {
           <p className="text-muted-foreground mt-1 text-sm">Capital concentration, behavioral analytics, and large movement detection</p>
         </div>
 
+        {/* Insight Summary */}
+        {!isLoading && protocolList.length > 0 && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <h3 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+              <Zap className="h-4 w-4" /> Ecosystem Insight
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {selectedChain.name}&apos;s ecosystem is <span className="font-medium text-foreground">{hhi.label.toLowerCase()}</span> (HHI: {hhi.value.toLocaleString()})
+              {hhi.value > 2500
+                ? ", meaning a few protocols dominate TVL — systemic risk is elevated."
+                : hhi.value > 1500
+                ? ", with moderate concentration. Top players hold outsized influence."
+                : ", with capital well-distributed — a healthy, competitive ecosystem."}
+              {" "}Daily capital velocity is <span className="font-medium text-foreground">{capitalVelocity.pct}</span> ({formatCurrency(capitalVelocity.value)} moved in 24h),
+              {parseFloat(capitalVelocity.pct) > 5
+                ? " indicating high rotation."
+                : parseFloat(capitalVelocity.pct) > 1
+                ? " suggesting healthy liquidity rotation."
+                : " relatively stable with minimal movement."}
+            </p>
+          </div>
+        )}
+
         {/* KPI Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
           {[
