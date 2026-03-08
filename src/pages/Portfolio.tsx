@@ -229,8 +229,8 @@ export default function Portfolio() {
                 <DollarSign className="h-5 w-5 text-primary" />
                 {t("portfolio.holdings")}
               </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-hidden">
+                <table className="w-full table-fixed">
                   <thead>
                     <tr className="text-left text-sm text-muted-foreground border-b border-border">
                       <th className="pb-3">{t("common.token")}</th>

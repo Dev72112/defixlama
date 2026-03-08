@@ -185,7 +185,7 @@ export default function RiskDashboard() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-hidden">
                 <table className="w-full data-table">
                   <thead>
                     <tr>
@@ -201,10 +201,10 @@ export default function RiskDashboard() {
                     {riskPageData.map((r) => (
                       <tr key={r.slug}>
                         <td>
-                          <div className="flex items-center gap-2">
-                            {r.logo && <img src={r.logo} alt="" className="h-5 w-5 rounded-full" />}
-                            <span className="font-medium">{r.name}</span>
-                            <span className="text-xs text-muted-foreground hidden sm:inline">{r.category}</span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            {r.logo && <img src={r.logo} alt="" className="h-5 w-5 rounded-full flex-shrink-0" />}
+                            <span className="font-medium truncate max-w-[100px] sm:max-w-none">{r.name}</span>
+                            <span className="text-xs text-muted-foreground hidden sm:inline flex-shrink-0">{r.category}</span>
                           </div>
                         </td>
                         <td className="text-right font-mono hidden sm:table-cell">{formatCurrency(r.tvl)}</td>

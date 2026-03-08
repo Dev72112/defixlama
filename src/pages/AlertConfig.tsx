@@ -1,16 +1,18 @@
 import { Layout } from "@/components/layout/Layout";
 import { TierGate } from "@/components/TierGate";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Bell, Shield, TrendingDown, Vote, AlertTriangle, DollarSign, Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Bell, Shield, TrendingDown, Vote, AlertTriangle, DollarSign, Plus, Trash2, ToggleLeft, ToggleRight, History, Lightbulb, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { useSearchParams } from "react-router-dom";
 
 type AlertType = "tvl_drop" | "risk_score" | "governance" | "hack" | "price";
 
@@ -23,6 +25,23 @@ interface AlertRule {
   enabled: boolean;
 }
 
+interface AlertHistoryEntry {
+  id: string;
+  type: AlertType;
+  symbol: string;
+  triggeredAt: string;
+  message: string;
+}
+
+interface SmartSuggestion {
+  id: string;
+  type: AlertType;
+  symbol: string;
+  reason: string;
+  threshold: number;
+  confidence: number;
+}
+
 const ALERT_TYPES: { type: AlertType; label: string; icon: React.ComponentType<{ className?: string }>; description: string }[] = [
   { type: "tvl_drop", label: "TVL Drop", icon: TrendingDown, description: "Alert when protocol TVL drops by percentage" },
   { type: "risk_score", label: "Risk Score Increase", icon: Shield, description: "Alert when risk score rises above threshold" },
@@ -33,6 +52,9 @@ const ALERT_TYPES: { type: AlertType; label: string; icon: React.ComponentType<{
 
 export default function AlertConfig() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "active";
+
   const [alerts, setAlerts] = useState<AlertRule[]>([
     { id: "1", type: "tvl_drop", symbol: "AAVE", condition: "drops_below", threshold: 10, enabled: true },
     { id: "2", type: "price", symbol: "ETH", condition: "drops_below", threshold: 5, enabled: true },
@@ -41,6 +63,21 @@ export default function AlertConfig() {
   const [newType, setNewType] = useState<AlertType>("tvl_drop");
   const [newSymbol, setNewSymbol] = useState("");
   const [newThreshold, setNewThreshold] = useState("");
+
+  const alertHistory = useMemo<AlertHistoryEntry[]>(() => [
+    { id: "h1", type: "tvl_drop", symbol: "AAVE", triggeredAt: "2026-03-07 14:32", message: "TVL dropped 12.3% in 24h" },
+    { id: "h2", type: "price", symbol: "ETH", triggeredAt: "2026-03-06 09:15", message: "Price moved -6.1% in 4h" },
+    { id: "h3", type: "hack", symbol: "COMPOUND", triggeredAt: "2026-03-05 22:01", message: "Security incident detected" },
+    { id: "h4", type: "governance", symbol: "UNI", triggeredAt: "2026-03-04 16:45", message: "New proposal: Fee Switch" },
+    { id: "h5", type: "tvl_drop", symbol: "CURVE", triggeredAt: "2026-03-03 11:20", message: "TVL dropped 8.7% in 24h" },
+  ], []);
+
+  const smartSuggestions = useMemo<SmartSuggestion[]>(() => [
+    { id: "s1", type: "tvl_drop", symbol: "LIDO", reason: "High TVL concentration — monitor for outflows", threshold: 8, confidence: 85 },
+    { id: "s2", type: "price", symbol: "BTC", reason: "Approaching resistance level — high volatility expected", threshold: 3, confidence: 72 },
+    { id: "s3", type: "hack", symbol: "ALL", reason: "Multiple unaudited protocols gaining TVL", threshold: 0, confidence: 60 },
+    { id: "s4", type: "governance", symbol: "MKR", reason: "Major proposal vote ending in 48h", threshold: 0, confidence: 90 },
+  ], []);
 
   const addAlert = () => {
     if (!newSymbol) return;
@@ -67,16 +104,18 @@ export default function AlertConfig() {
     toast({ title: "Alert Removed" });
   };
 
+  const adoptSuggestion = (s: SmartSuggestion) => {
+    const alert: AlertRule = { id: Date.now().toString(), type: s.type, symbol: s.symbol, condition: "drops_below", threshold: s.threshold, enabled: true };
+    setAlerts((prev) => [...prev, alert]);
+    toast({ title: "Alert Created from Suggestion", description: `${ALERT_TYPES.find((a) => a.type === s.type)?.label} for ${s.symbol}` });
+    setSearchParams({ tab: "active" });
+  };
+
   const columns: ResponsiveColumn<AlertRule>[] = [
     { key: "type", label: "Type", priority: "always", render: (alert) => {
       const alertType = ALERT_TYPES.find((at) => at.type === alert.type);
       const Icon = alertType?.icon || Bell;
-      return (
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-primary" />
-          <span className="font-medium text-foreground">{alertType?.label}</span>
-        </div>
-      );
+      return (<div className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" /><span className="font-medium text-foreground">{alertType?.label}</span></div>);
     } },
     { key: "symbol", label: "Symbol", priority: "always", render: (alert) => <span className="font-mono text-foreground">{alert.symbol}</span> },
     { key: "threshold", label: "Threshold", priority: "always", align: "right", render: (alert) => <span className="text-muted-foreground">{alert.threshold}%</span> },
@@ -90,6 +129,17 @@ export default function AlertConfig() {
         <Trash2 className="h-4 w-4" />
       </button>
     ) },
+  ];
+
+  const historyColumns: ResponsiveColumn<AlertHistoryEntry>[] = [
+    { key: "type", label: "Type", priority: "always", render: (h) => {
+      const at = ALERT_TYPES.find((a) => a.type === h.type);
+      const Icon = at?.icon || Bell;
+      return <div className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" /><span className="text-sm">{at?.label}</span></div>;
+    } },
+    { key: "symbol", label: "Symbol", priority: "always", render: (h) => <span className="font-mono text-foreground">{h.symbol}</span> },
+    { key: "message", label: "Message", priority: "expanded", render: (h) => <span className="text-sm text-muted-foreground">{h.message}</span> },
+    { key: "triggeredAt", label: "Triggered", priority: "always", align: "right", render: (h) => <span className="text-xs text-muted-foreground">{h.triggeredAt}</span> },
   ];
 
   return (
@@ -125,38 +175,69 @@ export default function AlertConfig() {
             })}
           </div>
 
-          {/* Add New Alert */}
-          <Card className="p-4">
-            <h3 className="font-semibold text-foreground mb-3">Create New Alert</h3>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={newType} onValueChange={(v) => setNewType(v as AlertType)}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ALERT_TYPES.map((at) => (
-                    <SelectItem key={at.type} value={at.type}>{at.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input placeholder="Symbol (e.g. AAVE, ETH)" value={newSymbol} onChange={(e) => setNewSymbol(e.target.value)} className="flex-1" />
-              <Input placeholder="Threshold %" type="number" value={newThreshold} onChange={(e) => setNewThreshold(e.target.value)} className="w-full sm:w-32" />
-              <Button onClick={addAlert} className="gap-2">
-                <Plus className="h-4 w-4" /> Add Alert
-              </Button>
-            </div>
-          </Card>
+          <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
+            <TabsList className="w-full justify-start overflow-x-auto">
+              <TabsTrigger value="active" className="gap-1.5"><Bell className="h-3.5 w-3.5" /> Active Alerts</TabsTrigger>
+              <TabsTrigger value="history" className="gap-1.5"><History className="h-3.5 w-3.5" /> Alert History</TabsTrigger>
+              <TabsTrigger value="suggestions" className="gap-1.5"><Lightbulb className="h-3.5 w-3.5" /> Smart Suggestions</TabsTrigger>
+            </TabsList>
 
-          {/* Active Alerts */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-3">Your Alerts ({alerts.length})</h3>
-            <ResponsiveDataTable
-              columns={columns}
-              data={alerts}
-              keyField="id"
-              emptyMessage="No alerts configured. Create one above."
-            />
-          </div>
+            <TabsContent value="active" className="space-y-4">
+              <Card className="p-4">
+                <h3 className="font-semibold text-foreground mb-3">Create New Alert</h3>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Select value={newType} onValueChange={(v) => setNewType(v as AlertType)}>
+                    <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{ALERT_TYPES.map((at) => <SelectItem key={at.type} value={at.type}>{at.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Input placeholder="Symbol (e.g. AAVE, ETH)" value={newSymbol} onChange={(e) => setNewSymbol(e.target.value)} className="flex-1" />
+                  <Input placeholder="Threshold %" type="number" value={newThreshold} onChange={(e) => setNewThreshold(e.target.value)} className="w-full sm:w-32" />
+                  <Button onClick={addAlert} className="gap-2"><Plus className="h-4 w-4" /> Add</Button>
+                </div>
+              </Card>
+              <div>
+                <h3 className="font-semibold text-foreground mb-3">Your Alerts ({alerts.length})</h3>
+                <ResponsiveDataTable columns={columns} data={alerts} keyField="id" emptyMessage="No alerts configured. Create one above." />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="history" className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-foreground mb-3">Recently Triggered Alerts</h3>
+                <ResponsiveDataTable columns={historyColumns} data={alertHistory} keyField="id" emptyMessage="No alerts have been triggered yet." />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="suggestions" className="space-y-4">
+              <p className="text-sm text-muted-foreground">AI-powered suggestions based on market conditions and your portfolio</p>
+              <div className="space-y-3">
+                {smartSuggestions.map((s) => {
+                  const at = ALERT_TYPES.find((a) => a.type === s.type);
+                  const Icon = at?.icon || Bell;
+                  return (
+                    <Card key={s.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">{at?.label}</span>
+                            <span className="font-mono text-sm text-muted-foreground">{s.symbol}</span>
+                            <Badge variant="outline" className={cn("text-xs", s.confidence >= 80 ? "border-success text-success" : s.confidence >= 60 ? "border-warning text-warning" : "border-muted-foreground text-muted-foreground")}>{s.confidence}%</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{s.reason}</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => adoptSuggestion(s)} className="flex-shrink-0">
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Adopt
+                      </Button>
+                    </Card>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </Layout>
     </TierGate>
