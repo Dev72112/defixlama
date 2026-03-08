@@ -1,7 +1,8 @@
 import React, { Suspense, lazy, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/layout/Layout";
-import { Activity } from "lucide-react";
+import { Activity, Zap } from "lucide-react";
+import { useLivePrices } from "@/hooks/useLivePrice";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDashboardData, useChainsTVL, useFeesData, useStablecoins, useTop10Chains } from "@/hooks/useDefiData";
 import { useChain } from "@/contexts/ChainContext";
@@ -23,7 +24,7 @@ import { StablecoinStats } from "@/components/dashboard/StablecoinStats";
 import { FeesOverview } from "@/components/dashboard/FeesOverview";
 import { TopChainsCard } from "@/components/dashboard/TopChainsCard";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
-import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
+import { Database, ArrowLeftRight, TrendingUp, TrendingDown, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -50,6 +51,7 @@ function DashboardContent() {
   const feesData = useFeesData();
   const stablecoins = useStablecoins();
   const { data: tokens } = useTokenPrices();
+  const { prices: livePrices, isConnected: wsConnected } = useLivePrices(["BTC", "ETH", "SOL", "BNB", "XRP"]);
 
   const protocols = dashboardData.protocols;
   const tvl = dashboardData.tvl;
@@ -124,7 +126,7 @@ function DashboardContent() {
       });
     }
 
-    // Top fees (no timestamp in payload) — give recent synthetic timestamps so they appear now
+    // Top fees — ranked items, no real timestamps available
     const feesList = feesData?.data ?? [];
     if (Array.isArray(feesList) && feesList.length > 0) {
       const topFees = feesList
@@ -137,13 +139,13 @@ function DashboardContent() {
           id: f.name || f.displayName || `fee-${i}`,
           title: f.displayName || f.name,
           subtitle: `24h ${formatCurrency(f.total24h || f.total_24h || 0)}`,
-          timestamp: Math.floor(Date.now() / 1000) - (i + 1) * 60,
+          timestamp: 0, // No real timestamp
           meta: f,
         });
       });
     }
 
-    // Top chains (no timestamp) — synthetic timestamps spaced further back
+    // Top chains — ranked items, no real timestamps
     for (let i = 0; i < topChains.length && i < 3; i++) {
       const c = topChains[i];
       items.push({
@@ -151,13 +153,17 @@ function DashboardContent() {
         id: c?.name || `chain-${i}`,
         title: c?.name || "unknown",
         subtitle: `${formatCurrency(c?.tvl ?? 0)} TVL`,
-        timestamp: Math.floor(Date.now() / 1000) - (i + 1) * 120,
+        timestamp: 0, // No real timestamp
         meta: c,
       });
     }
 
-    // Sort by timestamp desc and limit
-    return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
+    // Sort: items with real timestamps first (desc), then ranked items
+    return items.sort((a, b) => {
+      if (a.timestamp && !b.timestamp) return -1;
+      if (!a.timestamp && b.timestamp) return 1;
+      return b.timestamp - a.timestamp;
+    }).slice(0, 6);
   }, [recentProtocols, feesData?.data, topChains]);
 
   const newProtocolsCount = useMemo(() => {
@@ -242,6 +248,36 @@ function DashboardContent() {
           loading={yieldPools?.isLoading ?? true}
         />
       </div>
+
+      {/* Live WebSocket Prices */}
+      {Object.keys(livePrices).length > 0 && (
+        <div className="rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Live Market Prices</h3>
+            {wsConnected && (
+              <span className="flex items-center gap-1 text-[10px] text-success font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                WebSocket
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {["BTC", "ETH", "SOL", "BNB", "XRP"].map((sym) => {
+              const p = livePrices[sym];
+              if (!p) return null;
+              return (
+                <div key={sym} className="rounded-md border border-border bg-card/50 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">{sym}</span>
+                  <p className="text-base font-bold font-mono text-foreground price-flash">
+                    ${p >= 1 ? p.toLocaleString(undefined, { maximumFractionDigits: 2 }) : p.toFixed(6)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* New Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -384,7 +420,7 @@ function DashboardContent() {
                           <span className="text-primary font-medium">{value}</span>
                         </div>
                       </div>
-                      <div className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">{a.timestamp ? timeAgo(a.timestamp) : "—"}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">{a.timestamp ? timeAgo(a.timestamp) : "Top Ranked"}</div>
                     </Link>
                   </li>
                 );

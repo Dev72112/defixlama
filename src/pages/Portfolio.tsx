@@ -3,13 +3,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePortfolio } from "@/hooks/usePortfolio";
+import { useLivePrices } from "@/hooks/useLivePrice";
 import { formatCurrency } from "@/lib/api/defillama";
 import { useTranslation } from "react-i18next";
 import { 
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, 
-  PieChart, DollarSign, Percent, Activity 
+  PieChart, DollarSign, Percent, Activity, Zap
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -48,6 +49,28 @@ export default function Portfolio() {
     totalPnlPercent,
     tokenPrices 
   } = usePortfolio();
+
+  // Get live WebSocket prices for held symbols
+  const heldSymbols = useMemo(() => holdings.map(h => h.symbol.toUpperCase()), [holdings]);
+  const { prices: livePrices, isConnected: wsConnected } = useLivePrices(heldSymbols);
+
+  // Enhance holdings with live prices where available
+  const liveHoldings = useMemo(() => holdings.map(h => {
+    const livePrice = livePrices[h.symbol.toUpperCase()];
+    if (livePrice && livePrice > 0) {
+      const value = h.quantity * livePrice;
+      const costBasis = h.purchasePrice ? h.quantity * h.purchasePrice : 0;
+      const pnl = costBasis > 0 ? value - costBasis : 0;
+      const pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
+      return { ...h, currentPrice: livePrice, value, costBasis, pnl, pnlPercent };
+    }
+    return h;
+  }), [holdings, livePrices]);
+
+  const liveTotalValue = liveHoldings.reduce((s, h) => s + h.value, 0);
+  const liveTotalCost = liveHoldings.reduce((s, h) => s + h.costBasis, 0);
+  const liveTotalPnl = liveTotalCost > 0 ? liveTotalValue - liveTotalCost : 0;
+  const liveTotalPnlPct = liveTotalCost > 0 ? (liveTotalPnl / liveTotalCost) * 100 : 0;
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState("");
@@ -152,14 +175,14 @@ export default function Portfolio() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title={t("portfolio.totalValue")}
-            value={formatCurrency(totalValue)}
+            value={formatCurrency(liveTotalValue || totalValue)}
             icon={Wallet}
           />
           <StatCard
             title={t("portfolio.totalPnl")}
-            value={`${totalPnl >= 0 ? "+" : ""}${formatCurrency(totalPnl)}`}
-            change={totalPnlPercent}
-            icon={totalPnl >= 0 ? TrendingUp : TrendingDown}
+            value={`${(liveTotalPnl || totalPnl) >= 0 ? "+" : ""}${formatCurrency(liveTotalPnl || totalPnl)}`}
+            change={liveTotalPnlPct || totalPnlPercent}
+            icon={(liveTotalPnl || totalPnl) >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
             title={t("portfolio.holdings")}
@@ -168,14 +191,22 @@ export default function Portfolio() {
           />
           <StatCard
             title={t("portfolio.pnlPercent")}
-            value={`${totalPnlPercent >= 0 ? "+" : ""}${totalPnlPercent.toFixed(2)}%`}
-            change={totalPnlPercent}
+            value={`${(liveTotalPnlPct || totalPnlPercent) >= 0 ? "+" : ""}${(liveTotalPnlPct || totalPnlPercent).toFixed(2)}%`}
+            change={liveTotalPnlPct || totalPnlPercent}
             icon={Percent}
           />
         </div>
 
+        {wsConnected && liveHoldings.some(h => livePrices[h.symbol.toUpperCase()]) && (
+          <div className="flex items-center gap-2 text-xs text-success">
+            <Zap className="h-3 w-3" />
+            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+            Live WebSocket prices active for {Object.keys(livePrices).filter(k => livePrices[k] > 0).length} assets
+          </div>
+        )}
+
         {/* Portfolio Content */}
-        {holdings.length === 0 ? (
+        {liveHoldings.length === 0 ? (
           <Card className="p-12 text-center">
             <Wallet className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">{t("portfolio.noHoldings")}</h2>
@@ -242,7 +273,7 @@ export default function Portfolio() {
                     </tr>
                   </thead>
                   <tbody>
-                    {holdings.map((holding) => (
+                    {liveHoldings.map((holding) => (
                       <tr key={holding.id} className="border-b border-border/50 hover:bg-muted/30">
                         <td className="py-3">
                           <div className="flex items-center gap-2">

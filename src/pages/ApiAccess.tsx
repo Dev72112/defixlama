@@ -5,30 +5,46 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { useApiKeys } from "@/hooks/useApiKeys";
+import { useAuth } from "@/hooks/useAuth";
 import {
-  Key, Copy, Eye, EyeOff, Lock, BarChart3, Code2,
+  Key, Copy, Eye, EyeOff, Lock, BarChart3, Code2, Plus, Loader2, Ban, Shield,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
   Tooltip, CartesianGrid,
 } from "recharts";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function ApiAccess() {
-  const [showKey, setShowKey] = useState(false);
+  const { user } = useAuth();
+  const { keys, activeKeys, usage, loading, generating, totalRequests, generateKey, revokeKey } = useApiKeys();
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [newRawKey, setNewRawKey] = useState<string | null>(null);
 
-  // Deterministic usage data (last 30 days)
-  const usageData = useMemo(() => {
-    return Array.from({ length: 30 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (29 - i));
-      return {
-        day: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-        requests: 0,
-      };
-    });
-  }, []);
+  const handleGenerate = async () => {
+    const raw = await generateKey("Default");
+    if (raw) {
+      setNewRawKey(raw);
+      toast({ title: "API Key Generated", description: "Copy it now — it won't be shown again." });
+    } else {
+      toast({ title: "Error", description: "Failed to generate key. Please try again.", variant: "destructive" });
+    }
+  };
+
+  const handleCopyNew = () => {
+    if (newRawKey) {
+      navigator.clipboard.writeText(newRawKey);
+      toast({ title: "Copied", description: "API key copied to clipboard" });
+    }
+  };
+
+  const handleRevoke = async (id: string) => {
+    await revokeKey(id);
+    toast({ title: "Key Revoked", description: "This API key has been deactivated." });
+  };
 
   const endpoints = [
     { method: "GET", path: "/api/v1/protocols", desc: "List all tracked protocols with TVL and metadata", rateLimit: "60/min" },
@@ -42,11 +58,6 @@ export default function ApiAccess() {
     { method: "GET", path: "/api/v1/dexs", desc: "DEX volume data across all chains", rateLimit: "30/min" },
     { method: "GET", path: "/api/v1/stablecoins", desc: "Stablecoin market caps and peg data", rateLimit: "30/min" },
   ];
-
-  const copyKey = () => {
-    navigator.clipboard.writeText("dxl_live_xxxxxxxxxxxxxxxxxxxx");
-    toast({ title: "Copied", description: "API key copied to clipboard" });
-  };
 
   return (
     <TierGate requiredTier="pro">
@@ -64,22 +75,74 @@ export default function ApiAccess() {
           </p>
         </div>
 
-        {/* API Key Section */}
+        {/* API Keys Section */}
         <Card className="p-6 space-y-4">
-          <h3 className="text-lg font-semibold">Your API Key</h3>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 font-mono text-sm bg-muted/50 rounded-lg px-4 py-3 border border-border">
-              {showKey ? "dxl_live_xxxxxxxxxxxxxxxxxxxx" : "••••••••••••••••••••••••"}
-            </div>
-            <Button variant="outline" size="icon" onClick={() => setShowKey(!showKey)}>
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-            <Button variant="outline" size="icon" onClick={copyKey}>
-              <Copy className="h-4 w-4" />
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Your API Keys</h3>
+            <Button onClick={handleGenerate} disabled={generating || !user} size="sm" className="gap-2">
+              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Generate New Key
             </Button>
           </div>
+
+          {/* Show newly generated key (one-time) */}
+          {newRawKey && (
+            <div className="rounded-lg border-2 border-primary/50 bg-primary/5 p-4 space-y-2">
+              <p className="text-sm font-medium text-primary">🔑 New API Key — copy it now, it won't be shown again!</p>
+              <div className="flex items-center gap-3">
+                <code className="flex-1 font-mono text-sm bg-muted/50 rounded-lg px-4 py-3 border border-border break-all">
+                  {newRawKey}
+                </code>
+                <Button variant="outline" size="icon" onClick={handleCopyNew}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setNewRawKey(null)} className="text-xs text-muted-foreground">
+                Dismiss
+              </Button>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Loading keys…
+            </div>
+          ) : keys.length === 0 ? (
+            <div className="text-center py-8">
+              <Shield className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-muted-foreground">No API keys yet. Generate one to get started.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {keys.map((k) => (
+                <div key={k.id} className={cn(
+                  "flex items-center gap-3 rounded-lg border p-3",
+                  k.revokedAt ? "border-border/50 opacity-60" : "border-border"
+                )}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{k.name}</span>
+                      {k.revokedAt && <Badge variant="destructive" className="text-[10px]">Revoked</Badge>}
+                    </div>
+                    <code className="text-xs text-muted-foreground font-mono">{k.keyPrefix}</code>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      Created {new Date(k.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{k.dailyLimit}/day</span>
+                  {!k.revokedAt && (
+                    <Button variant="ghost" size="sm" onClick={() => handleRevoke(k.id)} className="text-destructive hover:text-destructive">
+                      <Ban className="h-4 w-4 mr-1" /> Revoke
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <p className="text-xs text-muted-foreground">
-            Keep your API key secret. Do not share it publicly or commit it to version control.
+            API keys are hashed before storage. The full key is only shown once at generation time.
           </p>
         </Card>
 
@@ -89,23 +152,23 @@ export default function ApiAccess() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="rounded-lg border border-border p-3">
               <p className="text-xs text-muted-foreground">Requests Made</p>
-              <p className="text-2xl font-bold">0</p>
-              <p className="text-xs text-muted-foreground">of 10,000</p>
+              <p className="text-2xl font-bold">{totalRequests.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">of {(activeKeys[0]?.dailyLimit || 100) * 30} monthly</p>
             </div>
             <div className="rounded-lg border border-border p-3">
-              <p className="text-xs text-muted-foreground">Rate Limit</p>
-              <p className="text-2xl font-bold">60</p>
-              <p className="text-xs text-muted-foreground">req/min</p>
+              <p className="text-xs text-muted-foreground">Active Keys</p>
+              <p className="text-2xl font-bold">{activeKeys.length}</p>
+              <p className="text-xs text-muted-foreground">keys</p>
             </div>
             <div className="rounded-lg border border-border p-3">
-              <p className="text-xs text-muted-foreground">Avg Latency</p>
-              <p className="text-2xl font-bold">-</p>
-              <p className="text-xs text-muted-foreground">ms</p>
+              <p className="text-xs text-muted-foreground">Daily Limit</p>
+              <p className="text-2xl font-bold">{activeKeys[0]?.dailyLimit || 100}</p>
+              <p className="text-xs text-muted-foreground">req/day</p>
             </div>
             <div className="rounded-lg border border-border p-3">
-              <p className="text-xs text-muted-foreground">Errors</p>
-              <p className="text-2xl font-bold">0</p>
-              <p className="text-xs text-muted-foreground">this month</p>
+              <p className="text-xs text-muted-foreground">Total Keys</p>
+              <p className="text-2xl font-bold">{keys.length}</p>
+              <p className="text-xs text-muted-foreground">generated</p>
             </div>
           </div>
           {/* Usage Chart */}
@@ -115,7 +178,7 @@ export default function ApiAccess() {
             </h4>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={usageData}>
+                <AreaChart data={usage}>
                   <defs>
                     <linearGradient id="apiUsageGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -123,7 +186,7 @@ export default function ApiAccess() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="day" tick={AXIS_TICK_STYLE} interval={4} />
+                  <XAxis dataKey="date" tick={AXIS_TICK_STYLE} interval={4} />
                   <YAxis tick={AXIS_TICK_STYLE} />
                   <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                   <Area type="monotone" dataKey="requests" stroke="hsl(var(--primary))" fill="url(#apiUsageGrad)" strokeWidth={2} name="Requests" />
