@@ -172,11 +172,16 @@ class WebSocketManager {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    if (this.stableTimeout) {
+      clearTimeout(this.stableTimeout);
+      this.stableTimeout = null;
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
     this.isConnected = false;
+    this.stableIsConnected = false;
     this.reconnectAttempts = 0;
   }
 
