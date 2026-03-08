@@ -390,7 +390,7 @@ function DashboardContent() {
                           <span className="text-primary font-medium">{value}</span>
                         </div>
                       </div>
-                      <div className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">{a.timestamp ? timeAgo(a.timestamp) : "—"}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">{a.timestamp ? timeAgo(a.timestamp) : "Top Ranked"}</div>
                     </Link>
                   </li>
                 );
