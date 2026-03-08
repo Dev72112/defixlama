@@ -245,7 +245,7 @@ export default function ApiAccess() {
         </Card>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

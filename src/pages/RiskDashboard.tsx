@@ -282,7 +282,7 @@ export default function RiskDashboard() {
         </Card>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

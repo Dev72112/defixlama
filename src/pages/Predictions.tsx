@@ -204,7 +204,7 @@ export default function Predictions() {
           </p>
         </div>
         </ErrorBoundary>
-      </Layout>
-    </TierGate>
+      </TierGate>
+    </Layout>
   );
 }

@@ -132,6 +132,9 @@ function UpgradePrompt({ requiredTier }: { requiredTier: string }) {
         <Button onClick={() => navigate("/billing")} className="w-full">
           View Plans & Pricing
         </Button>
+        <Button variant="ghost" onClick={() => navigate(-1 as any)} className="w-full">
+          Go Back
+        </Button>
       </Card>
     </div>
   );

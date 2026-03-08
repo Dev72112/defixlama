@@ -228,7 +228,7 @@ export default function ProtocolComparison() {
           )}
         </div>
         </ErrorBoundary>
-      </Layout>
-    </TierGate>
+      </TierGate>
+    </Layout>
   );
 }

@@ -251,7 +251,7 @@ export default function WhaleActivity() {
         </div>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

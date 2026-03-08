@@ -230,7 +230,7 @@ export default function CommunitySentiment() {
           </Tabs>
         </div>
         </ErrorBoundary>
-      </Layout>
-    </TierGate>
+      </TierGate>
+    </Layout>
   );
 }

@@ -143,7 +143,7 @@ export default function WatchlistExports() {
             </TabsContent>
           </Tabs>
         </div>
-      </Layout>
-    </TierGate>
+      </TierGate>
+    </Layout>
   );
 }

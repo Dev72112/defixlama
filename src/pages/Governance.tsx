@@ -210,7 +210,7 @@ export default function Governance() {
           </Tabs>
         </div>
         </ErrorBoundary>
-      </Layout>
-    </TierGate>
+      </TierGate>
+    </Layout>
   );
 }

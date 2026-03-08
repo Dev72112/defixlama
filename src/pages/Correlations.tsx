@@ -297,7 +297,7 @@ export default function Correlations() {
         </div>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

@@ -292,7 +292,7 @@ export default function MarketStructure() {
         </div>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

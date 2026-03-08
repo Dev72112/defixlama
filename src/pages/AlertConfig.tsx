@@ -235,7 +235,7 @@ export default function AlertConfig() {
             </TabsContent>
           </Tabs>
         </div>
-      </Layout>
-    </TierGate>
+      </TierGate>
+    </Layout>
   );
 }

@@ -193,7 +193,7 @@ export default function Backtester() {
         </Card>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

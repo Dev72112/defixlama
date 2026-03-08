@@ -269,7 +269,7 @@ export default function YieldIntelligence() {
           </div>
         </Card>
       </div>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

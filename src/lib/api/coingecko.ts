@@ -6,7 +6,18 @@ const DEFILLAMA_COINS_URL = "https://coins.llama.fi";
 // CoinGecko proxy via edge function (uses API key)
 const COINGECKO_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/coingecko-proxy`;
 
+// Circuit breaker for CoinGecko proxy
+let consecutiveFailures = 0;
+let circuitOpenUntil = 0;
+const CIRCUIT_THRESHOLD = 3;
+const CIRCUIT_COOLDOWN_MS = 60_000;
+
 async function fetchFromCoinGeckoProxy(endpoint: string, params?: Record<string, string>) {
+  // Circuit breaker: skip proxy if too many recent failures
+  if (consecutiveFailures >= CIRCUIT_THRESHOLD && Date.now() < circuitOpenUntil) {
+    return null;
+  }
+
   try {
     const response = await fetch(COINGECKO_PROXY_URL, {
       method: "POST",
@@ -14,9 +25,16 @@ async function fetchFromCoinGeckoProxy(endpoint: string, params?: Record<string,
       body: JSON.stringify({ endpoint, params }),
     });
     if (!response.ok) throw new Error(`CoinGecko proxy error: ${response.status}`);
+    consecutiveFailures = 0; // Reset on success
     return await response.json();
   } catch (error) {
-    console.error("CoinGecko proxy error:", error);
+    consecutiveFailures++;
+    if (consecutiveFailures >= CIRCUIT_THRESHOLD) {
+      circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
+      console.warn(`CoinGecko proxy circuit breaker open — skipping for ${CIRCUIT_COOLDOWN_MS / 1000}s`);
+    } else {
+      console.warn("CoinGecko proxy error:", error);
+    }
     return null;
   }
 }

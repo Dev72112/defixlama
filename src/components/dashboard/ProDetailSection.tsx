@@ -19,12 +19,12 @@ interface ProDetailSectionProps {
 }
 
 export function ProDetailSection({ title, children, requiredTier = "pro" }: ProDetailSectionProps) {
-  const { tier, isTrialActive, isLoading } = useSubscription();
+  const { tier, isTrialActive, isLoading, isAdmin } = useSubscription();
   const navigate = useNavigate();
 
   if (isLoading) return null;
 
-  const hasAccess = isTrialActive || tierLevel[tier] >= tierLevel[requiredTier];
+  const hasAccess = isAdmin || isTrialActive || tierLevel[tier] >= tierLevel[requiredTier];
   const tierLabel = requiredTier === "pro_plus" ? "PRO+" : "PRO";
 
   if (!hasAccess) {
