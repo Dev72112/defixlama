@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
-  Tooltip, CartesianGrid, Cell,
+  Tooltip, CartesianGrid, Cell, PieChart, Pie,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, CHART_COLORS } from "@/lib/chartStyles";
 import { cn } from "@/lib/utils";
 import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 
