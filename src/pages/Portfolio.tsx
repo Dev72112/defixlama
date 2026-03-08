@@ -206,7 +206,7 @@ export default function Portfolio() {
         )}
 
         {/* Portfolio Content */}
-        {holdings.length === 0 ? (
+        {liveHoldings.length === 0 ? (
           <Card className="p-12 text-center">
             <Wallet className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">{t("portfolio.noHoldings")}</h2>
