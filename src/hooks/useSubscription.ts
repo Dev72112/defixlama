@@ -31,7 +31,7 @@ export function useSubscription(): SubscriptionState {
 
   useEffect(() => {
     if (!user) {
-      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, paddleSubscriptionId: null, status: null });
+      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, paddleSubscriptionId: null, paddleCustomerId: null, status: null });
       return;
     }
 
