@@ -190,7 +190,7 @@ class WebSocketManager {
   getSnapshot() {
     return {
       prices: this.prices,
-      isConnected: this.isConnected,
+      isConnected: this.stableIsConnected,
       lastUpdate: this.lastUpdate,
       error: this.error,
     };
