@@ -360,7 +360,7 @@ export default function MarketStructure() {
             <p className="text-center text-muted-foreground py-12 text-sm">No chain data</p>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-hidden">
                 <table className="data-table w-full">
                   <thead>
                     <tr>

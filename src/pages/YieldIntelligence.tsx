@@ -172,7 +172,7 @@ export default function YieldIntelligence() {
                     {riskAdjusted.slice((page - 1) * pageSize, page * pageSize).map((r, i) => (
                       <tr key={i}>
                         <td className="text-muted-foreground hidden sm:table-cell">{(page - 1) * pageSize + i + 1}</td>
-                        <td className="font-medium text-foreground">{r.pool}</td>
+                        <td className="font-medium text-foreground truncate max-w-[100px] sm:max-w-none">{r.pool}</td>
                         <td className="text-muted-foreground hidden md:table-cell">{r.project}</td>
                         <td className="text-muted-foreground hidden lg:table-cell">{r.chain}</td>
                         <td className="text-right font-mono text-success">{r.apy.toFixed(2)}%</td>

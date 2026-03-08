@@ -364,6 +364,7 @@ export default function Tokens() {
               })()}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Info */}

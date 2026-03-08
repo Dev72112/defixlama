@@ -90,7 +90,7 @@ export function YieldTable({
                       <Droplets className="h-4 w-4" />
                     </div>
                     <div>
-                      <span className="font-medium text-foreground">
+                    <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none block">
                         {pool.symbol}
                       </span>
                       {pool.poolMeta && (
