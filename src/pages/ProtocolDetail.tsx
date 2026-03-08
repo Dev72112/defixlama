@@ -55,7 +55,8 @@ function ProtocolDetailContent() {
     try {
       const arr = Array.isArray(tvlHistory) ? tvlHistory : [];
       // guard against extremely large payloads
-      const safe = arr.slice(-90);
+      const days = dateRange === "all" ? arr.length : dateRange === "1y" ? 365 : dateRange === "90d" ? 90 : dateRange === "30d" ? 30 : 7;
+      const safe = arr.slice(-days);
       return safe.map((item: any) => ({
         date: isNaN(Number(item?.date)) ? "" : new Date(item.date * 1000).toLocaleDateString(),
         tvl: typeof item?.totalLiquidityUSD === "number" && !isNaN(item.totalLiquidityUSD) ? item.totalLiquidityUSD : 0,
