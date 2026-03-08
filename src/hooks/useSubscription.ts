@@ -55,6 +55,7 @@ export function useSubscription(): SubscriptionState {
             trialEndsAt: null,
             isLoading: false,
             paddleSubscriptionId: sub.paddle_subscription_id,
+            paddleCustomerId: sub.paddle_customer_id,
             status: sub.status,
           });
           return;
