@@ -255,9 +255,9 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           id: string
+          paddle_customer_id: string | null
+          paddle_subscription_id: string | null
           status: Database["public"]["Enums"]["subscription_status"]
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
           tier: Database["public"]["Enums"]["subscription_tier"]
           trial_end: string | null
           trial_start: string | null
@@ -268,9 +268,9 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           tier?: Database["public"]["Enums"]["subscription_tier"]
           trial_end?: string | null
           trial_start?: string | null
@@ -281,9 +281,9 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           tier?: Database["public"]["Enums"]["subscription_tier"]
           trial_end?: string | null
           trial_start?: string | null
@@ -502,7 +502,7 @@ export type Database = {
         | "duplicate"
       feedback_type: "bug" | "error" | "feature_request" | "listing" | "other"
       subscription_status: "active" | "canceled" | "past_due" | "trialing"
-      subscription_tier: "free" | "pro" | "enterprise"
+      subscription_tier: "free" | "pro" | "pro_plus" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -643,7 +643,7 @@ export const Constants = {
       ],
       feedback_type: ["bug", "error", "feature_request", "listing", "other"],
       subscription_status: ["active", "canceled", "past_due", "trialing"],
-      subscription_tier: ["free", "pro", "enterprise"],
+      subscription_tier: ["free", "pro", "pro_plus", "enterprise"],
     },
   },
 } as const
