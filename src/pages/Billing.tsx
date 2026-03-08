@@ -24,7 +24,9 @@ declare global {
   }
 }
 
-const PADDLE_CLIENT_TOKEN = "live_ba0e1a0e0e028e3e3f27c2b0bd6"; // Replace with your actual client token if different
+// Paddle client token is a publishable key - safe for frontend
+// Set via VITE_PADDLE_CLIENT_TOKEN env var or fallback
+const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN || "";
 
 const tiers = [
   {
