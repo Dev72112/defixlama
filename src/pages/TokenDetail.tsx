@@ -366,7 +366,7 @@ export default function TokenDetail() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h2 className="text-lg font-semibold text-foreground">Price Chart</h2>
             <div className="flex gap-2">
-              {[1, 7, 30, 90].map((d) => (
+              {[1, 7, 30, 90, 365].map((d) => (
                 <Button
                   key={d}
                   variant={days === d ? "default" : "outline"}

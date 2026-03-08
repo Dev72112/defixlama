@@ -384,21 +384,17 @@ function StablecoinDetailContent() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       type="number"
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={AXIS_TICK_STYLE}
                       tickFormatter={(v) => formatCurrency(v)}
                     />
                     <YAxis
                       type="category"
                       dataKey="name"
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={AXIS_TICK_STYLE}
                       width={80}
                     />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(value: number) => [formatCurrency(value), "Supply"]}
                     />
                     <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
