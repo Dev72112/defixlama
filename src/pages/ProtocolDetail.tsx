@@ -364,7 +364,10 @@ function ProtocolDetailContent() {
 
         {/* TVL Chart */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-6">TVL History (90 Days)</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h2 className="text-lg font-semibold text-foreground">TVL History</h2>
+            <DateRangeSelector value={dateRange} onChange={setDateRange} />
+          </div>
           <div className="h-[300px] md:h-[400px]">
             {historyLoading ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
