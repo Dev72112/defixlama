@@ -253,9 +253,19 @@ export default function TokenDetail() {
               </div>
             )}
             <div className="flex items-center gap-4 mt-2">
-              <span className="text-3xl font-bold text-foreground">
-                {formatTokenPrice(displayToken.market_data?.current_price?.usd)}
+              <span className={cn(
+                "text-3xl font-bold text-foreground transition-colors duration-300",
+                animate && direction === "up" && "text-success",
+                animate && direction === "down" && "text-destructive"
+              )}>
+                {formatTokenPrice(displayPrice)}
               </span>
+              {isLive && isWsSupported && (
+                <span className="flex items-center gap-1 text-[10px] text-success font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                  LIVE
+                </span>
+              )}
               <span
                 className={cn(
                   "flex items-center gap-1 font-mono",
@@ -269,7 +279,7 @@ export default function TokenDetail() {
                 tokenId={tokenId}
                 symbol={tokenSymbol}
                 name={tokenName}
-                currentPrice={displayToken.market_data?.current_price?.usd || 0}
+                currentPrice={displayPrice}
               />
             </div>
           </div>

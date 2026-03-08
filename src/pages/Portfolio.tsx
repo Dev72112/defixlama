@@ -3,13 +3,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePortfolio } from "@/hooks/usePortfolio";
+import { useLivePrices } from "@/hooks/useLivePrice";
 import { formatCurrency } from "@/lib/api/defillama";
 import { useTranslation } from "react-i18next";
 import { 
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, 
-  PieChart, DollarSign, Percent, Activity 
+  PieChart, DollarSign, Percent, Activity, Zap
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
