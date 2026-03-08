@@ -13,7 +13,17 @@ export interface Holding {
   addedAt: number;
 }
 
-const STORAGE_KEY = "xlayer-portfolio";
+const STORAGE_KEY = "defixlama-portfolio";
+const LEGACY_KEY = "xlayer-portfolio";
+
+// Migrate legacy key
+try {
+  const legacy = localStorage.getItem(LEGACY_KEY);
+  if (legacy && !localStorage.getItem(STORAGE_KEY)) {
+    localStorage.setItem(STORAGE_KEY, legacy);
+    localStorage.removeItem(LEGACY_KEY);
+  }
+} catch {}
 
 function getLocalHoldings(): Holding[] {
   try {

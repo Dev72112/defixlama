@@ -315,14 +315,51 @@ export async function fetchTokenDetails(id: string): Promise<any> {
     });
     if (proxyData && !proxyData.error) return proxyData;
     
-    // Fallback to direct API
+    // Fallback to direct CoinGecko API
     const response = await fetch(
       `${COINGECKO_BASE_URL}/coins/${encodeURIComponent(id)}?localization=false&tickers=false&community_data=false&developer_data=false`
     );
-    if (!response.ok) throw new Error("Failed to fetch token details");
-    return await response.json();
+    if (response.ok) return await response.json();
+    
+    // If both CoinGecko sources fail, build partial data from DefiLlama
+    console.warn(`CoinGecko unavailable for ${id}, falling back to DefiLlama`);
+    return await buildFallbackTokenDetails(id);
   } catch (error) {
     console.error("Error fetching token details:", error);
+    // Last resort: try DefiLlama fallback
+    try { return await buildFallbackTokenDetails(id); } catch { return null; }
+  }
+}
+
+async function buildFallbackTokenDetails(id: string): Promise<any | null> {
+  try {
+    const tokenKey = `coingecko:${id}`;
+    const res = await fetch(`${DEFILLAMA_COINS_URL}/prices/current/${encodeURIComponent(tokenKey)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const coin = data.coins?.[tokenKey];
+    if (!coin) return null;
+    
+    const symbol = TOKEN_IDS_REVERSE[id] || coin.symbol || id;
+    return {
+      id,
+      symbol: symbol.toLowerCase(),
+      name: TOKEN_NAMES[id] || coin.symbol || id,
+      image: { large: TOKEN_LOGOS[id] || null, small: TOKEN_LOGOS[id] || null },
+      market_data: {
+        current_price: { usd: coin.price || 0 },
+        price_change_percentage_24h: 0,
+        price_change_percentage_7d: 0,
+        total_volume: { usd: 0 },
+        market_cap: { usd: coin.mcap || 0 },
+        circulating_supply: 0,
+        total_supply: 0,
+        max_supply: null,
+      },
+      description: { en: `Market data provided by DefiLlama. CoinGecko data temporarily unavailable.` },
+      _fallback: true,
+    };
+  } catch {
     return null;
   }
 }

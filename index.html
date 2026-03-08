@@ -49,11 +49,15 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Register service worker
+      // Unregister any existing service workers to ensure fresh updates
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var registration of registrations) {
+            registration.unregister();
+          }
         });
+        // Also register the self-unregistering SW to clean caches for existing users
+        navigator.serviceWorker.register('/sw.js').catch(function() {});
       }
     </script>
   </body>

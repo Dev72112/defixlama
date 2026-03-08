@@ -14,7 +14,17 @@ interface ChainContextType {
 
 const ChainContext = createContext<ChainContextType | undefined>(undefined);
 
-const STORAGE_KEY = "xlayer-selected-chain";
+const STORAGE_KEY = "defixlama-selected-chain";
+const LEGACY_KEY = "xlayer-selected-chain";
+
+// Migrate legacy key
+try {
+  const legacy = localStorage.getItem(LEGACY_KEY);
+  if (legacy && !localStorage.getItem(STORAGE_KEY)) {
+    localStorage.setItem(STORAGE_KEY, legacy);
+    localStorage.removeItem(LEGACY_KEY);
+  }
+} catch {}
 
 export function ChainProvider({ children }: { children: ReactNode }) {
   const [selectedChain, setSelectedChainState] = useState<Chain>(() => {

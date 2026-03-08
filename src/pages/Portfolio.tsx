@@ -256,7 +256,10 @@ export default function Portfolio() {
                         borderRadius: "8px",
                       }}
                     />
-                    <Legend />
+                    <Legend formatter={(value: string, entry: any) => {
+                      const item = pieData.find(d => d.name === value);
+                      return `${value} (${item?.percent || 0}%)`;
+                    }} />
                   </RechartsPie>
                 </ResponsiveContainer>
               </div>
