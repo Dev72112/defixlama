@@ -194,7 +194,7 @@ function FeesContent() {
         {/* Fees Table */}
         {isLoading ? (
           <div className="rounded-lg border border-border bg-card overflow-x-auto">
-            <table className="data-table w-full min-w-[500px]">
+            <table className="data-table w-full">
               <thead>
                 <tr className="bg-muted/30">
                   <th className="w-12 hidden sm:table-cell">#</th>
