@@ -25,6 +25,7 @@ export function useSubscription(): SubscriptionState {
     trialEndsAt: null,
     isLoading: true,
     paddleSubscriptionId: null,
+    paddleCustomerId: null,
     status: null,
   });
 
