@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.paddle-portal]
 verify_jwt = false
+
+[functions.paddle-config]
+verify_jwt = false
