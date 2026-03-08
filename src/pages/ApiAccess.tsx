@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
