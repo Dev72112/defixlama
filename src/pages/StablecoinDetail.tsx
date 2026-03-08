@@ -350,11 +350,7 @@ function StablecoinDetailContent() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(value: number) => [formatCurrency(value), "Supply"]}
                     />
                   </RechartsPie>
