@@ -1,20 +1,10 @@
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, ChevronRight, GitCompare, Download } from "lucide-react";
+import { Wallet, TrendingUp, Search, Coins, Activity, ExternalLink, GitCompare, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useEffect } from "react";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/api/defillama";
 import { useTokenPrices } from "@/hooks/useTokenData";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +15,7 @@ import { exportToCSV } from "@/lib/export";
 import { PriceDisplay, ChangeDisplay } from "@/components/PriceDisplay";
 import { ErrorState } from "@/components/ErrorState";
 import { useChain } from "@/contexts/ChainContext";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 
 export default function Tokens() {
   const { t } = useTranslation();
@@ -43,11 +34,9 @@ export default function Tokens() {
     if (isAllChains) return true;
     const chainId = selectedChain.id.toLowerCase();
     const chainSlug = selectedChain.slug.toLowerCase();
-    // Match token chain field against chain id or slug
     if (t.chain && (t.chain.toLowerCase() === chainId || t.chain.toLowerCase() === chainSlug)) return true;
     if (t.isCommunityToken && chainId === "xlayer") return true;
     if (t.isDbListing && t.chain && (t.chain.toLowerCase() === chainId || t.chain.toLowerCase() === chainSlug)) return true;
-    // Major tokens with no chain field show on all chains
     if (!t.chain && !t.isCommunityToken && !t.isDbListing) return true;
     return false;
   });
@@ -57,7 +46,6 @@ export default function Tokens() {
     t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Calculate metrics from chain-filtered tokens
   const totalMcap = chainFilteredTokens.reduce((acc: number, t: any) => acc + (t.mcap || 0), 0);
   const totalVolume = chainFilteredTokens.reduce((acc: number, t: any) => acc + (t.volume24h || 0), 0);
   const validTokens = chainFilteredTokens.filter((t: any) => t.price > 0);
@@ -65,65 +53,114 @@ export default function Tokens() {
     ? validTokens.reduce((acc: number, t: any) => acc + (t.change24h || 0), 0) / validTokens.length 
     : 0;
 
-  // Get the correct route ID for each token
   const getTokenRouteId = (token: any) => {
-    // For DB listings, use coingecko_id if available, otherwise the DB id
-    if (token.isDbListing) {
-      return token.id;
-    }
-    
-    // For community tokens, use coingeckoId if available, otherwise contract
+    if (token.isDbListing) return token.id;
     if (token.isCommunityToken) {
-      // Find the matching community token to get its coingeckoId
       const communityMatch = XLAYER_COMMUNITY_TOKENS.find(
         t => t.symbol.toLowerCase() === token.symbol.toLowerCase()
       );
-      if (communityMatch?.coingeckoId) {
-        return communityMatch.coingeckoId;
-      }
-      if (token.contract) {
-        return token.contract;
-      }
+      if (communityMatch?.coingeckoId) return communityMatch.coingeckoId;
+      if (token.contract) return token.contract;
     }
-    
-    // For standard tokens, use CoinGecko ID if available, otherwise the stored id
-    if (token.id) {
-      return token.id;
-    }
-    
-    // Check if we have a mapping for this symbol
+    if (token.id) return token.id;
     const cgId = TOKEN_IDS[token.symbol];
-    if (cgId) {
-      return cgId;
-    }
-    
-    // Fallback to lowercase symbol
+    if (cgId) return cgId;
     return token.symbol.toLowerCase();
   };
 
-  // Prepare tokens for price comparison component
   const comparisonTokens = (tokens || []).map((t) => ({
-    symbol: t.symbol,
-    name: t.name,
-    price: t.price,
-    change24h: t.change24h,
-    logo: t.logo,
+    symbol: t.symbol, name: t.name, price: t.price, change24h: t.change24h, logo: t.logo,
   }));
 
   const handleExport = () => {
     if (!filteredTokens.length) return;
     exportToCSV(
       filteredTokens.map(t => ({
-        Symbol: t.symbol,
-        Name: t.name,
-        Price: t.price,
-        "24h Change": t.change24h,
-        Volume: t.volume24h,
-        "Market Cap": t.mcap,
+        Symbol: t.symbol, Name: t.name, Price: t.price,
+        "24h Change": t.change24h, Volume: t.volume24h, "Market Cap": t.mcap,
       })),
       "tokens"
     );
   };
+
+  const totalPages = Math.ceil(filteredTokens.length / itemsPerPage);
+  const paginatedTokens = filteredTokens.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const columns: ResponsiveColumn<any>[] = [
+    {
+      key: "watchlist", label: "", priority: "desktop", className: "w-10",
+      render: (token) => {
+        const routeId = getTokenRouteId(token);
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <WatchlistButton item={{ id: routeId, symbol: token.symbol, name: token.name, type: "token" }} />
+          </div>
+        );
+      },
+    },
+    {
+      key: "rank", label: "#", priority: "desktop", className: "w-12",
+      render: (_token, index) => (
+        <span className="text-muted-foreground font-mono text-sm">
+          {(currentPage - 1) * itemsPerPage + index + 1}
+        </span>
+      ),
+    },
+    {
+      key: "name", label: t("tokens.token"), priority: "always",
+      render: (token) => (
+        <div className="flex items-center gap-3">
+          {token.logo ? (
+            <img src={token.logo} alt={token.name} className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-muted flex-shrink-0"
+              onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${token.symbol}&background=1a1a2e&color=2dd4bf&size=32`; }}
+            />
+          ) : (
+            <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs sm:text-sm flex-shrink-0">
+              {token.symbol.slice(0, 2)}
+            </div>
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">{token.name}</span>
+              {token.isCommunityToken && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary/20 text-primary font-medium">{t("tokens.community")}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{token.symbol}</span>
+              {token.contract && selectedChain.id === "xlayer" && (
+                <a href={`https://www.okx.com/explorer/xlayer/address/${encodeURIComponent(token.contract)}`}
+                  target="_blank" rel="noopener noreferrer" className="text-xs text-primary/70 hover:text-primary"
+                  onClick={(e) => e.stopPropagation()}>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "price", label: t("tokens.price"), priority: "always", align: "right",
+      render: (token) => (
+        <span className="font-mono font-medium text-foreground whitespace-nowrap">
+          <PriceDisplay price={token.price} />
+        </span>
+      ),
+    },
+    {
+      key: "change24h", label: t("tokens.change24h"), priority: "always", align: "right",
+      render: (token) => token.price > 0 ? <ChangeDisplay change={token.change24h} /> : <span className="text-muted-foreground">-</span>,
+    },
+    {
+      key: "volume24h", label: t("tokens.volume"), priority: "expanded", align: "right",
+      render: (token) => <span className="font-mono text-muted-foreground whitespace-nowrap">{token.volume24h > 0 ? formatCurrency(token.volume24h) : "-"}</span>,
+    },
+    {
+      key: "mcap", label: t("tokens.mcap"), priority: "expanded", align: "right",
+      render: (token) => <span className="font-mono font-medium text-foreground whitespace-nowrap">{token.mcap > 0 ? formatCurrency(token.mcap) : "-"}</span>,
+    },
+  ];
 
   return (
     <Layout>
@@ -132,276 +169,81 @@ export default function Tokens() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t("tokens.title")}</h1>
-            <p className="text-muted-foreground mt-1">
-              {t("tokens.subtitle")}
-            </p>
+            <p className="text-muted-foreground mt-1">{t("tokens.subtitle")}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
-              <Download className="h-4 w-4" />
-              {t("tokens.export")}
+              <Download className="h-4 w-4" />{t("tokens.export")}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowComparison(true)}
-              className="gap-2"
-            >
-              <GitCompare className="h-4 w-4" />
-              {t("tokens.compare")}
+            <Button variant="outline" size="sm" onClick={() => setShowComparison(true)} className="gap-2">
+              <GitCompare className="h-4 w-4" />{t("tokens.compare")}
             </Button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
-              <Activity className="h-4 w-4 animate-pulse" />
-              {t("common.live")}
+              <Activity className="h-4 w-4 animate-pulse" />{t("common.live")}
             </div>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title={t("tokens.totalMarketCap")}
-            value={formatCurrency(totalMcap)}
-            icon={Coins}
-            loading={isLoading}
-          />
-          <StatCard
-            title={t("tokens.volume24h")}
-            value={formatCurrency(totalVolume)}
-            icon={Activity}
-            loading={isLoading}
-          />
-          <StatCard
-            title={t("tokens.tokensTracked")}
-            value={chainFilteredTokens.length.toString()}
-            icon={Wallet}
-            loading={isLoading}
-          />
-          <StatCard
-            title={t("tokens.avgChange24h")}
-            value={`${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(2)}%`}
-            change={avgChange}
-            icon={TrendingUp}
-            loading={isLoading}
-          />
+          <StatCard title={t("tokens.totalMarketCap")} value={formatCurrency(totalMcap)} icon={Coins} loading={isLoading} />
+          <StatCard title={t("tokens.volume24h")} value={formatCurrency(totalVolume)} icon={Activity} loading={isLoading} />
+          <StatCard title={t("tokens.tokensTracked")} value={chainFilteredTokens.length.toString()} icon={Wallet} loading={isLoading} />
+          <StatCard title={t("tokens.avgChange24h")} value={`${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(2)}%`} change={avgChange} icon={TrendingUp} loading={isLoading} />
         </div>
 
         {/* Search */}
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t("tokens.searchPlaceholder")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+          <Input placeholder={t("tokens.searchPlaceholder")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
 
         {/* Tokens Table */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-          <table className="data-table w-full">
-            <thead>
-              <tr className="bg-muted/30">
-                <th className="w-10 hidden sm:table-cell"></th>
-                <th className="w-12 hidden sm:table-cell">#</th>
-                <th className="text-left">{t("tokens.token")}</th>
-                <th className="text-right">{t("tokens.price")}</th>
-                <th className="text-right">{t("tokens.change24h")}</th>
-                <th className="text-right hidden md:table-cell">{t("tokens.volume")}</th>
-                <th className="text-right hidden lg:table-cell">{t("tokens.mcap")}</th>
-                <th className="w-12 hidden sm:table-cell"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array(8).fill(0).map((_, i) => (
-                  <tr key={i}>
-                    <td className="hidden sm:table-cell"></td>
-                    <td className="hidden sm:table-cell"><div className="skeleton h-4 w-6" /></td>
-                    <td><div className="skeleton h-8 w-32" /></td>
-                    <td><div className="skeleton h-4 w-20 ml-auto" /></td>
-                    <td><div className="skeleton h-4 w-16 ml-auto" /></td>
-                    <td className="hidden md:table-cell"><div className="skeleton h-4 w-20 ml-auto" /></td>
-                    <td className="hidden lg:table-cell"><div className="skeleton h-4 w-20 ml-auto" /></td>
-                    <td className="hidden sm:table-cell"></td>
-                  </tr>
-                ))
-              ) : isError ? (
-                <tr>
-                  <td colSpan={8} className="py-8">
-                    <ErrorState 
-                      error={error as Error}
-                      onRetry={() => refetch()}
-                      compact
-                    />
-                  </td>
-                </tr>
-              ) : (() => {
-                const totalPages = Math.ceil(filteredTokens.length / itemsPerPage);
-                const paginatedTokens = filteredTokens.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-                return (<>
-                {paginatedTokens.map((token, index) => {
-                const routeId = getTokenRouteId(token);
-                const isCommunity = token.isCommunityToken;
-                return (
-                  <tr
-                    key={token.symbol}
-                    className={cn(
-                      "group hover:bg-muted/30 transition-colors cursor-pointer",
-                      isCommunity && "bg-primary/5"
-                    )}
-                    onClick={() => navigate(`/tokens/${routeId}`)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/tokens/${routeId}`); }}
-                  >
-                    <td className="hidden sm:table-cell">
-                      <WatchlistButton
-                        item={{
-                          id: routeId,
-                          symbol: token.symbol,
-                          name: token.name,
-                          type: "token",
-                        }}
-                      />
-                    </td>
-                    <td className="text-muted-foreground font-mono text-sm hidden sm:table-cell">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        {token.logo ? (
-                          <img
-                            src={token.logo}
-                            alt={token.name}
-                            className="h-8 w-8 rounded-full bg-muted flex-shrink-0"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${token.symbol}&background=1a1a2e&color=2dd4bf&size=32`;
-                            }}
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                            {token.symbol.slice(0, 2)}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground block truncate">
-                              {token.name}
-                            </span>
-                            {isCommunity && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary/20 text-primary font-medium">
-                                {t("tokens.community")}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
-                              {token.symbol}
-                            </span>
-                            {token.contract && selectedChain.id === "xlayer" && (
-                                <a
-                                href={`https://www.okx.com/explorer/xlayer/address/${encodeURIComponent(token.contract)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-primary/70 hover:text-primary"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="text-right font-mono font-medium text-foreground whitespace-nowrap">
-                      <PriceDisplay price={token.price} />
-                    </td>
-                    <td className="text-right whitespace-nowrap">
-                      {token.price > 0 ? (
-                        <ChangeDisplay change={token.change24h} />
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </td>
-                    <td className="text-right font-mono text-muted-foreground hidden md:table-cell whitespace-nowrap">
-                      {token.volume24h > 0 ? formatCurrency(token.volume24h) : "-"}
-                    </td>
-                    <td className="text-right font-mono font-medium text-foreground hidden lg:table-cell whitespace-nowrap">
-                      {token.mcap > 0 ? formatCurrency(token.mcap) : "-"}
-                    </td>
-                    <td className="hidden sm:table-cell">
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </td>
-                  </tr>
-                );
-              })}
-              {totalPages > 1 && (
-                <tr>
-                  <td colSpan={8} className="py-4">
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                        </PaginationItem>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                          .filter((p) => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
-                          .map((p, idx, arr) => (
-                            <PaginationItem key={p}>
-                              {idx > 0 && arr[idx - 1] !== p - 1 && <PaginationEllipsis />}
-                              <PaginationLink isActive={p === currentPage} onClick={() => setCurrentPage(p)} className="cursor-pointer">{p}</PaginationLink>
-                            </PaginationItem>
-                          ))}
-                        <PaginationItem>
-                          <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
-                  </td>
-                </tr>
-              )}
-              </>);
-              })()}
-            </tbody>
-          </table>
+        {isError ? (
+          <ErrorState error={error as Error} onRetry={() => refetch()} />
+        ) : (
+          <ResponsiveDataTable
+            columns={columns}
+            data={paginatedTokens}
+            keyField={(token: any) => token.symbol}
+            onRowClick={(token) => navigate(`/tokens/${getTokenRouteId(token)}`)}
+            loading={isLoading}
+            loadingRows={8}
+            emptyMessage={t("tokens.noTokensFound") || "No tokens found"}
+          />
+        )}
+
+        {/* Pagination */}
+        {!isLoading && totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              {t("common.showing") || "Showing"} {paginatedTokens.length} {t("common.of") || "of"} {filteredTokens.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                {t("protocols.prev") || "Prev"}
+              </Button>
+              <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
+              <Button variant="ghost" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                {t("protocols.next") || "Next"}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Info */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-2">
-          <p className="text-sm text-muted-foreground">
-            {t("tokens.priceInfo")}
-          </p>
+          <p className="text-sm text-muted-foreground">{t("tokens.priceInfo")}</p>
           <div className="flex flex-wrap gap-4 pt-2">
-            <a
-              href="https://defillama.com/docs/api"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary/70 hover:text-primary transition-colors"
-            >
-              DefiLlama API Docs →
-            </a>
+            <a href="https://defillama.com/docs/api" target="_blank" rel="noopener noreferrer" className="text-xs text-primary/70 hover:text-primary transition-colors">DefiLlama API Docs →</a>
             {selectedChain.slug && (
-              <a
-                href={`https://defillama.com/chain/${selectedChain.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-primary/70 hover:text-primary transition-colors"
-              >
-                {selectedChain.name} on DefiLlama →
-              </a>
+              <a href={`https://defillama.com/chain/${selectedChain.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary/70 hover:text-primary transition-colors">{selectedChain.name} on DefiLlama →</a>
             )}
           </div>
         </div>
       </div>
 
-      {/* Price Comparison Modal */}
-      <PriceComparison
-        tokens={comparisonTokens}
-        isOpen={showComparison}
-        onClose={() => setShowComparison(false)}
-      />
+      <PriceComparison tokens={comparisonTokens} isOpen={showComparison} onClose={() => setShowComparison(false)} />
     </Layout>
   );
 }
