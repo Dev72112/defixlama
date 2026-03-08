@@ -22,6 +22,10 @@ import {
 } from "recharts";
 
 export default function StablecoinDetail() {
+  return <ErrorBoundary><StablecoinDetailContent /></ErrorBoundary>;
+}
+
+function StablecoinDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: stablecoins, isLoading } = useStablecoins();
 
