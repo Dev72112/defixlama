@@ -126,7 +126,7 @@ function DashboardContent() {
       });
     }
 
-    // Top fees (no timestamp in payload) — give recent synthetic timestamps so they appear now
+    // Top fees — ranked items, no real timestamps available
     const feesList = feesData?.data ?? [];
     if (Array.isArray(feesList) && feesList.length > 0) {
       const topFees = feesList
@@ -139,7 +139,7 @@ function DashboardContent() {
           id: f.name || f.displayName || `fee-${i}`,
           title: f.displayName || f.name,
           subtitle: `24h ${formatCurrency(f.total24h || f.total_24h || 0)}`,
-          timestamp: Math.floor(Date.now() / 1000) - (i + 1) * 60,
+          timestamp: 0, // No real timestamp
           meta: f,
         });
       });
