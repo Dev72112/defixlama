@@ -156,34 +156,19 @@ export default function YieldIntelligence() {
             <ChartEmptyState message="No yield pools with sufficient data" height="h-[200px]" />
           ) : (
             <>
-              <div className="overflow-hidden">
-                <table className="data-table w-full">
-                  <thead>
-                    <tr>
-                      <th className="hidden sm:table-cell">#</th>
-                      <th>Pool</th>
-                      <th className="hidden md:table-cell">Project</th>
-                      <th className="hidden lg:table-cell">Chain</th>
-                      <th className="text-right">APY</th>
-                      <th className="text-right">TVL</th>
-                      <th className="text-right hidden sm:table-cell">Risk Score</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {riskAdjusted.slice((page - 1) * pageSize, page * pageSize).map((r, i) => (
-                      <tr key={i}>
-                        <td className="text-muted-foreground hidden sm:table-cell">{(page - 1) * pageSize + i + 1}</td>
-                        <td className="font-medium text-foreground truncate max-w-[100px] sm:max-w-none">{r.pool}</td>
-                        <td className="text-muted-foreground hidden md:table-cell">{r.project}</td>
-                        <td className="text-muted-foreground hidden lg:table-cell">{r.chain}</td>
-                        <td className="text-right font-mono text-success">{r.apy.toFixed(2)}%</td>
-                        <td className="text-right font-mono">{formatCurrency(r.tvl)}</td>
-                        <td className="text-right font-mono text-primary hidden sm:table-cell">{r.riskScore.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ResponsiveDataTable
+                columns={[
+                  { key: "rank", label: "#", priority: "desktop" as const, className: "w-12", render: (_r: any, i: number) => <span className="text-muted-foreground font-mono text-sm">{(page - 1) * pageSize + i + 1}</span> },
+                  { key: "pool", label: "Pool", priority: "always" as const, render: (r: any) => <span className="font-medium text-foreground">{r.pool}</span> },
+                  { key: "project", label: "Project", priority: "expanded" as const, render: (r: any) => <span className="text-muted-foreground">{r.project}</span> },
+                  { key: "chain", label: "Chain", priority: "expanded" as const, render: (r: any) => <span className="text-muted-foreground">{r.chain}</span> },
+                  { key: "apy", label: "APY", priority: "always" as const, align: "right" as const, render: (r: any) => <span className="font-mono text-success">{r.apy.toFixed(2)}%</span> },
+                  { key: "tvl", label: "TVL", priority: "expanded" as const, align: "right" as const, render: (r: any) => <span className="font-mono">{formatCurrency(r.tvl)}</span> },
+                  { key: "riskScore", label: "Risk Score", priority: "expanded" as const, align: "right" as const, render: (r: any) => <span className="font-mono text-primary">{r.riskScore.toFixed(2)}</span> },
+                ]}
+                data={riskAdjusted.slice((page - 1) * pageSize, page * pageSize)}
+                keyField={(_r: any, i: number) => String((page - 1) * pageSize + i)}
+              />
               {riskAdjusted.length > pageSize && (
                 <div className="mt-4">
                   <Pagination>
