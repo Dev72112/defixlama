@@ -158,8 +158,12 @@ function DashboardContent() {
       });
     }
 
-    // Sort by timestamp desc and limit
-    return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
+    // Sort: items with real timestamps first (desc), then ranked items
+    return items.sort((a, b) => {
+      if (a.timestamp && !b.timestamp) return -1;
+      if (!a.timestamp && b.timestamp) return 1;
+      return b.timestamp - a.timestamp;
+    }).slice(0, 6);
   }, [recentProtocols, feesData?.data, topChains]);
 
   const newProtocolsCount = useMemo(() => {
