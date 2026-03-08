@@ -71,11 +71,15 @@ export default function CommunitySentiment() {
     }));
   }, [protocols]);
 
-  const sourceBreakdown = useMemo(() => [
-    { name: "Twitter/X", value: 45 },
-    { name: "Reddit", value: 30 },
-    { name: "GitHub", value: 25 },
-  ], []);
+  const neutralCount = sentimentData.filter((s) => s.trend === "neutral").length;
+  const sourceBreakdown = useMemo(() => {
+    const total = sentimentData.length || 1;
+    return [
+      { name: "Bullish", value: Math.round((sentimentData.filter(s => s.trend === "bullish").length / total) * 100) },
+      { name: "Neutral", value: Math.round((sentimentData.filter(s => s.trend === "neutral").length / total) * 100) },
+      { name: "Bearish", value: Math.round((sentimentData.filter(s => s.trend === "bearish").length / total) * 100) },
+    ];
+  }, [sentimentData]);
 
   const bullishCount = sentimentData.filter((s) => s.trend === "bullish").length;
   const bearishCount = sentimentData.filter((s) => s.trend === "bearish").length;
