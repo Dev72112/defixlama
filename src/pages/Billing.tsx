@@ -3,9 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard, Check, Crown, Zap, Shield,
+  CreditCard, Check, Crown, Zap, Shield, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSubscription } from "@/hooks/useSubscription";
+import { format } from "date-fns";
 
 const tiers = [
   {
@@ -21,29 +23,47 @@ const tiers = [
       "Community access",
     ],
     cta: "Current Plan",
-    active: true,
+    tierKey: "free",
     icon: Zap,
   },
   {
     name: "Pro",
-    price: "$20",
+    price: "$29",
     period: "/month",
     description: "Advanced analytics & tools",
     features: [
       "Everything in Free",
+      "Backtester",
+      "Risk Dashboard",
+      "Predictions",
+      "Alert Config",
+      "Governance",
+      "Protocol Comparison",
+      "API Access (10k req/mo)",
+    ],
+    cta: "Upgrade to Pro",
+    tierKey: "pro",
+    popular: true,
+    icon: Crown,
+  },
+  {
+    name: "Pro+",
+    price: "$59",
+    period: "/month",
+    description: "Full analytics suite",
+    features: [
+      "Everything in Pro",
       "Whale Activity tracking",
       "Market Structure analysis",
       "Yield Intelligence",
       "Correlation matrix",
-      "Backtester",
-      "Risk Dashboard",
-      "API Access (10k req/mo)",
-      "Priority support",
+      "Community Sentiment",
+      "Watchlist Exports",
+      "Unlimited API access",
     ],
-    cta: "3 Month Free Trial",
-    active: false,
-    popular: true,
-    icon: Crown,
+    cta: "Upgrade to Pro+",
+    tierKey: "pro_plus",
+    icon: Sparkles,
   },
   {
     name: "Enterprise",
@@ -51,20 +71,22 @@ const tiers = [
     period: "",
     description: "For institutions & teams",
     features: [
-      "Everything in Pro",
-      "Unlimited API access",
+      "Everything in Pro+",
       "Custom data feeds",
       "White-label options",
       "Dedicated support",
       "SLA guarantee",
     ],
-    cta: "Contact Us",
-    active: false,
+    cta: "Coming Soon",
+    tierKey: "enterprise",
+    comingSoon: true,
     icon: Shield,
   },
 ];
 
 export default function Billing() {
+  const { tier, isTrialActive, trialEndsAt } = useSubscription();
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -80,60 +102,73 @@ export default function Billing() {
 
         {/* Current Status */}
         <Card className="p-6 border-primary/30 bg-primary/5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Current Plan</p>
-              <p className="text-xl font-bold">Free Trial</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                All PRO features unlocked for 3 months
+              <p className="text-xl font-bold">
+                {isTrialActive ? "Free Trial (Pro+ Access)" : tier.toUpperCase()}
               </p>
+              {isTrialActive && trialEndsAt && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Trial ends {format(trialEndsAt, "MMM d, yyyy")} — All Pro+ features unlocked
+                </p>
+              )}
             </div>
-            <Badge className="bg-primary/20 text-primary px-3 py-1 text-sm">
-              Active
+            <Badge className="bg-primary/20 text-primary px-3 py-1 text-sm w-fit">
+              {isTrialActive ? "Trial Active" : "Active"}
             </Badge>
           </div>
         </Card>
 
         {/* Pricing Tiers */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {tiers.map((tier) => {
-            const Icon = tier.icon;
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          {tiers.map((t) => {
+            const Icon = t.icon;
+            const isCurrentTier = !isTrialActive && tier === t.tierKey;
+            const isDisabled = t.comingSoon || isCurrentTier;
+
             return (
               <Card
-                key={tier.name}
+                key={t.name}
                 className={cn(
-                  "p-6 relative",
-                  tier.popular && "border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.1)]"
+                  "p-5 relative flex flex-col",
+                  t.popular && "border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.1)]",
+                  t.comingSoon && "opacity-75"
                 )}
               >
-                {tier.popular && (
+                {t.popular && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                     Most Popular
                   </Badge>
                 )}
-                <div className="text-center mb-6">
-                  <Icon className="h-8 w-8 mx-auto mb-3 text-primary" />
-                  <h3 className="text-xl font-bold">{tier.name}</h3>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold">{tier.price}</span>
-                    <span className="text-muted-foreground">{tier.period}</span>
+                {t.comingSoon && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-muted text-muted-foreground">
+                    Coming Soon
+                  </Badge>
+                )}
+                <div className="text-center mb-4">
+                  <Icon className="h-7 w-7 mx-auto mb-2 text-primary" />
+                  <h3 className="text-lg font-bold">{t.name}</h3>
+                  <div className="mt-1">
+                    <span className="text-2xl font-bold">{t.price}</span>
+                    <span className="text-muted-foreground text-sm">{t.period}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">{tier.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
                 </div>
-                <ul className="space-y-3 mb-6">
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                <ul className="space-y-2 mb-4 flex-1">
+                  {t.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>{f}</span>
                     </li>
                   ))}
                 </ul>
                 <Button
-                  className="w-full"
-                  variant={tier.popular ? "default" : "outline"}
-                  disabled={tier.active}
+                  className="w-full mt-auto"
+                  variant={t.popular ? "default" : "outline"}
+                  disabled={isDisabled}
                 >
-                  {tier.cta}
+                  {isCurrentTier ? "Current Plan" : t.cta}
                 </Button>
               </Card>
             );
@@ -142,7 +177,7 @@ export default function Billing() {
 
         <Card className="p-4 bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            💳 Payment processing coming soon. All PRO features are currently available during the free trial period.
+            💳 Payments powered by Paddle. Payment processing coming soon — all Pro+ features are currently available during the free trial period.
           </p>
         </Card>
       </div>

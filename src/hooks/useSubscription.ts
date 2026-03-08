@@ -36,7 +36,7 @@ export function useSubscription(): SubscriptionState {
     const isTrialActive = trialEnd > new Date();
 
     setState({
-      tier: isTrialActive ? "pro" : "free",
+      tier: isTrialActive ? "pro_plus" : "free",
       isTrialActive,
       trialEndsAt: trialEnd,
       isLoading: false,
