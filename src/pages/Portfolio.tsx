@@ -71,6 +71,11 @@ export default function Portfolio() {
   const liveTotalCost = liveHoldings.reduce((s, h) => s + h.costBasis, 0);
   const liveTotalPnl = liveTotalCost > 0 ? liveTotalValue - liveTotalCost : 0;
   const liveTotalPnlPct = liveTotalCost > 0 ? (liveTotalPnl / liveTotalCost) * 100 : 0;
+
+  // Best/worst performers
+  const holdingsWithPnl = liveHoldings.filter(h => h.costBasis > 0);
+  const bestPerformer = holdingsWithPnl.length > 0 ? holdingsWithPnl.reduce((best, h) => h.pnlPercent > best.pnlPercent ? h : best) : null;
+  const worstPerformer = holdingsWithPnl.length > 0 ? holdingsWithPnl.reduce((worst, h) => h.pnlPercent < worst.pnlPercent ? h : worst) : null;
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState("");
