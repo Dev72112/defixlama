@@ -87,8 +87,8 @@ export default function ProtocolComparison() {
   };
 
   return (
-    <TierGate requiredTier="pro">
-      <Layout>
+    <Layout>
+      <TierGate requiredTier="pro">
         <ErrorBoundary>
         <div className="space-y-6 animate-fade-in">
           <div>
