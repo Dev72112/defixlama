@@ -198,7 +198,8 @@ export default function Tokens() {
         </div>
 
         {/* Tokens Table */}
-        <div className="rounded-lg border border-border bg-card overflow-x-auto">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="data-table w-full">
             <thead>
               <tr className="bg-muted/30">
