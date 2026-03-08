@@ -131,8 +131,8 @@ export default function AlertConfig() {
   ];
 
   return (
-    <TierGate requiredTier="pro">
-      <Layout>
+    <Layout>
+      <TierGate requiredTier="pro">
         <div className="space-y-6 animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
