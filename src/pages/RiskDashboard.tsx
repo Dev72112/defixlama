@@ -185,7 +185,7 @@ export default function RiskDashboard() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-hidden">
                 <table className="w-full data-table">
                   <thead>
                     <tr>
