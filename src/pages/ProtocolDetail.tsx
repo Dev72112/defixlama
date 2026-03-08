@@ -28,6 +28,7 @@ import {
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import { DateRangeSelector, DateRange } from "@/components/dashboard/DateRangeSelector";
 import { useState } from "react";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
 
 export default function ProtocolDetail() {
   return (
@@ -825,7 +826,106 @@ function ProtocolDetailContent() {
                 </Link>
               ))}
             </div>
-          </Card>
+           </Card>
+        )}
+
+        {/* PRO Analytics Sections */}
+        <ProDetailSection title="Fee Revenue Efficiency">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Revenue per $1 TVL</p>
+              <p className="text-2xl font-bold text-primary">
+                {protocol.tvl && (protocol as any).fees_24h
+                  ? `$${((protocol as any).fees_24h / protocol.tvl).toFixed(6)}`
+                  : "N/A"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Annualized Revenue</p>
+              <p className="text-2xl font-bold">
+                {(protocol as any).fees_24h ? formatCurrency(((protocol as any).fees_24h || 0) * 365) : "N/A"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Fee/TVL Ratio (bps)</p>
+              <p className="text-2xl font-bold">
+                {protocol.tvl && (protocol as any).fees_24h
+                  ? `${(((protocol as any).fees_24h / protocol.tvl) * 10000).toFixed(2)}`
+                  : "N/A"}
+              </p>
+            </div>
+          </div>
+        </ProDetailSection>
+
+        {protocolDetails?.chainTvls && Object.keys(protocolDetails.chainTvls).length > 0 && (
+          <ProDetailSection title="Cross-Chain TVL Breakdown">
+            <div className="space-y-2">
+              {Object.entries(protocolDetails.chainTvls)
+                .filter(([_, val]: [string, any]) => typeof val === "number" || (val && typeof val === "object" && val.tvl))
+                .map(([chain, val]: [string, any]) => {
+                  const tvlVal = typeof val === "number" ? val : val?.tvl || 0;
+                  const pct = protocol.tvl ? (tvlVal / protocol.tvl) * 100 : 0;
+                  return { chain, tvl: tvlVal, pct };
+                })
+                .sort((a, b) => b.tvl - a.tvl)
+                .slice(0, 10)
+                .map((d, i) => (
+                  <div key={d.chain} className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-6">#{i + 1}</span>
+                    <span className="text-sm text-foreground w-24 truncate">{d.chain}</span>
+                    <div className="flex-1 h-3 bg-muted/30 rounded overflow-hidden">
+                      <div className="h-full bg-primary rounded" style={{ width: `${Math.min(d.pct, 100)}%` }} />
+                    </div>
+                    <span className="text-xs font-mono text-muted-foreground w-14 text-right">{d.pct.toFixed(1)}%</span>
+                    <span className="text-xs font-mono text-foreground w-20 text-right">{formatCurrency(d.tvl)}</span>
+                  </div>
+                ))}
+            </div>
+          </ProDetailSection>
+        )}
+
+        {relatedProtocols.length > 0 && (
+          <ProDetailSection title="Competitor Comparison">
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Protocol</th>
+                    <th className="text-right">TVL</th>
+                    <th className="text-right">24h Change</th>
+                    <th className="text-right">7d Change</th>
+                    <th className="text-right">Chains</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-primary/5">
+                    <td className="font-medium text-primary">{protocol.name} (this)</td>
+                    <td className="text-right font-mono">{formatCurrency(protocol.tvl || 0)}</td>
+                    <td className={cn("text-right font-mono", (protocol.change_1d || 0) >= 0 ? "text-success" : "text-destructive")}>
+                      {formatPercentage(protocol.change_1d || 0)}
+                    </td>
+                    <td className={cn("text-right font-mono", (protocol.change_7d || 0) >= 0 ? "text-success" : "text-destructive")}>
+                      {formatPercentage(protocol.change_7d || 0)}
+                    </td>
+                    <td className="text-right">{protocol.chains?.length || 0}</td>
+                  </tr>
+                  {relatedProtocols.map((p) => (
+                    <tr key={p.slug}>
+                      <td className="font-medium text-foreground">{p.name}</td>
+                      <td className="text-right font-mono">{formatCurrency(p.tvl || 0)}</td>
+                      <td className={cn("text-right font-mono", (p.change_1d || 0) >= 0 ? "text-success" : "text-destructive")}>
+                        {formatPercentage(p.change_1d || 0)}
+                      </td>
+                      <td className={cn("text-right font-mono", (p.change_7d || 0) >= 0 ? "text-success" : "text-destructive")}>
+                        {formatPercentage(p.change_7d || 0)}
+                      </td>
+                      <td className="text-right">{p.chains?.length || 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ProDetailSection>
         )}
       </div>
     </Layout>

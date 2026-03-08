@@ -21,6 +21,7 @@ import {
 import { useState, useMemo } from "react";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import { useLivePrice } from "@/hooks/useLivePrice";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
 
 const WS_SUPPORTED_SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "DOT", "USDT", "USDC"];
 
@@ -660,6 +661,58 @@ export default function TokenDetail() {
             </p>
           </div>
         )}
+
+        {/* PRO Analytics Sections */}
+        <ProDetailSection title="Market Dominance & Turnover">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Vol/MCap Ratio</p>
+              <p className="text-2xl font-bold text-primary">
+                {marketMetrics?.mcapVolumeRatio
+                  ? `${(1 / marketMetrics.mcapVolumeRatio).toFixed(4)}`
+                  : "N/A"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Higher = more liquid</p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Supply Circulating</p>
+              <p className="text-2xl font-bold">{marketMetrics?.circSupplyPercent.toFixed(1) || 0}%</p>
+              <p className="text-xs text-muted-foreground mt-1">of max supply</p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Volatility Score</p>
+              <p className="text-2xl font-bold">
+                {priceAnalytics?.volatility
+                  ? priceAnalytics.volatility < 15 ? "Low" : priceAnalytics.volatility < 40 ? "Medium" : "High"
+                  : "N/A"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">{priceAnalytics?.volatility.toFixed(1) || 0}% range</p>
+            </div>
+          </div>
+        </ProDetailSection>
+
+        <ProDetailSection title="Price Performance Summary">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-lg bg-muted/30 p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Period High</p>
+              <p className="font-mono font-bold">{formatTokenPrice(priceAnalytics?.highest || 0)}</p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Period Low</p>
+              <p className="font-mono font-bold">{formatTokenPrice(priceAnalytics?.lowest || 0)}</p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Average Price</p>
+              <p className="font-mono font-bold">{formatTokenPrice(priceAnalytics?.avgPrice || 0)}</p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Period Change</p>
+              <p className={cn("font-mono font-bold", (priceAnalytics?.dayChange || 0) >= 0 ? "text-success" : "text-destructive")}>
+                {(priceAnalytics?.dayChange || 0) >= 0 ? "+" : ""}{priceAnalytics?.dayChange.toFixed(2) || 0}%
+              </p>
+            </div>
+          </div>
+        </ProDetailSection>
       </div>
     </Layout>
   );

@@ -24,6 +24,7 @@ import {
   Line,
 } from "recharts";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
 
 export default function DexDetail() {
   const { id } = useParams<{ id: string }>();
@@ -726,6 +727,73 @@ export default function DexDetail() {
               </Card>
             )}
           </div>
+        )}
+
+        {/* PRO Analytics Sections */}
+        {hasVolumeData && allDexs && (
+          <ProDetailSection title="Market Share Analysis">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Market Share (24h)</p>
+                <p className="text-2xl font-bold text-primary">
+                  {(() => {
+                    const totalVol = allDexs.reduce((a, d) => a + (d.total24h || 0), 0);
+                    return totalVol > 0 ? `${(((dex.total24h || 0) / totalVol) * 100).toFixed(2)}%` : "N/A";
+                  })()}
+                </p>
+              </div>
+              <div className="rounded-lg bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Volume per Chain</p>
+                <p className="text-2xl font-bold">
+                  {dex.chains?.length ? formatCurrency((dex.total24h || 0) / dex.chains.length) : "N/A"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Annualized Volume</p>
+                <p className="text-2xl font-bold">{formatCurrency((dex.total24h || 0) * 365)}</p>
+              </div>
+            </div>
+          </ProDetailSection>
+        )}
+
+        {relatedDexs.length > 0 && (
+          <ProDetailSection title="Competitor Comparison">
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>DEX</th>
+                    <th className="text-right">24h Volume</th>
+                    <th className="text-right">7d Volume</th>
+                    <th className="text-right">24h Change</th>
+                    <th className="text-right">Chains</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-primary/5">
+                    <td className="font-medium text-primary">{dex.displayName || dex.name} (this)</td>
+                    <td className="text-right font-mono">{formatCurrency(dex.total24h || 0)}</td>
+                    <td className="text-right font-mono">{formatCurrency(dex.total7d || 0)}</td>
+                    <td className={cn("text-right font-mono", change1d >= 0 ? "text-success" : "text-destructive")}>
+                      {formatPercentage(change1d)}
+                    </td>
+                    <td className="text-right">{dex.chains?.length || 0}</td>
+                  </tr>
+                  {relatedDexs.map((d) => (
+                    <tr key={d.name}>
+                      <td className="font-medium text-foreground">{d.displayName || d.name}</td>
+                      <td className="text-right font-mono">{formatCurrency(d.total24h || 0)}</td>
+                      <td className="text-right font-mono">{formatCurrency(d.total7d || 0)}</td>
+                      <td className={cn("text-right font-mono", (d.change_1d || 0) >= 0 ? "text-success" : "text-destructive")}>
+                        {formatPercentage(d.change_1d || 0)}
+                      </td>
+                      <td className="text-right">{d.chains?.length || 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ProDetailSection>
         )}
       </div>
     </Layout>

@@ -20,7 +20,7 @@ const tierLevel: Record<SubscriptionTier, number> = {
 };
 
 export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
-  const { tier, isTrialActive, isLoading, currentPeriodEnd, status } = useSubscription();
+  const { tier, isTrialActive, isLoading, currentPeriodEnd, status, isExpired } = useSubscription();
 
   if (isLoading) return null;
 
@@ -28,7 +28,14 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
 
   const hasAccess = tierLevel[tier] >= tierLevel[requiredTier];
 
-  if (!hasAccess) return <UpgradePrompt requiredTier={requiredTier} />;
+  if (!hasAccess) {
+    return (
+      <>
+        {isExpired && <ExpiredBanner />}
+        <UpgradePrompt requiredTier={requiredTier} />
+      </>
+    );
+  }
 
   const daysLeft = currentPeriodEnd ? differenceInDays(currentPeriodEnd, new Date()) : null;
   const showExpiryWarning = status === "active" && daysLeft !== null && daysLeft <= 7;
@@ -38,6 +45,24 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
       {showExpiryWarning && currentPeriodEnd && <ExpiryBanner daysLeft={daysLeft!} expiryDate={currentPeriodEnd} />}
       {children}
     </>
+  );
+}
+
+function ExpiredBanner() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="mx-4 mt-2 mb-0">
+      <Card className="p-3 border-destructive/40 bg-destructive/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm">
+          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <span>Your subscription has expired. Renew to regain access to premium features.</span>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => navigate("/billing")} className="text-xs w-fit">
+          Renew Now
+        </Button>
+      </Card>
+    </div>
   );
 }
 
