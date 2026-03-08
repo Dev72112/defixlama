@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard, Check, Crown, Zap, Shield, Sparkles, Loader2,
+  CreditCard, Check, Crown, Zap, Shield, Sparkles, Loader2, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
 const tiers = [
@@ -91,11 +92,44 @@ const tiers = [
 const TIER_RANK: Record<string, number> = { free: 0, pro: 1, pro_plus: 2, enterprise: 3 };
 
 export default function Billing() {
-  const { tier, isTrialActive, trialEndsAt, status } = useSubscription();
+  const { tier, isTrialActive, trialEndsAt, status, currentPeriodEnd, refetch } = useSubscription();
   const { user } = useAuth();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [verifying, setVerifying] = useState(false);
 
   const hasActiveSubscription = status === "active";
+
+  // Poll for payment confirmation when returning from checkout
+  useEffect(() => {
+    if (searchParams.get("status") !== "success" || hasActiveSubscription) return;
+
+    setVerifying(true);
+    let attempts = 0;
+    const maxAttempts = 24; // 2 minutes at 5s intervals
+
+    const interval = setInterval(() => {
+      attempts++;
+      refetch();
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        setVerifying(false);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [searchParams, hasActiveSubscription, refetch]);
+
+  // Stop verifying once subscription activates
+  useEffect(() => {
+    if (hasActiveSubscription && verifying) {
+      setVerifying(false);
+      toast.success("Payment confirmed! Your subscription is now active.");
+    }
+  }, [hasActiveSubscription, verifying]);
+
+  const daysUntilExpiry = currentPeriodEnd ? differenceInDays(currentPeriodEnd, new Date()) : null;
+  const isExpiringSoon = hasActiveSubscription && daysUntilExpiry !== null && daysUntilExpiry <= 7;
 
   const handleUpgrade = async (tierKey: "pro" | "pro_plus") => {
     if (!user) {
@@ -137,6 +171,45 @@ export default function Billing() {
           </p>
         </div>
 
+        {/* Verifying Payment Banner */}
+        {verifying && (
+          <Card className="p-4 border-primary/50 bg-primary/10 animate-pulse">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div>
+                <p className="font-medium text-foreground">Verifying payment…</p>
+                <p className="text-sm text-muted-foreground">
+                  Waiting for blockchain confirmation. This may take a few minutes.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Expiry Warning Banner */}
+        {isExpiringSoon && currentPeriodEnd && (
+          <Card className="p-4 border-destructive/50 bg-destructive/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-medium text-foreground">Subscription expiring soon</p>
+                <p className="text-sm text-muted-foreground">
+                  Your {tier === "pro_plus" ? "Pro+" : "Pro"} plan expires on{" "}
+                  {format(currentPeriodEnd, "MMM d, yyyy")} ({daysUntilExpiry} day{daysUntilExpiry !== 1 ? "s" : ""} left).
+                  Crypto payments don't auto-renew.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => handleUpgrade(tier as "pro" | "pro_plus")}
+                disabled={!!loadingTier}
+              >
+                {loadingTier ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                Renew Now
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Current Status */}
         <Card className="p-6 border-primary/30 bg-primary/5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -154,9 +227,9 @@ export default function Billing() {
                   Trial ends {format(trialEndsAt, "MMM d, yyyy")} — All Pro+ features unlocked
                 </p>
               )}
-              {hasActiveSubscription && (
+              {hasActiveSubscription && currentPeriodEnd && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Active subscription — paid with crypto
+                  Active until {format(currentPeriodEnd, "MMM d, yyyy")} — paid with crypto
                 </p>
               )}
             </div>

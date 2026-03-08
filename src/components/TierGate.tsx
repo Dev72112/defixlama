@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Lock } from "lucide-react";
+import { Crown, Lock, AlertTriangle } from "lucide-react";
 import { useSubscription, SubscriptionTier } from "@/hooks/useSubscription";
+import { differenceInDays, format } from "date-fns";
 
 interface TierGateProps {
   children: ReactNode;
   requiredTier?: "pro" | "pro_plus" | "enterprise";
 }
 
-// Tier hierarchy: enterprise > pro_plus > pro > free
 const tierLevel: Record<SubscriptionTier, number> = {
   free: 0,
   pro: 1,
@@ -19,36 +19,50 @@ const tierLevel: Record<SubscriptionTier, number> = {
   enterprise: 3,
 };
 
-/**
- * TierGate wraps premium pages.
- * During the 3-month free trial, all features are unlocked.
- * After trial, it checks the user's subscription tier.
- */
 export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
-  const { tier, isTrialActive, isLoading } = useSubscription();
+  const { tier, isTrialActive, isLoading, currentPeriodEnd, status } = useSubscription();
 
-  if (isLoading) {
-    return null;
-  }
+  if (isLoading) return null;
 
-  // Trial active = full access
-  if (isTrialActive) {
-    return <>{children}</>;
-  }
+  if (isTrialActive) return <>{children}</>;
 
-  // Check if user's tier meets the required tier
   const hasAccess = tierLevel[tier] >= tierLevel[requiredTier];
 
-  if (hasAccess) {
-    return <>{children}</>;
-  }
+  if (!hasAccess) return <UpgradePrompt requiredTier={requiredTier} />;
 
-  return <UpgradePrompt requiredTier={requiredTier} />;
+  const daysLeft = currentPeriodEnd ? differenceInDays(currentPeriodEnd, new Date()) : null;
+  const showExpiryWarning = status === "active" && daysLeft !== null && daysLeft <= 7;
+
+  return (
+    <>
+      {showExpiryWarning && currentPeriodEnd && <ExpiryBanner daysLeft={daysLeft!} expiryDate={currentPeriodEnd} />}
+      {children}
+    </>
+  );
+}
+
+function ExpiryBanner({ daysLeft, expiryDate }: { daysLeft: number; expiryDate: Date }) {
+  const navigate = useNavigate();
+
+  return (
+    <div className="mx-4 mt-2 mb-0">
+      <Card className="p-3 border-destructive/40 bg-destructive/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm">
+          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <span>
+            Your subscription expires {format(expiryDate, "MMM d")} ({daysLeft} day{daysLeft !== 1 ? "s" : ""} left).
+          </span>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => navigate("/billing")} className="text-xs w-fit">
+          Renew
+        </Button>
+      </Card>
+    </div>
+  );
 }
 
 function UpgradePrompt({ requiredTier }: { requiredTier: string }) {
   const navigate = useNavigate();
-
   const tierLabel = requiredTier === "pro_plus" ? "PRO+" : requiredTier.toUpperCase();
 
   return (
