@@ -197,7 +197,14 @@ export default function AlertConfig() {
             </TabsContent>
 
             <TabsContent value="suggestions" className="space-y-4">
-              <p className="text-sm text-muted-foreground">AI-powered suggestions based on market conditions and your portfolio</p>
+              <p className="text-sm text-muted-foreground">Suggestions based on market conditions will appear here as protocols experience significant changes</p>
+              {smartSuggestions.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground mb-2">No Suggestions Yet</h3>
+                  <p className="text-sm text-muted-foreground">Smart suggestions will appear when significant market movements are detected</p>
+                </Card>
+              ) : (
               <div className="space-y-3">
                 {smartSuggestions.map((s) => {
                   const at = ALERT_TYPES.find((a) => a.type === s.type);
