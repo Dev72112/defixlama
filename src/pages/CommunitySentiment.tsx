@@ -141,7 +141,7 @@ export default function CommunitySentiment() {
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="current" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Current Sentiment</TabsTrigger>
               <TabsTrigger value="trend" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Trend Analysis</TabsTrigger>
-              <TabsTrigger value="sources" className="gap-1.5"><PieIcon className="h-3.5 w-3.5" /> Source Breakdown</TabsTrigger>
+              <TabsTrigger value="sources" className="gap-1.5"><PieIcon className="h-3.5 w-3.5" /> Sentiment Distribution</TabsTrigger>
             </TabsList>
 
             <TabsContent value="current" className="space-y-4">
