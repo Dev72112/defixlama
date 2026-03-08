@@ -109,28 +109,40 @@ export default function Billing() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [paddleReady, setPaddleReady] = useState(false);
 
-  // Initialize Paddle.js
+  // Initialize Paddle.js by fetching client token from backend
   useEffect(() => {
-    const initPaddle = () => {
-      if (window.Paddle) {
-        window.Paddle.Initialize({ token: PADDLE_CLIENT_TOKEN });
-        setPaddleReady(true);
+    const initPaddle = async () => {
+      if (paddleReady) return;
+      try {
+        const { data } = await supabase.functions.invoke("paddle-config");
+        const clientToken = data?.token;
+        if (!clientToken) return;
+
+        const tryInit = () => {
+          if (window.Paddle) {
+            window.Paddle.Initialize({ token: clientToken });
+            setPaddleReady(true);
+          }
+        };
+
+        if (window.Paddle) {
+          tryInit();
+        } else {
+          const interval = setInterval(() => {
+            if (window.Paddle) {
+              tryInit();
+              clearInterval(interval);
+            }
+          }, 200);
+          setTimeout(() => clearInterval(interval), 5000);
+        }
+      } catch (err) {
+        console.error("Failed to init Paddle:", err);
       }
     };
 
-    if (window.Paddle) {
-      initPaddle();
-    } else {
-      // Wait for script to load
-      const interval = setInterval(() => {
-        if (window.Paddle) {
-          initPaddle();
-          clearInterval(interval);
-        }
-      }, 200);
-      return () => clearInterval(interval);
-    }
-  }, []);
+    initPaddle();
+  }, [paddleReady]);
 
   const handleUpgrade = async (tierKey: "pro" | "pro_plus") => {
     if (!user) {
