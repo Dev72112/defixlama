@@ -25,6 +25,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 
 export default function FeeDetail() {
   return (
