@@ -23,7 +23,7 @@ export default function Privacy() {
           <h3>Information you provide:</h3>
           <ul>
             <li>Email address (for account creation)</li>
-            <li>Payment information (processed by Paddle, not stored by us)</li>
+            <li>Payment information (processed by NOWPayments, not stored by us)</li>
             <li>Wallet addresses (if connected, optional)</li>
             <li>Communication preferences</li>
           </ul>
