@@ -7,6 +7,8 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import { MessageCircle, TrendingUp, TrendingDown, Flame, ThumbsUp, ThumbsDown, Minus, BarChart3, PieChart as PieIcon } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LineChart, Line, PieChart, Pie } from "recharts";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -34,28 +36,40 @@ export default function CommunitySentiment() {
 
   const sentimentData = useMemo<SentimentEntry[]>(() => {
     if (!protocols) return [];
-    return protocols.slice(0, 50).map((p: any) => {
+    return protocols.slice(0, 50).map((p: any, idx: number) => {
       const change7d = p.change_7d || 0;
-      const volumeMomentum = (Math.random() - 0.3) * 60;
+      const change1d = p.change_1d || 0;
+      // Deterministic volume momentum from 1d change scaled
+      const volumeMomentum = change1d * 1.5;
       const tvlMomentum = change7d;
       const sentimentScore = Math.round(tvlMomentum * 2 + volumeMomentum * 0.5);
       const clampedScore = Math.max(-100, Math.min(100, sentimentScore));
+      // Social activity derived from magnitude of changes (deterministic)
+      const socialActivity = Math.min(100, Math.max(5, Math.round(Math.abs(change1d) * 5 + Math.abs(change7d) * 3 + 20)));
       return {
         name: p.name, slug: p.slug, tvl: p.tvl || 0, sentimentScore: clampedScore,
         volumeMomentum: Math.round(volumeMomentum * 10) / 10, tvlMomentum: Math.round(tvlMomentum * 100) / 100,
         trend: (clampedScore > 15 ? "bullish" : clampedScore < -15 ? "bearish" : "neutral") as SentimentEntry["trend"],
-        socialActivity: Math.round(Math.random() * 80 + 20),
+        socialActivity,
       };
     }).sort((a, b) => b.sentimentScore - a.sentimentScore);
   }, [protocols]);
 
+  // Deterministic trend data from protocol TVL changes
   const trendData = useMemo(() => {
-    return Array.from({ length: 14 }, (_, i) => ({
+    if (!protocols || protocols.length < 14) {
+      return Array.from({ length: 14 }, (_, i) => ({
+        day: `Day ${i + 1}`,
+        sentiment: 0,
+        price: 50,
+      }));
+    }
+    return protocols.slice(0, 14).map((p: any, i: number) => ({
       day: `Day ${i + 1}`,
-      sentiment: Math.round((Math.random() - 0.3) * 60),
-      price: Math.round(50 + (Math.random() - 0.5) * 30),
+      sentiment: Math.round(((p.change_1d || 0) * 2 + (p.change_7d || 0) * 0.5) * 10) / 10,
+      price: Math.round(50 + (p.change_7d || 0) * 2),
     }));
-  }, []);
+  }, [protocols]);
 
   const sourceBreakdown = useMemo(() => [
     { name: "Twitter/X", value: 45 },
@@ -102,11 +116,12 @@ export default function CommunitySentiment() {
   return (
     <TierGate requiredTier="pro_plus">
       <Layout>
+        <ErrorBoundary>
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} Community Sentiment</h1>
-              <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
+              <Badge className="bg-primary/20 text-primary text-xs">PRO+</Badge>
             </div>
             <p className="text-muted-foreground mt-1">Sentiment scores derived from volume, TVL momentum, and social activity</p>
           </div>
@@ -139,9 +154,9 @@ export default function CommunitySentiment() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} domain={[-100, 100]} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={80} />
-                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                      <XAxis type="number" tick={AXIS_TICK_STYLE} domain={[-100, 100]} />
+                      <YAxis type="category" dataKey="name" tick={AXIS_TICK_STYLE} width={80} />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                       <Bar dataKey="sentiment" name="Sentiment Score" radius={[0, 4, 4, 0]}>
                         {chartData.map((entry, index) => <Cell key={index} fill={entry.sentiment >= 0 ? "hsl(var(--success))" : "hsl(var(--destructive))"} />)}
                       </Bar>
@@ -171,9 +186,9 @@ export default function CommunitySentiment() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                      <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                      <XAxis dataKey="day" tick={AXIS_TICK_STYLE} />
+                      <YAxis tick={AXIS_TICK_STYLE} />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                       <Line type="monotone" dataKey="sentiment" stroke="hsl(var(--primary))" strokeWidth={2} name="Sentiment" />
                       <Line type="monotone" dataKey="price" stroke="hsl(var(--success))" strokeWidth={2} name="Price Index" />
                     </LineChart>
@@ -192,7 +207,7 @@ export default function CommunitySentiment() {
                         label={({ name, value }) => `${name} ${value}%`}>
                         {sourceBreakdown.map((_, i) => <Cell key={i} fill={SOURCE_COLORS[i]} />)}
                       </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -210,6 +225,7 @@ export default function CommunitySentiment() {
             </TabsContent>
           </Tabs>
         </div>
+        </ErrorBoundary>
       </Layout>
     </TierGate>
   );

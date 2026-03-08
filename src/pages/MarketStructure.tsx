@@ -4,20 +4,16 @@ import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols, useChainDexVolumes, useChainFees, useChainsTVL, useChainTVLData } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
-import { Landmark, Activity, BarChart3, Layers, Gauge, TrendingUp, Clock, Search } from "lucide-react";
+import { Landmark, Activity, BarChart3, Layers, Gauge, TrendingUp, Clock, Search, Zap } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { CategoryTreemap } from "@/components/dashboard/CategoryTreemap";
 import { ProtocolLifecycle } from "@/components/dashboard/ProtocolLifecycle";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, CHART_COLORS } from "@/lib/chartStyles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
-
-const COLORS = [
-  "hsl(142, 76%, 46%)", "hsl(180, 80%, 45%)", "hsl(45, 100%, 50%)",
-  "hsl(280, 80%, 60%)", "hsl(348, 83%, 47%)", "hsl(200, 70%, 50%)",
-  "hsl(30, 90%, 55%)", "hsl(160, 60%, 40%)",
-];
 
 const PAGE_SIZE = 20;
 
@@ -38,19 +34,11 @@ export default function MarketStructure() {
 
   useEffect(() => { setFeePage(1); setChainPage(1); }, [selectedChain.id]);
 
-  // DEX volume concentration
   const dexConcentration = useMemo(() => {
     if (!dexList.length) return [];
     const totalVol = dexList.reduce((acc, d) => acc + (d.total24h || 0), 0);
-    return dexList
-      .filter((d) => d.total24h && d.total24h > 0)
-      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
-      .slice(0, 10)
-      .map((d) => ({
-        name: (d.displayName || d.name).length > 14 ? (d.displayName || d.name).slice(0, 12) + "…" : (d.displayName || d.name),
-        volume: d.total24h || 0,
-        share: totalVol > 0 ? ((d.total24h || 0) / totalVol) * 100 : 0,
-      }));
+    return dexList.filter((d) => d.total24h && d.total24h > 0).sort((a, b) => (b.total24h || 0) - (a.total24h || 0)).slice(0, 10)
+      .map((d) => ({ name: (d.displayName || d.name).length > 14 ? (d.displayName || d.name).slice(0, 12) + "…" : (d.displayName || d.name), volume: d.total24h || 0, share: totalVol > 0 ? ((d.total24h || 0) / totalVol) * 100 : 0 }));
   }, [dexList]);
 
   const dexVsLending = useMemo(() => {
@@ -92,15 +80,12 @@ export default function MarketStructure() {
 
   const allFeeEfficiency = useMemo(() => {
     const protocolMap = new Map(protocolList.map((p) => [p.name.toLowerCase(), p.tvl || 0]));
-    let results = feeList
-      .filter((f: any) => (f.total24h || f.total_24h || 0) > 0)
-      .map((f: any) => {
-        const feeVal = f.total24h || f.total_24h || 0;
-        const matchedTvl = protocolMap.get((f.name || "").toLowerCase()) || 0;
-        const fullName = (f.displayName || f.name) as string;
-        return { name: fullName.length > 14 ? fullName.slice(0, 12) + "…" : fullName, fullName, fees: feeVal, tvl: matchedTvl, ratio: matchedTvl > 0 ? (feeVal / matchedTvl) * 10000 : 0 };
-      })
-      .filter((f) => f.ratio > 0);
+    let results = feeList.filter((f: any) => (f.total24h || f.total_24h || 0) > 0).map((f: any) => {
+      const feeVal = f.total24h || f.total_24h || 0;
+      const matchedTvl = protocolMap.get((f.name || "").toLowerCase()) || 0;
+      const fullName = (f.displayName || f.name) as string;
+      return { name: fullName.length > 14 ? fullName.slice(0, 12) + "…" : fullName, fullName, fees: feeVal, tvl: matchedTvl, ratio: matchedTvl > 0 ? (feeVal / matchedTvl) * 10000 : 0 };
+    }).filter((f) => f.ratio > 0);
     if (feeSearch) results = results.filter((f) => f.fullName.toLowerCase().includes(feeSearch.toLowerCase()));
     return results.sort((a, b) => b.ratio - a.ratio);
   }, [feeList, protocolList, feeSearch]);
@@ -110,14 +95,9 @@ export default function MarketStructure() {
   const feePageData = allFeeEfficiency.slice((feePage - 1) * PAGE_SIZE, feePage * PAGE_SIZE);
 
   const feeDistribution = useMemo(() => {
-    return feeList
-      .filter((f: any) => (f.total24h || f.total_24h || 0) > 0)
-      .sort((a: any, b: any) => (b.total24h || b.total_24h || 0) - (a.total24h || a.total_24h || 0))
-      .slice(0, 10)
-      .map((f: any) => ({
-        name: ((f.displayName || f.name) as string).length > 14 ? (f.displayName || f.name).slice(0, 12) + "…" : (f.displayName || f.name),
-        fees: f.total24h || f.total_24h || 0,
-      }));
+    return feeList.filter((f: any) => (f.total24h || f.total_24h || 0) > 0)
+      .sort((a: any, b: any) => (b.total24h || b.total_24h || 0) - (a.total24h || a.total_24h || 0)).slice(0, 10)
+      .map((f: any) => ({ name: ((f.displayName || f.name) as string).length > 14 ? (f.displayName || f.name).slice(0, 12) + "…" : (f.displayName || f.name), fees: f.total24h || f.total_24h || 0 }));
   }, [feeList]);
 
   const allCrossChainVtl = useMemo(() => {
@@ -146,11 +126,32 @@ export default function MarketStructure() {
   return (
     <TierGate requiredTier="pro_plus">
     <Layout>
+      <ErrorBoundary>
       <div className="space-y-6 page-enter">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{selectedChain.name} Market Structure</h1>
           <p className="text-muted-foreground mt-1 text-sm">Liquidity dynamics, structural analysis, and protocol efficiency metrics</p>
         </div>
+
+        {/* Ecosystem Structure Insight */}
+        {!isLoading && protocolList.length > 0 && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <h3 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+              <Zap className="h-4 w-4" /> Ecosystem Structure Insight
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {selectedChain.name} has <span className="font-medium text-foreground">{diversityData.categories} protocol categories</span> with a diversity score of <span className="font-medium text-foreground">{diversityScore.toFixed(0)}%</span>
+              {diversityScore > 70
+                ? " — a well-diversified ecosystem with broad DeFi coverage."
+                : diversityScore > 40
+                ? " — moderate diversification with room for emerging categories."
+                : " — concentrated in few categories, suggesting early-stage or specialized ecosystem."}
+              {" "}Market fragmentation is <span className="font-medium text-foreground">{(fragmentation * 100).toFixed(0)}%</span>
+              {fragmentation > 0.6 ? " (healthy competition)" : " (dominated by few players)"}.
+              {vtRatio > 0 && <> Vol/TVL ratio of <span className="font-medium text-foreground">{vtRatio.toFixed(2)}%</span> indicates {vtRatio > 5 ? "high trading activity" : vtRatio > 1 ? "moderate capital utilization" : "low trading relative to locked capital"}.</>}
+            </p>
+          </div>
+        )}
 
         {/* KPI Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
@@ -185,10 +186,10 @@ export default function MarketStructure() {
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={dexConcentration} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
-                  <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)}%`} tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} />
-                  <YAxis dataKey="name" type="category" width={90} tick={{ fill: "hsl(0,0%,70%)", fontSize: 11 }} />
-                  <Tooltip formatter={(v: number, _: any, entry: any) => [`${v.toFixed(1)}% (${formatCurrency(entry.payload.volume)})`, "Share"]} contentStyle={{ backgroundColor: "hsl(0 0% 3%)", border: "1px solid hsl(0 0% 8%)", borderRadius: "8px", color: "hsl(0 0% 93%)", fontSize: "12px" }} />
-                  <Bar dataKey="share" radius={[0, 4, 4, 0]}>{dexConcentration.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}</Bar>
+                  <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)}%`} tick={AXIS_TICK_STYLE} />
+                  <YAxis dataKey="name" type="category" width={90} tick={{ ...AXIS_TICK_STYLE, fill: "hsl(0,0%,70%)" }} />
+                  <Tooltip formatter={(v: number, _: any, entry: any) => [`${v.toFixed(1)}% (${formatCurrency(entry.payload.volume)})`, "Share"]} contentStyle={CHART_TOOLTIP_STYLE} />
+                  <Bar dataKey="share" radius={[0, 4, 4, 0]}>{dexConcentration.map((_, i) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}</Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -199,10 +200,10 @@ export default function MarketStructure() {
             {isLoading ? (<div className="skeleton h-[250px] w-full rounded-lg" />) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={dexVsLending} margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
-                  <XAxis dataKey="name" tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => formatCurrency(v)} tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => [formatCurrency(v), "TVL"]} contentStyle={{ backgroundColor: "hsl(0 0% 3%)", border: "1px solid hsl(0 0% 8%)", borderRadius: "8px", color: "hsl(0 0% 93%)", fontSize: "12px" }} />
-                  <Bar dataKey="tvl" radius={[4, 4, 0, 0]}>{dexVsLending.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}</Bar>
+                  <XAxis dataKey="name" tick={AXIS_TICK_STYLE} />
+                  <YAxis tickFormatter={(v) => formatCurrency(v)} tick={AXIS_TICK_STYLE} />
+                  <Tooltip formatter={(v: number) => [formatCurrency(v), "TVL"]} contentStyle={CHART_TOOLTIP_STYLE} />
+                  <Bar dataKey="tvl" radius={[4, 4, 0, 0]}>{dexVsLending.map((_, i) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}</Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -224,10 +225,10 @@ export default function MarketStructure() {
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={feeEfficiency} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
-                <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)} bps`} tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={90} tick={{ fill: "hsl(0,0%,70%)", fontSize: 11 }} />
-                <Tooltip formatter={(v: number, _: any, entry: any) => [`${v.toFixed(1)} bps (${formatCurrency(entry.payload.fees)} fees / ${formatCurrency(entry.payload.tvl)} TVL)`, "Efficiency"]} contentStyle={{ backgroundColor: "hsl(0 0% 3%)", border: "1px solid hsl(0 0% 8%)", borderRadius: "8px", color: "hsl(0 0% 93%)", fontSize: "12px" }} />
-                <Bar dataKey="ratio" radius={[0, 4, 4, 0]}>{feeEfficiency.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}</Bar>
+                <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)} bps`} tick={AXIS_TICK_STYLE} />
+                <YAxis dataKey="name" type="category" width={90} tick={{ ...AXIS_TICK_STYLE, fill: "hsl(0,0%,70%)" }} />
+                <Tooltip formatter={(v: number, _: any, entry: any) => [`${v.toFixed(1)} bps (${formatCurrency(entry.payload.fees)} fees / ${formatCurrency(entry.payload.tvl)} TVL)`, "Efficiency"]} contentStyle={CHART_TOOLTIP_STYLE} />
+                <Bar dataKey="ratio" radius={[0, 4, 4, 0]}>{feeEfficiency.map((_, i) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}</Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -259,10 +260,10 @@ export default function MarketStructure() {
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={feeDistribution} margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} />
-                <YAxis tickFormatter={(v) => formatCurrency(v)} tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} />
-                <Tooltip formatter={(v: number) => [formatCurrency(v), "24h Fees"]} contentStyle={{ backgroundColor: "hsl(0 0% 3%)", border: "1px solid hsl(0 0% 8%)", borderRadius: "8px", color: "hsl(0 0% 93%)", fontSize: "12px" }} />
-                <Bar dataKey="fees" radius={[4, 4, 0, 0]}>{feeDistribution.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}</Bar>
+                <XAxis dataKey="name" tick={AXIS_TICK_STYLE} />
+                <YAxis tickFormatter={(v) => formatCurrency(v)} tick={AXIS_TICK_STYLE} />
+                <Tooltip formatter={(v: number) => [formatCurrency(v), "24h Fees"]} contentStyle={CHART_TOOLTIP_STYLE} />
+                <Bar dataKey="fees" radius={[4, 4, 0, 0]}>{feeDistribution.map((_, i) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}</Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -290,6 +291,7 @@ export default function MarketStructure() {
           )}
         </div>
       </div>
+      </ErrorBoundary>
     </Layout>
     </TierGate>
   );

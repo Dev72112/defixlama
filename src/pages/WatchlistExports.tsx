@@ -75,7 +75,7 @@ export default function WatchlistExports() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">Watchlist Exports</h1>
-                <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
+                <Badge className="bg-primary/20 text-primary text-xs">PRO+</Badge>
               </div>
               <p className="text-muted-foreground mt-1">Export your watchlist as CSV or JSON for external tools</p>
             </div>

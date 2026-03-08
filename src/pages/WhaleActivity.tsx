@@ -9,17 +9,13 @@ import { CapitalConcentrationChart } from "@/components/dashboard/CapitalConcent
 import { AccumulationHeatmap } from "@/components/dashboard/AccumulationHeatmap";
 import { CrossChainFlowMatrix } from "@/components/dashboard/CrossChainFlowMatrix";
 import { CategoryTreemap } from "@/components/dashboard/CategoryTreemap";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, CHART_COLORS } from "@/lib/chartStyles";
 import { Waves, TrendingUp, TrendingDown, BarChart3, AlertTriangle, Gauge, Zap, Filter, Search } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const CHART_COLORS = [
-  "hsl(142, 76%, 46%)", "hsl(180, 80%, 45%)", "hsl(45, 100%, 50%)",
-  "hsl(280, 80%, 60%)", "hsl(348, 83%, 47%)", "hsl(200, 70%, 50%)",
-  "hsl(30, 90%, 55%)", "hsl(160, 60%, 40%)", "hsl(220, 70%, 55%)", "hsl(0, 70%, 55%)",
-];
 
 type Severity = "all" | "moderate" | "major" | "extreme";
 
@@ -112,6 +108,7 @@ export default function WhaleActivity() {
   return (
     <TierGate requiredTier="pro_plus">
     <Layout>
+      <ErrorBoundary>
       <div className="space-y-6 page-enter">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{selectedChain.name} Whale Activity</h1>
@@ -171,9 +168,9 @@ export default function WhaleActivity() {
             {isLoading ? (<div className="skeleton h-[250px] w-full rounded-lg" />) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={topProtocols} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
-                  <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)}%`} tick={{ fill: "hsl(0,0%,50%)", fontSize: 11 }} />
-                  <YAxis dataKey="name" type="category" width={90} tick={{ fill: "hsl(0,0%,70%)", fontSize: 11 }} />
-                  <Tooltip formatter={(v: number, _: any, entry: any) => [`${v.toFixed(1)}% (${formatCurrency(entry.payload.tvl)})`, "Share"]} contentStyle={{ backgroundColor: "hsl(0 0% 3%)", border: "1px solid hsl(0 0% 8%)", borderRadius: "8px", color: "hsl(0 0% 93%)", fontSize: "12px" }} />
+                  <XAxis type="number" tickFormatter={(v) => `${v.toFixed(0)}%`} tick={AXIS_TICK_STYLE} />
+                  <YAxis dataKey="name" type="category" width={90} tick={{ ...AXIS_TICK_STYLE, fill: "hsl(0,0%,70%)" }} />
+                  <Tooltip formatter={(v: number, _: any, entry: any) => [`${v.toFixed(1)}% (${formatCurrency(entry.payload.tvl)})`, "Share"]} contentStyle={CHART_TOOLTIP_STYLE} />
                   <Bar dataKey="share" radius={[0, 4, 4, 0]}>{topProtocols.map((_, i) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}</Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -253,6 +250,7 @@ export default function WhaleActivity() {
           )}
         </div>
       </div>
+      </ErrorBoundary>
     </Layout>
     </TierGate>
   );
