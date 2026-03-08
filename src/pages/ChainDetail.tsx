@@ -23,6 +23,10 @@ import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import { DateRangeSelector, DateRange } from "@/components/dashboard/DateRangeSelector";
 
 export default function ChainDetail() {
+  return <ErrorBoundary><ChainDetailContent /></ErrorBoundary>;
+}
+
+function ChainDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: chains, isLoading } = useChainsTVL();
   const { data: protocols } = useAllProtocols();
