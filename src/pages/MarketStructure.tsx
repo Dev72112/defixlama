@@ -291,5 +291,6 @@ export default function MarketStructure() {
         </div>
       </div>
     </Layout>
+    </TierGate>
   );
 }
