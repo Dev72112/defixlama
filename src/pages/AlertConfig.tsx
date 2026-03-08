@@ -55,11 +55,7 @@ export default function AlertConfig() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || "active";
 
-  const [alerts, setAlerts] = useState<AlertRule[]>([
-    { id: "1", type: "tvl_drop", symbol: "AAVE", condition: "drops_below", threshold: 10, enabled: true },
-    { id: "2", type: "price", symbol: "ETH", condition: "drops_below", threshold: 5, enabled: true },
-    { id: "3", type: "hack", symbol: "ALL", condition: "any", threshold: 0, enabled: false },
-  ]);
+  const [alerts, setAlerts] = useState<AlertRule[]>([]);
   const [newType, setNewType] = useState<AlertType>("tvl_drop");
   const [newSymbol, setNewSymbol] = useState("");
   const [newThreshold, setNewThreshold] = useState("");
