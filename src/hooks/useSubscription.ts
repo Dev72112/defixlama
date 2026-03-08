@@ -73,6 +73,7 @@ export function useSubscription(): SubscriptionState {
         trialEndsAt: trialEnd,
         isLoading: false,
         paddleSubscriptionId: sub?.paddle_subscription_id || null,
+        paddleCustomerId: sub?.paddle_customer_id || null,
         status: sub?.status || null,
       });
     };
