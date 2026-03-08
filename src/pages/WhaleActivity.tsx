@@ -106,8 +106,8 @@ export default function WhaleActivity() {
   const isLoading = protocols.isLoading;
 
   return (
-    <TierGate requiredTier="pro_plus">
     <Layout>
+    <TierGate requiredTier="pro_plus">
       <ErrorBoundary>
       <div className="space-y-6 page-enter">
         <div>
@@ -251,7 +251,7 @@ export default function WhaleActivity() {
         </div>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

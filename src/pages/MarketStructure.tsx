@@ -124,8 +124,8 @@ export default function MarketStructure() {
   ];
 
   return (
-    <TierGate requiredTier="pro_plus">
     <Layout>
+    <TierGate requiredTier="pro_plus">
       <ErrorBoundary>
       <div className="space-y-6 page-enter">
         <div>
@@ -292,7 +292,7 @@ export default function MarketStructure() {
         </div>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

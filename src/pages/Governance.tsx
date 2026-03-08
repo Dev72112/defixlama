@@ -117,8 +117,8 @@ export default function Governance() {
   ];
 
   return (
-    <TierGate requiredTier="pro">
-      <Layout>
+    <Layout>
+      <TierGate requiredTier="pro">
         <ErrorBoundary>
         <div className="space-y-6 animate-fade-in">
           <div>
@@ -210,7 +210,7 @@ export default function Governance() {
           </Tabs>
         </div>
         </ErrorBoundary>
-      </Layout>
-    </TierGate>
+      </TierGate>
+    </Layout>
   );
 }

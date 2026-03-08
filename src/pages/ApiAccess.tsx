@@ -60,8 +60,8 @@ export default function ApiAccess() {
   ];
 
   return (
-    <TierGate requiredTier="pro">
     <Layout>
+    <TierGate requiredTier="pro">
       <ErrorBoundary>
       <div className="space-y-6 animate-fade-in">
         <div>
@@ -245,7 +245,7 @@ export default function ApiAccess() {
         </Card>
       </div>
       </ErrorBoundary>
-    </Layout>
     </TierGate>
+    </Layout>
   );
 }

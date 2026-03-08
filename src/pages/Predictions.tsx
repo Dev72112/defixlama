@@ -105,8 +105,8 @@ export default function Predictions() {
   ];
 
   return (
-    <TierGate requiredTier="pro">
-      <Layout>
+    <Layout>
+      <TierGate requiredTier="pro">
         <ErrorBoundary>
         <div className="space-y-6 animate-fade-in">
           <div>
@@ -204,7 +204,7 @@ export default function Predictions() {
           </p>
         </div>
         </ErrorBoundary>
-      </Layout>
-    </TierGate>
+      </TierGate>
+    </Layout>
   );
 }
