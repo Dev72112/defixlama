@@ -65,7 +65,7 @@ function ProtocolDetailContent() {
       console.error("Error formatting chart data:", e);
       return [];
     }
-  }, [tvlHistory]);
+  }, [tvlHistory, dateRange]);
 
   // TVL Analytics - ALWAYS CALL
   const tvlAnalytics = useMemo(() => {
