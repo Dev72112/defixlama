@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
 
 export default function SecurityDetail() {
   return <ErrorBoundary><SecurityDetailContent /></ErrorBoundary>;

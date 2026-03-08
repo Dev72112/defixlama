@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
 import {
   PieChart as RechartsPie,
   Pie,

@@ -26,6 +26,7 @@ import {
   Legend,
 } from "recharts";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
 
 export default function FeeDetail() {
   return (

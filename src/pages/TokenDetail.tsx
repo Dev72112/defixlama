@@ -21,6 +21,7 @@ import {
 import { useState, useMemo } from "react";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import { useLivePrice } from "@/hooks/useLivePrice";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
 
 const WS_SUPPORTED_SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "DOT", "USDT", "USDC"];
 

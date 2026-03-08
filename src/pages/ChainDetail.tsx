@@ -21,6 +21,8 @@ import { useMemo, useState } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import { DateRangeSelector, DateRange } from "@/components/dashboard/DateRangeSelector";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
+import { cn } from "@/lib/utils";
 
 export default function ChainDetail() {
   return <ErrorBoundary><ChainDetailContent /></ErrorBoundary>;

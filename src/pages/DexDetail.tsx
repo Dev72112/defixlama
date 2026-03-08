@@ -24,6 +24,7 @@ import {
   Line,
 } from "recharts";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { ProDetailSection } from "@/components/dashboard/ProDetailSection";
 
 export default function DexDetail() {
   const { id } = useParams<{ id: string }>();
