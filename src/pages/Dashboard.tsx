@@ -51,6 +51,7 @@ function DashboardContent() {
   const feesData = useFeesData();
   const stablecoins = useStablecoins();
   const { data: tokens } = useTokenPrices();
+  const { prices: livePrices, isConnected: wsConnected } = useLivePrices(["BTC", "ETH", "SOL", "BNB", "XRP"]);
 
   const protocols = dashboardData.protocols;
   const tvl = dashboardData.tvl;
