@@ -24,9 +24,6 @@ declare global {
   }
 }
 
-// Paddle client token is a publishable key - safe for frontend
-// Set via VITE_PADDLE_CLIENT_TOKEN env var or fallback
-const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN || "";
 
 const tiers = [
   {
