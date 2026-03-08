@@ -1,72 +1,54 @@
 
 
-# Paddle Integration + Premium Infrastructure Push
+# Paddle Integration — Full Plan
 
-## Part 1: Paddle Webhook & Checkout Edge Functions
+## Step 1: Get Your Missing Paddle Values
 
-### 1a. `supabase/functions/paddle-webhook/index.ts`
-- Receives Paddle webhook events (subscription.created, subscription.updated, subscription.canceled, transaction.completed)
-- Validates webhook signature using Paddle's webhook secret
-- Updates the `subscriptions` table: sets `paddle_customer_id`, `paddle_subscription_id`, `tier`, `status`, `current_period_end`
-- Maps Paddle price IDs to tiers (Pro = one price ID, Pro+ = another)
-- No JWT required (public webhook endpoint)
+You need 3 more values from your Paddle dashboard:
 
-### 1b. `supabase/functions/create-checkout/index.ts`
-- Authenticated endpoint (requires JWT via `getClaims`)
-- Accepts `{ tierKey: "pro" | "pro_plus" }` in the request body
-- Calls Paddle API to generate a checkout transaction URL with the user's email pre-filled and the correct price ID
-- Returns the checkout URL for the frontend to redirect to
-- Requires secrets: `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `PADDLE_PRICE_PRO`, `PADDLE_PRICE_PRO_PLUS`
+### Price IDs (2 values)
+1. Go to **Paddle Dashboard → Catalog → Products**
+2. Create a product called "DefiXlama Pro" with a **$29/month** recurring price
+3. Copy the **Price ID** (starts with `pri_`) — this is your `PADDLE_PRICE_PRO`
+4. Create another product "DefiXlama Pro+" with a **$49/month** recurring price
+5. Copy that Price ID — this is your `PADDLE_PRICE_PRO_PLUS`
 
-### 1c. Secret setup
-- We need 4 secrets added: `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `PADDLE_PRICE_PRO`, `PADDLE_PRICE_PRO_PLUS`
+### Webhook Secret (1 value)
+1. Go to **Paddle Dashboard → Developer Tools → Notifications**
+2. Create a new webhook destination
+3. Set the URL to: `https://nxlncqmwpjiufsnwkfnd.supabase.co/functions/v1/paddle-webhook`
+4. Select these events: `subscription.created`, `subscription.updated`, `subscription.canceled`, `transaction.completed`
+5. Copy the **Webhook Secret Key** — this is your `PADDLE_WEBHOOK_SECRET`
 
-## Part 2: Upgrade `useSubscription` Hook
+## Step 2: Store All 4 Secrets
 
-Currently the hook only checks trial status from `user.created_at`. Upgrade to:
-1. Query the `subscriptions` table for the user's row
-2. If a row exists with `status = 'active'` and `current_period_end > now()`, use `tier` from the row
-3. If no row or expired, fall back to trial logic (90 days from account creation)
-4. If trial also expired, tier = `"free"`
+Once you have all 4 values, add them via **Cloud View → Advanced → Secrets**:
+- `PADDLE_API_KEY`
+- `PADDLE_WEBHOOK_SECRET`
+- `PADDLE_PRICE_PRO`
+- `PADDLE_PRICE_PRO_PLUS`
 
-This makes the hook production-ready — it respects real Paddle subscriptions while keeping trial fallback.
+## Step 3: Implementation (what I'll build once secrets are set)
 
-## Part 3: Wire Billing Page Buttons to Paddle Checkout
+### Files to create:
+1. **`supabase/functions/paddle-webhook/index.ts`** — Receives Paddle events, validates signature, upserts `subscriptions` table with tier/status/period
+2. **`supabase/functions/create-checkout/index.ts`** — Authenticated endpoint that calls Paddle API to generate checkout URL for Pro or Pro+
 
-- Pro/Pro+ "Upgrade" buttons call `create-checkout` edge function
-- On success, redirect user to the Paddle checkout URL
-- Add loading states to buttons during checkout creation
-- Show "Manage Subscription" button for active subscribers (links to Paddle customer portal)
+### Files to modify:
+3. **`src/hooks/useSubscription.ts`** — Query the `subscriptions` table for active subscription; fall back to trial logic only if no DB row exists
+4. **`src/pages/Billing.tsx`** — Wire upgrade buttons to call `create-checkout`, add loading states, show "Manage Subscription" for active subscribers
+5. **`supabase/config.toml`** — Add `paddle-webhook` and `create-checkout` function entries
 
-## Part 4: Config Updates
+### How it works:
+- User clicks "Upgrade to Pro" → frontend calls `create-checkout` edge function → returns Paddle checkout URL → user redirected to Paddle
+- After payment, Paddle sends webhook → `paddle-webhook` edge function validates signature → upserts `subscriptions` row with `tier: 'pro'`, `status: 'active'`
+- `useSubscription` queries DB on load: active subscription row = use that tier; no row = check trial; trial expired = free
+- TierGate already enforces access based on the tier from `useSubscription` — no changes needed there
 
-- Add `paddle-webhook` and `create-checkout` to `supabase/config.toml` with `verify_jwt = false`
-
----
-
-## File Summary (6 files)
-
-| # | File | Action |
-|---|------|--------|
-| 1 | `supabase/functions/paddle-webhook/index.ts` | Create — webhook handler |
-| 2 | `supabase/functions/create-checkout/index.ts` | Create — checkout session creator |
-| 3 | `src/hooks/useSubscription.ts` | Modify — query subscriptions table |
-| 4 | `src/pages/Billing.tsx` | Modify — wire buttons to checkout + manage subscription |
-| 5 | `supabase/config.toml` | Modify — add new function entries |
-
-## Secrets Needed
-
-Before implementation, I'll request you to add these 4 secrets:
-- **PADDLE_API_KEY** — from your Paddle dashboard → Developer Tools → API Keys
-- **PADDLE_WEBHOOK_SECRET** — from Paddle → Notifications → Webhook destination secret
-- **PADDLE_PRICE_PRO** — the Paddle Price ID for the $29/mo Pro plan (e.g. `pri_xxxxx`)
-- **PADDLE_PRICE_PRO_PLUS** — the Paddle Price ID for the $49/mo Pro+ plan
+### Database:
+No schema changes needed. The `subscriptions` table already has `paddle_customer_id`, `paddle_subscription_id`, `tier`, `status`, and `current_period_end` columns ready.
 
 ---
 
-## Technical Notes
-
-- Paddle sandbox mode works fine before verification — checkout sessions will work in test mode
-- Webhook endpoint needs to be registered in Paddle dashboard pointing to: `https://nxlncqmwpjiufsnwkfnd.supabase.co/functions/v1/paddle-webhook`
-- The `subscriptions` table already has `paddle_customer_id` and `paddle_subscription_id` columns ready
+**Next step**: Create your 2 products + webhook in Paddle, then tell me when you've added all 4 secrets. I'll build everything immediately after.
 
