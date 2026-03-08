@@ -530,6 +530,72 @@ function StablecoinDetailContent() {
             </div>
           </div>
         </div>
+
+        {/* PRO Analytics Sections */}
+        <ProDetailSection title="Peg Deviation Analysis">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Peg Deviation</p>
+              <p className="text-2xl font-bold text-primary">
+                {coin.price ? `${(Math.abs(1 - coin.price) * 100).toFixed(4)}%` : "0.0000%"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">distance from $1.00</p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Peg Status</p>
+              <p className="text-2xl font-bold">
+                {coin.price ? (Math.abs(1 - coin.price) < 0.001 ? "Perfect" : Math.abs(1 - coin.price) < 0.01 ? "Tight" : Math.abs(1 - coin.price) < 0.05 ? "Loose" : "Depegged") : "Perfect"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Direction</p>
+              <p className="text-2xl font-bold">
+                {coin.price ? (coin.price >= 1 ? "Above Peg" : "Below Peg") : "On Peg"}
+              </p>
+            </div>
+          </div>
+        </ProDetailSection>
+
+        {stablecoins && (
+          <ProDetailSection title="Market Share Among Stablecoins">
+            {(() => {
+              const totalAll = stablecoins.reduce((a, s) => a + Object.values(s.circulating || {}).reduce((x, y) => x + (y || 0), 0), 0);
+              const share = totalAll > 0 ? (totalCirculating / totalAll) * 100 : 0;
+              const top5 = [...stablecoins]
+                .map(s => ({ ...s, total: Object.values(s.circulating || {}).reduce((a, b) => a + (b || 0), 0) }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 5);
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Market Share</p>
+                      <p className="text-2xl font-bold text-primary">{share.toFixed(2)}%</p>
+                      <p className="text-xs text-muted-foreground mt-1">of ${formatCurrency(totalAll)} total</p>
+                    </div>
+                    <div className="rounded-lg bg-muted/30 p-4">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Chain Dominance</p>
+                      <p className="text-2xl font-bold">{supplyAnalytics?.concentration.toFixed(1) || 0}%</p>
+                      <p className="text-xs text-muted-foreground mt-1">on largest chain</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {top5.map((s, i) => (
+                      <div key={s.id} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-6">#{i + 1}</span>
+                        <span className={`text-sm w-20 truncate ${s.id === coin.id ? "text-primary font-medium" : "text-foreground"}`}>{s.symbol}</span>
+                        <div className="flex-1 h-3 bg-muted/30 rounded overflow-hidden">
+                          <div className={`h-full rounded ${s.id === coin.id ? "bg-primary" : "bg-muted-foreground/30"}`} style={{ width: `${totalAll > 0 ? (s.total / totalAll) * 100 : 0}%` }} />
+                        </div>
+                        <span className="text-xs font-mono text-muted-foreground w-14 text-right">{totalAll > 0 ? ((s.total / totalAll) * 100).toFixed(1) : 0}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </ProDetailSection>
+        )}
       </div>
     </Layout>
   );
