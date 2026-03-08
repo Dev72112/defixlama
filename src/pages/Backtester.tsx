@@ -43,6 +43,7 @@ export default function Backtester() {
   const selectedProtocol = protocols.find((p: any) => p.slug === params.protocolSlug);
 
   return (
+    <TierGate requiredTier="pro">
     <Layout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
