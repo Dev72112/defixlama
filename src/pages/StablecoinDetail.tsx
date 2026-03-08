@@ -305,21 +305,17 @@ function StablecoinDetailContent() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       dataKey="chain"
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={AXIS_TICK_STYLE}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
                     <YAxis
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={AXIS_TICK_STYLE}
                       label={{ value: "Percentage (%)", angle: -90, position: "insideLeft" }}
                     />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(value: number) => `${value.toFixed(1)}%`}
                     />
                     <Bar dataKey="percentage" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
