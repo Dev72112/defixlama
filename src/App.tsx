@@ -109,6 +109,10 @@ const App = () => (
             <Route path="/governance" element={<GovernancePage />} />
             <Route path="/community-sentiment" element={<CommunitySentiment />} />
             <Route path="/watchlist-exports" element={<WatchlistExports />} />
+            {/* Legal pages */}
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refunds" element={<Refunds />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BackToTopFab />

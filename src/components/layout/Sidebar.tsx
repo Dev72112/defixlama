@@ -269,6 +269,18 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
               <Link to="/builder-logs" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
                 <ScrollText className="h-4 w-4" /><span>{t("nav.builderLogs")}</span>
               </Link>
+              <div className="mt-3 pt-3 border-t border-sidebar-border space-y-0.5">
+                <p className="px-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Legal</p>
+                <Link to="/terms" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
+                  <ExternalLink className="h-4 w-4" /><span>Terms of Service</span>
+                </Link>
+                <Link to="/privacy" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
+                  <ExternalLink className="h-4 w-4" /><span>Privacy Policy</span>
+                </Link>
+                <Link to="/refunds" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
+                  <ExternalLink className="h-4 w-4" /><span>Refund Policy</span>
+                </Link>
+              </div>
               {isAdmin && (
                 <Link to="/admin" className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",

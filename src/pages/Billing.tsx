@@ -48,7 +48,7 @@ const tiers = [
   },
   {
     name: "Pro+",
-    price: "$59",
+    price: "$49",
     period: "/month",
     description: "Full analytics suite",
     features: [
