@@ -98,7 +98,7 @@ export default function Billing() {
   const [searchParams] = useSearchParams();
   const [verifying, setVerifying] = useState(false);
 
-  const hasActiveSubscription = status === "active";
+  const hasActiveSubscription = status === "active" && !isExpired;
 
   // Poll for payment confirmation when returning from checkout
   useEffect(() => {
