@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { useMemo, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
