@@ -50,8 +50,11 @@ class WebSocketManager {
   
   public prices: PriceUpdate = {};
   public isConnected = false;
+  public stableIsConnected = false; // debounced — won't flicker on brief disconnects
   public lastUpdate: number | null = null;
   public error: string | null = null;
+  private stableTimeout: NodeJS.Timeout | null = null;
+  private readonly STABLE_DELAY = 5000; // 5s before showing disconnect
 
   private constructor() {}
 
@@ -100,6 +103,9 @@ class WebSocketManager {
         this.isConnected = true;
         this.error = null;
         this.reconnectAttempts = 0;
+        // Immediately show connected
+        if (this.stableTimeout) { clearTimeout(this.stableTimeout); this.stableTimeout = null; }
+        this.stableIsConnected = true;
         this.notify();
       };
 
@@ -125,6 +131,14 @@ class WebSocketManager {
       this.ws.onclose = () => {
         this.isConnected = false;
         this.ws = null;
+        // Debounce: only show disconnected after STABLE_DELAY
+        if (!this.stableTimeout) {
+          this.stableTimeout = setTimeout(() => {
+            this.stableIsConnected = false;
+            this.stableTimeout = null;
+            this.notify();
+          }, this.STABLE_DELAY);
+        }
         this.notify();
         
         // Only reconnect if not manually disconnected and there are active listeners
@@ -158,11 +172,16 @@ class WebSocketManager {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    if (this.stableTimeout) {
+      clearTimeout(this.stableTimeout);
+      this.stableTimeout = null;
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
     this.isConnected = false;
+    this.stableIsConnected = false;
     this.reconnectAttempts = 0;
   }
 
@@ -176,7 +195,7 @@ class WebSocketManager {
   getSnapshot() {
     return {
       prices: this.prices,
-      isConnected: this.isConnected,
+      isConnected: this.stableIsConnected,
       lastUpdate: this.lastUpdate,
       error: this.error,
     };
