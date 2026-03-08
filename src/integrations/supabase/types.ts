@@ -507,7 +507,12 @@ export type Database = {
         | "wont_fix"
         | "duplicate"
       feedback_type: "bug" | "error" | "feature_request" | "listing" | "other"
-      subscription_status: "active" | "canceled" | "past_due" | "trialing"
+      subscription_status:
+        | "active"
+        | "canceled"
+        | "past_due"
+        | "trialing"
+        | "pending"
       subscription_tier: "free" | "pro" | "pro_plus" | "enterprise"
     }
     CompositeTypes: {
@@ -648,7 +653,13 @@ export const Constants = {
         "duplicate",
       ],
       feedback_type: ["bug", "error", "feature_request", "listing", "other"],
-      subscription_status: ["active", "canceled", "past_due", "trialing"],
+      subscription_status: [
+        "active",
+        "canceled",
+        "past_due",
+        "trialing",
+        "pending",
+      ],
       subscription_tier: ["free", "pro", "pro_plus", "enterprise"],
     },
   },
