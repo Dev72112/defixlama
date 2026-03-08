@@ -277,7 +277,7 @@ export default function MarketStructure() {
         {allFeeEfficiency.length > 10 && (
           <div className="rounded-lg border border-border bg-card p-4">
             <h3 className="text-base font-semibold text-foreground mb-3">All Fee Efficiency Rankings</h3>
-            <div className="overflow-x-auto">
+            <div className="overflow-hidden">
               <table className="data-table w-full">
                   <thead>
                     <tr>
