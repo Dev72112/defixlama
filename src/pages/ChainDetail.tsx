@@ -338,7 +338,10 @@ function ChainDetailContent() {
 
         {/* TVL History Chart */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">TVL History (90 Days)</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <h3 className="text-lg font-semibold text-foreground">TVL History</h3>
+            <DateRangeSelector value={dateRange} onChange={setDateRange} />
+          </div>
           <div className="h-[300px] md:h-[380px]">
             {historyLoading ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
