@@ -10,7 +10,6 @@ async function verifySignature(body: Record<string, unknown>, sig: string | null
   const secret = Deno.env.get("NOWPAYMENTS_IPN_SECRET");
   if (!secret || !sig) return false;
 
-  // Sort keys alphabetically and stringify
   const sorted = Object.keys(body).sort().reduce((acc: Record<string, unknown>, key) => {
     acc[key] = body[key];
     return acc;
@@ -55,7 +54,6 @@ Deno.serve(async (req) => {
     const paymentStatus = body.payment_status;
     console.log(`NOWPayments webhook: status=${paymentStatus}, order=${body.order_id}`);
 
-    // Only activate on confirmed/finished payments
     if (paymentStatus !== "finished" && paymentStatus !== "confirmed") {
       return new Response(JSON.stringify({ received: true, action: "ignored" }), {
         status: 200,
@@ -63,33 +61,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse order_id: {userId}_{tierKey}_{timestamp}
     const orderId = body.order_id as string;
-    const parts = orderId.split("_");
-    if (parts.length < 3) {
-      console.error("Invalid order_id format:", orderId);
-      return new Response(JSON.stringify({ error: "Invalid order_id" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
-    // UUID is first 5 parts joined by hyphens (standard UUID format)
-    // order_id format: {uuid}_pro_{timestamp} or {uuid}_pro_plus_{timestamp}
-    // UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (contains 4 hyphens but we used _ separator)
-    // So userId parts are separated by _ too. We need a different parsing strategy.
-    // Since UUID has format with hyphens, we stored it with hyphens intact.
-    // Actually the user.id from Supabase is a UUID like "abc-def-..." 
-    // order_id = `${user.id}_${tierKey}_${Date.now()}`
-    // user.id example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-    // So: "a1b2c3d4-e5f6-7890-abcd-ef1234567890_pro_1234567890"
-    // or: "a1b2c3d4-e5f6-7890-abcd-ef1234567890_pro_plus_1234567890"
-    
-    // Find tier by checking if it contains _pro_plus_ or _pro_
+    // Parse order_id: {uuid}_{tierKey}_{timestamp}
+    // tierKey can be "trial", "pro", or "pro_plus"
     let userId: string;
     let tierKey: string;
-    
-    if (orderId.includes("_pro_plus_")) {
+
+    if (orderId.includes("_trial_")) {
+      const idx = orderId.indexOf("_trial_");
+      userId = orderId.substring(0, idx);
+      tierKey = "trial";
+    } else if (orderId.includes("_pro_plus_")) {
       const idx = orderId.indexOf("_pro_plus_");
       userId = orderId.substring(0, idx);
       tierKey = "pro_plus";
@@ -110,33 +93,69 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const periodEnd = new Date();
-    periodEnd.setDate(periodEnd.getDate() + 30);
+    const now = new Date();
 
-    const { error } = await supabase
-      .from("subscriptions")
-      .upsert(
-        {
-          user_id: userId,
-          tier: tierKey,
-          status: "active",
-          current_period_end: periodEnd.toISOString(),
-          nowpayments_invoice_id: body.invoice_id?.toString() || null,
-          nowpayments_payment_id: body.payment_id?.toString() || null,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+    if (tierKey === "trial") {
+      // Trial: 7 days of Pro+ access
+      const trialEnd = new Date(now);
+      trialEnd.setDate(trialEnd.getDate() + 7);
 
-    if (error) {
-      console.error("Error upserting subscription:", error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const { error } = await supabase
+        .from("subscriptions")
+        .upsert(
+          {
+            user_id: userId,
+            tier: "pro_plus",
+            status: "trialing",
+            trial_start: now.toISOString(),
+            trial_end: trialEnd.toISOString(),
+            current_period_end: trialEnd.toISOString(),
+            nowpayments_invoice_id: body.invoice_id?.toString() || null,
+            nowpayments_payment_id: body.payment_id?.toString() || null,
+            updated_at: now.toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (error) {
+        console.error("Error upserting trial subscription:", error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      console.log(`Trial activated: user=${userId}, ends=${trialEnd.toISOString()}`);
+    } else {
+      // Regular subscription: 30 days
+      const periodEnd = new Date(now);
+      periodEnd.setDate(periodEnd.getDate() + 30);
+
+      const { error } = await supabase
+        .from("subscriptions")
+        .upsert(
+          {
+            user_id: userId,
+            tier: tierKey,
+            status: "active",
+            current_period_end: periodEnd.toISOString(),
+            nowpayments_invoice_id: body.invoice_id?.toString() || null,
+            nowpayments_payment_id: body.payment_id?.toString() || null,
+            updated_at: now.toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (error) {
+        console.error("Error upserting subscription:", error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      console.log(`Subscription activated: user=${userId}, tier=${tierKey}`);
     }
-
-    console.log(`Subscription activated: user=${userId}, tier=${tierKey}`);
 
     return new Response(JSON.stringify({ received: true, activated: true }), {
       status: 200,

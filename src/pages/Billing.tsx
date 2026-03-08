@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard, Check, Crown, Zap, Shield, Sparkles, Loader2, RefreshCw,
+  CreditCard, Check, Crown, Zap, Shield, Sparkles, Loader2, RefreshCw, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -16,20 +16,20 @@ import { toast } from "sonner";
 
 const tiers = [
   {
-    name: "Free",
-    price: "$0",
-    period: "/month",
-    description: "Basic DeFi analytics",
+    name: "Trial",
+    price: "$1",
+    period: "/ 7 days",
+    description: "Try all Pro+ features",
     features: [
-      "Dashboard & protocol data",
-      "Token prices & charts",
-      "DEX volumes & TVL",
-      "Chain analytics",
-      "Community access",
+      "Full Pro+ access for 7 days",
+      "All analytics & tools",
+      "Whale Activity & Yield Intelligence",
+      "Unlimited API access",
+      "No auto-renewal",
     ],
-    cta: "Current Plan",
-    tierKey: "free" as const,
-    icon: Zap,
+    cta: "Start Trial — $1",
+    tierKey: "trial" as const,
+    icon: Clock,
   },
   {
     name: "Pro",
@@ -37,7 +37,6 @@ const tiers = [
     period: "/month",
     description: "Advanced analytics & tools",
     features: [
-      "Everything in Free",
       "Backtester",
       "Risk Dashboard",
       "Predictions",
@@ -89,24 +88,23 @@ const tiers = [
   },
 ];
 
-const TIER_RANK: Record<string, number> = { free: 0, pro: 1, pro_plus: 2, enterprise: 3 };
+const TIER_RANK: Record<string, number> = { free: 0, trial: 2, pro: 1, pro_plus: 2, enterprise: 3 };
 
 export default function Billing() {
-  const { tier, isTrialActive, trialEndsAt, status, currentPeriodEnd, refetch, isExpired } = useSubscription();
+  const { tier, isTrialActive, trialEndsAt, status, currentPeriodEnd, refetch, isExpired, isPendingPayment, isAdmin } = useSubscription();
   const { user } = useAuth();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const [verifying, setVerifying] = useState(false);
 
-  const hasActiveSubscription = status === "active" && !isExpired;
+  const hasActiveSubscription = (status === "active" || status === "trialing") && !isExpired;
 
-  // Poll for payment confirmation when returning from checkout
   useEffect(() => {
     if (searchParams.get("status") !== "success" || hasActiveSubscription) return;
 
     setVerifying(true);
     let attempts = 0;
-    const maxAttempts = 24; // 2 minutes at 5s intervals
+    const maxAttempts = 24;
 
     const interval = setInterval(() => {
       attempts++;
@@ -120,7 +118,6 @@ export default function Billing() {
     return () => clearInterval(interval);
   }, [searchParams, hasActiveSubscription, refetch]);
 
-  // Stop verifying once subscription activates
   useEffect(() => {
     if (hasActiveSubscription && verifying) {
       setVerifying(false);
@@ -131,7 +128,7 @@ export default function Billing() {
   const daysUntilExpiry = currentPeriodEnd ? differenceInDays(currentPeriodEnd, new Date()) : null;
   const isExpiringSoon = hasActiveSubscription && daysUntilExpiry !== null && daysUntilExpiry <= 7;
 
-  const handleUpgrade = async (tierKey: "pro" | "pro_plus") => {
+  const handleUpgrade = async (tierKey: "pro" | "pro_plus" | "trial") => {
     if (!user) {
       toast.error("Please sign in to upgrade");
       return;
@@ -171,6 +168,21 @@ export default function Billing() {
           </p>
         </div>
 
+        {/* Admin Banner */}
+        {isAdmin && (
+          <Card className="p-4 border-primary/50 bg-primary/10">
+            <div className="flex items-center gap-3">
+              <Crown className="h-5 w-5 text-primary" />
+              <div>
+                <p className="font-medium text-foreground">Admin Account</p>
+                <p className="text-sm text-muted-foreground">
+                  You have complimentary Pro+ access as an administrator.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Verifying Payment Banner */}
         {verifying && (
           <Card className="p-4 border-primary/50 bg-primary/10 animate-pulse">
@@ -182,6 +194,24 @@ export default function Billing() {
                   Waiting for blockchain confirmation. This may take a few minutes.
                 </p>
               </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Pending Payment Banner */}
+        {isPendingPayment && !verifying && (
+          <Card className="p-4 border-primary/50 bg-primary/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-medium text-foreground">Payment Pending</p>
+                <p className="text-sm text-muted-foreground">
+                  You have an incomplete checkout. Complete your payment to activate your subscription.
+                </p>
+              </div>
+              <Button size="sm" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Check Status
+              </Button>
             </div>
           </Card>
         )}
@@ -238,25 +268,29 @@ export default function Billing() {
             <div>
               <p className="text-sm text-muted-foreground">Current Plan</p>
               <p className="text-xl font-bold">
-                {hasActiveSubscription
+                {isAdmin
+                  ? "Pro+ (Admin)"
+                  : hasActiveSubscription
                   ? tier === "pro_plus" ? "Pro+" : tier.charAt(0).toUpperCase() + tier.slice(1)
                   : isTrialActive
-                  ? "Free Trial (Pro+ Access)"
+                  ? "Trial (Pro+ Access)"
+                  : isPendingPayment
+                  ? "Payment Pending"
                   : "Free"}
               </p>
-              {isTrialActive && trialEndsAt && !hasActiveSubscription && (
+              {isTrialActive && trialEndsAt && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Trial ends {format(trialEndsAt, "MMM d, yyyy")} — All Pro+ features unlocked
                 </p>
               )}
-              {hasActiveSubscription && currentPeriodEnd && (
+              {hasActiveSubscription && currentPeriodEnd && !isTrialActive && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Active until {format(currentPeriodEnd, "MMM d, yyyy")} — paid with crypto
                 </p>
               )}
             </div>
             <Badge className="bg-primary/20 text-primary px-3 py-1 text-sm w-fit">
-              {hasActiveSubscription ? "Subscribed" : isTrialActive ? "Trial Active" : "Free"}
+              {isAdmin ? "Admin" : hasActiveSubscription ? "Subscribed" : isTrialActive ? "Trial Active" : isPendingPayment ? "Pending" : "Free"}
             </Badge>
           </div>
         </Card>
@@ -265,12 +299,14 @@ export default function Billing() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {tiers.map((t) => {
             const Icon = t.icon;
-            const effectiveTier = isTrialActive && !hasActiveSubscription ? "free" : tier;
             const isCurrentTier = !isTrialActive && tier === t.tierKey;
-            const isDowngrade = TIER_RANK[t.tierKey] < TIER_RANK[effectiveTier];
-            const isDisabled = t.comingSoon || isCurrentTier || isDowngrade || (hasActiveSubscription && TIER_RANK[t.tierKey] <= TIER_RANK[effectiveTier]);
+            const isTrialTier = t.tierKey === "trial";
+            const canBuyTrial = isTrialTier && !hasActiveSubscription && !isTrialActive && !isAdmin;
+            const isDisabled = t.comingSoon || isCurrentTier || isAdmin || 
+              (isTrialTier && !canBuyTrial) ||
+              (!isTrialTier && t.tierKey !== "enterprise" && hasActiveSubscription && TIER_RANK[t.tierKey] <= TIER_RANK[tier]);
             const isLoading = loadingTier === t.tierKey;
-            const canUpgrade = !isDisabled && t.tierKey !== "free" && t.tierKey !== "enterprise";
+            const canUpgrade = !isDisabled && !t.comingSoon && t.tierKey !== "enterprise";
 
             return (
               <Card
@@ -312,12 +348,14 @@ export default function Billing() {
                   className="w-full mt-auto"
                   variant={t.popular ? "default" : "outline"}
                   disabled={isDisabled || isLoading}
-                  onClick={() => canUpgrade ? handleUpgrade(t.tierKey as "pro" | "pro_plus") : undefined}
+                  onClick={() => canUpgrade ? handleUpgrade(t.tierKey as "pro" | "pro_plus" | "trial") : undefined}
                 >
                   {isLoading ? (
                     <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating checkout…</>
                   ) : isCurrentTier ? (
                     "Current Plan"
+                  ) : isAdmin ? (
+                    "Admin Access"
                   ) : (
                     t.cta
                   )}
@@ -332,7 +370,7 @@ export default function Billing() {
             🪙 Pay with 200+ cryptocurrencies via NOWPayments.{" "}
             {hasActiveSubscription
               ? "Your subscription is active. Renewals are manual — you'll receive a reminder before expiry."
-              : "All Pro+ features are currently available during the free trial period."}
+              : "Start with a $1 trial to unlock all Pro+ features for 7 days."}
           </p>
         </Card>
       </div>

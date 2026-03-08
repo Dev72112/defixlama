@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const TIER_PRICES: Record<string, number> = {
+  trial: 1,
   pro: 29,
   pro_plus: 49,
 };
@@ -25,13 +26,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
+    const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -40,9 +41,9 @@ Deno.serve(async (req) => {
     }
 
     const { tierKey } = await req.json();
-    if (!tierKey || !["pro", "pro_plus"].includes(tierKey)) {
+    if (!tierKey || !["pro", "pro_plus", "trial"].includes(tierKey)) {
       return new Response(
-        JSON.stringify({ error: "Invalid tier. Use 'pro' or 'pro_plus'." }),
+        JSON.stringify({ error: "Invalid tier. Use 'pro', 'pro_plus', or 'trial'." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
     }
 
     const orderId = `${user.id}_${tierKey}_${Date.now()}`;
-    const tierLabel = tierKey === "pro" ? "Pro" : "Pro+";
+    const tierLabel = tierKey === "trial" ? "7-Day Trial" : tierKey === "pro" ? "Pro" : "Pro+";
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/nowpayments-webhook`;
     const successUrl = "https://defixlama.lovable.app/billing?status=success";
     const cancelUrl = "https://defixlama.lovable.app/billing?status=cancel";
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
         price_amount: TIER_PRICES[tierKey],
         price_currency: "usd",
         order_id: orderId,
-        order_description: `DefiXlama ${tierLabel} Monthly Subscription`,
+        order_description: `DefiXlama ${tierLabel} ${tierKey === "trial" ? "" : "Monthly "}Subscription`,
         ipn_callback_url: webhookUrl,
         success_url: successUrl,
         cancel_url: cancelUrl,
@@ -87,6 +88,27 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Write a pending subscription record using service role
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const pendingTier = tierKey === "trial" ? "pro_plus" : tierKey;
+
+    await supabaseAdmin
+      .from("subscriptions")
+      .upsert(
+        {
+          user_id: user.id,
+          tier: pendingTier,
+          status: "pending",
+          nowpayments_invoice_id: data.id?.toString() || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
 
     return new Response(
       JSON.stringify({

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Lock, AlertTriangle } from "lucide-react";
+import { Crown, Lock, AlertTriangle, CreditCard } from "lucide-react";
 import { useSubscription, SubscriptionTier } from "@/hooks/useSubscription";
 import { differenceInDays, format } from "date-fns";
 
@@ -20,10 +20,14 @@ const tierLevel: Record<SubscriptionTier, number> = {
 };
 
 export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
-  const { tier, isTrialActive, isLoading, currentPeriodEnd, status, isExpired } = useSubscription();
+  const { tier, isTrialActive, isLoading, currentPeriodEnd, status, isExpired, isPendingPayment, isAdmin } = useSubscription();
 
   if (isLoading) return null;
 
+  // Admins always have access
+  if (isAdmin) return <>{children}</>;
+
+  // Active trial (paid $1) grants access
   if (isTrialActive) return <>{children}</>;
 
   const hasAccess = tierLevel[tier] >= tierLevel[requiredTier];
@@ -32,6 +36,7 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
     return (
       <>
         {isExpired && <ExpiredBanner />}
+        {isPendingPayment && <PendingPaymentBanner />}
         <UpgradePrompt requiredTier={requiredTier} />
       </>
     );
@@ -43,8 +48,27 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
   return (
     <>
       {showExpiryWarning && currentPeriodEnd && <ExpiryBanner daysLeft={daysLeft!} expiryDate={currentPeriodEnd} />}
+      {isPendingPayment && <PendingPaymentBanner />}
       {children}
     </>
+  );
+}
+
+function PendingPaymentBanner() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="mx-4 mt-2 mb-0">
+      <Card className="p-3 border-primary/40 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm">
+          <CreditCard className="h-4 w-4 text-primary flex-shrink-0" />
+          <span>You have a pending payment. Complete your checkout to activate your subscription.</span>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => navigate("/billing")} className="text-xs w-fit">
+          Complete Payment
+        </Button>
+      </Card>
+    </div>
   );
 }
 
