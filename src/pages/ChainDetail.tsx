@@ -686,6 +686,88 @@ function ChainDetailContent() {
             )}
           </div>
         </div>
+
+        {/* PRO Analytics Sections */}
+        <ProDetailSection title="Ecosystem Composition">
+          {(() => {
+            const categories: Record<string, number> = {};
+            topProtocols.forEach((p: any) => {
+              const cat = p.category || "Other";
+              categories[cat] = (categories[cat] || 0) + (p.chainTvl || p.tvl || 0);
+            });
+            const sorted = Object.entries(categories).sort(([, a], [, b]) => b - a);
+            const total = sorted.reduce((a, [, v]) => a + v, 0);
+            return (
+              <div className="space-y-2">
+                {sorted.slice(0, 8).map(([cat, val], i) => (
+                  <div key={cat} className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-6">#{i + 1}</span>
+                    <span className="text-sm text-foreground w-28 truncate">{cat}</span>
+                    <div className="flex-1 h-3 bg-muted/30 rounded overflow-hidden">
+                      <div className="h-full bg-primary rounded" style={{ width: `${total > 0 ? (val / total) * 100 : 0}%` }} />
+                    </div>
+                    <span className="text-xs font-mono text-muted-foreground w-14 text-right">{total > 0 ? ((val / total) * 100).toFixed(1) : 0}%</span>
+                    <span className="text-xs font-mono text-foreground w-20 text-right">{formatCurrency(val)}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </ProDetailSection>
+
+        <ProDetailSection title="Growth Velocity">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">7-Day Growth</p>
+              <p className={cn("text-2xl font-bold", (tvlAnalytics?.change7d || 0) >= 0 ? "text-success" : "text-destructive")}>
+                {tvlAnalytics?.change7d.toFixed(2) || 0}%
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">30-Day Growth</p>
+              <p className={cn("text-2xl font-bold", (tvlAnalytics?.change30d || 0) >= 0 ? "text-success" : "text-destructive")}>
+                {tvlAnalytics?.change30d.toFixed(2) || 0}%
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Avg TVL (30d)</p>
+              <p className="text-2xl font-bold">{formatCurrency(tvlAnalytics?.avgTvl || 0)}</p>
+            </div>
+          </div>
+        </ProDetailSection>
+
+        {relatedChains.length > 0 && (
+          <ProDetailSection title="Chain Comparison">
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Chain</th>
+                    <th className="text-right">TVL</th>
+                    <th className="text-right">Market Share</th>
+                    <th className="text-right">Protocols</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-primary/5">
+                    <td className="font-medium text-primary">{chain.name} (this)</td>
+                    <td className="text-right font-mono">{formatCurrency(chain.tvl)}</td>
+                    <td className="text-right font-mono">{marketShare.toFixed(2)}%</td>
+                    <td className="text-right">{topProtocols.length}</td>
+                  </tr>
+                  {relatedChains.map((c) => (
+                    <tr key={c.name}>
+                      <td className="font-medium text-foreground">{c.name}</td>
+                      <td className="text-right font-mono">{formatCurrency(c.tvl || 0)}</td>
+                      <td className="text-right font-mono">{totalTVL > 0 ? ((c.tvl / totalTVL) * 100).toFixed(2) : 0}%</td>
+                      <td className="text-right">—</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ProDetailSection>
+        )}
       </div>
     </Layout>
   );
