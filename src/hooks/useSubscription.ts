@@ -11,6 +11,7 @@ interface SubscriptionState {
   isLoading: boolean;
   status: string | null;
   currentPeriodEnd: Date | null;
+  isExpired: boolean;
 }
 
 // 3-month free trial from account creation
@@ -25,11 +26,12 @@ export function useSubscription(): SubscriptionState & { refetch: () => void } {
     isLoading: true,
     status: null,
     currentPeriodEnd: null,
+    isExpired: false,
   });
 
   const load = useCallback(async () => {
     if (!user) {
-      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, status: null, currentPeriodEnd: null });
+      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, status: null, currentPeriodEnd: null, isExpired: false });
       return;
     }
 
@@ -39,24 +41,46 @@ export function useSubscription(): SubscriptionState & { refetch: () => void } {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (sub && (sub.status === "active" || sub.status === "trialing")) {
+    if (sub) {
       const periodEnd = sub.current_period_end ? new Date(sub.current_period_end) : null;
-      const isExpired = periodEnd ? periodEnd < new Date() : false;
+      const isExpiredNow = periodEnd ? periodEnd < new Date() : false;
 
-      if (!isExpired) {
+      if (sub.status === "active" || sub.status === "trialing") {
+        if (!isExpiredNow) {
+          setState({
+            tier: sub.tier as SubscriptionTier,
+            isTrialActive: false,
+            trialEndsAt: null,
+            isLoading: false,
+            status: sub.status,
+            currentPeriodEnd: periodEnd,
+            isExpired: false,
+          });
+          return;
+        }
+      }
+
+      // Subscription exists but is expired or canceled
+      if (isExpiredNow || sub.status === "canceled" || sub.status === "past_due") {
+        // Fall through to trial but expose isExpired
+        const createdAt = new Date(user.created_at || Date.now());
+        const trialEnd = new Date(createdAt.getTime() + TRIAL_DURATION_MS);
+        const isTrialActive = trialEnd > new Date();
+
         setState({
-          tier: sub.tier as SubscriptionTier,
-          isTrialActive: false,
-          trialEndsAt: null,
+          tier: isTrialActive ? "pro_plus" : "free",
+          isTrialActive,
+          trialEndsAt: trialEnd,
           isLoading: false,
           status: sub.status,
           currentPeriodEnd: periodEnd,
+          isExpired: true,
         });
         return;
       }
     }
 
-    // Fall back to trial logic
+    // No subscription record — trial logic
     const createdAt = new Date(user.created_at || Date.now());
     const trialEnd = new Date(createdAt.getTime() + TRIAL_DURATION_MS);
     const isTrialActive = trialEnd > new Date();
@@ -68,6 +92,7 @@ export function useSubscription(): SubscriptionState & { refetch: () => void } {
       isLoading: false,
       status: sub?.status || null,
       currentPeriodEnd: null,
+      isExpired: false,
     });
   }, [user]);
 
