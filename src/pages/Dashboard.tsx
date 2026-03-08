@@ -1,7 +1,8 @@
 import React, { Suspense, lazy, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/layout/Layout";
-import { Activity } from "lucide-react";
+import { Activity, Zap } from "lucide-react";
+import { useLivePrices } from "@/hooks/useLivePrice";
 import { ErrorBoundary } from "react-error-boundary";
 import { useDashboardData, useChainsTVL, useFeesData, useStablecoins, useTop10Chains } from "@/hooks/useDefiData";
 import { useChain } from "@/contexts/ChainContext";
