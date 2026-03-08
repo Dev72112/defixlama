@@ -103,6 +103,9 @@ class WebSocketManager {
         this.isConnected = true;
         this.error = null;
         this.reconnectAttempts = 0;
+        // Immediately show connected
+        if (this.stableTimeout) { clearTimeout(this.stableTimeout); this.stableTimeout = null; }
+        this.stableIsConnected = true;
         this.notify();
       };
 
