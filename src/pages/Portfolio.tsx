@@ -273,7 +273,7 @@ export default function Portfolio() {
                     </tr>
                   </thead>
                   <tbody>
-                    {holdings.map((holding) => (
+                    {liveHoldings.map((holding) => (
                       <tr key={holding.id} className="border-b border-border/50 hover:bg-muted/30">
                         <td className="py-3">
                           <div className="flex items-center gap-2">
