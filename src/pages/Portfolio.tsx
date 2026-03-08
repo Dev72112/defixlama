@@ -100,12 +100,14 @@ export default function Portfolio() {
     setPurchasePrice("");
   };
 
-  // Pie chart data
-  const pieData = holdings
+  // Pie chart data with percentage
+  const pieData = liveHoldings
     .filter(h => h.value > 0)
+    .sort((a, b) => b.value - a.value)
     .map(h => ({
       name: h.symbol,
       value: h.value,
+      percent: liveTotalValue > 0 ? ((h.value / liveTotalValue) * 100).toFixed(1) : "0",
     }));
 
   return (
