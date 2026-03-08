@@ -10,6 +10,7 @@ interface SubscriptionState {
   trialEndsAt: Date | null;
   isLoading: boolean;
   paddleSubscriptionId: string | null;
+  paddleCustomerId: string | null;
   status: string | null;
 }
 
