@@ -53,6 +53,11 @@ const GovernancePage = lazyLoad(() => import("./pages/Governance"));
 const CommunitySentiment = lazyLoad(() => import("./pages/CommunitySentiment"));
 const WatchlistExports = lazyLoad(() => import("./pages/WatchlistExports"));
 
+// Legal pages
+const Terms = lazyLoad(() => import("./pages/Terms"));
+const Privacy = lazyLoad(() => import("./pages/Privacy"));
+const Refunds = lazyLoad(() => import("./pages/Refunds"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -109,6 +114,10 @@ const App = () => (
             <Route path="/governance" element={<GovernancePage />} />
             <Route path="/community-sentiment" element={<CommunitySentiment />} />
             <Route path="/watchlist-exports" element={<WatchlistExports />} />
+            {/* Legal pages */}
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refunds" element={<Refunds />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BackToTopFab />

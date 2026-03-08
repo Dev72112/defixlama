@@ -68,7 +68,7 @@ export default function WatchlistExports() {
   ];
 
   return (
-    <TierGate requiredTier="pro">
+    <TierGate requiredTier="pro_plus">
       <Layout>
         <div className="space-y-6 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

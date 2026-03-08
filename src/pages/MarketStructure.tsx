@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { useMemo, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
@@ -143,6 +144,7 @@ export default function MarketStructure() {
   ];
 
   return (
+    <TierGate requiredTier="pro_plus">
     <Layout>
       <div className="space-y-6 page-enter">
         <div>
@@ -289,5 +291,6 @@ export default function MarketStructure() {
         </div>
       </div>
     </Layout>
+    </TierGate>
   );
 }

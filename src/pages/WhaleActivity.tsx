@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { useMemo, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
@@ -109,6 +110,7 @@ export default function WhaleActivity() {
   const isLoading = protocols.isLoading;
 
   return (
+    <TierGate requiredTier="pro_plus">
     <Layout>
       <div className="space-y-6 page-enter">
         <div>
@@ -229,5 +231,6 @@ export default function WhaleActivity() {
         </div>
       </div>
     </Layout>
+    </TierGate>
   );
 }

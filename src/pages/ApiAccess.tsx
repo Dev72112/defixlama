@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ export default function ApiAccess() {
   const [showKey, setShowKey] = useState(false);
 
   return (
+    <TierGate requiredTier="pro">
     <Layout>
       <div className="space-y-6 animate-fade-in">
         <div>
@@ -103,5 +105,6 @@ export default function ApiAccess() {
         </Card>
       </div>
     </Layout>
+    </TierGate>
   );
 }

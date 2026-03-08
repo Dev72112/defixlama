@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { useMemo, useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
@@ -116,6 +117,7 @@ export default function Correlations() {
   ];
 
   return (
+    <TierGate requiredTier="pro_plus">
     <Layout>
       <div className="space-y-6 page-enter">
         <div className="flex items-center gap-3">
@@ -293,5 +295,6 @@ export default function Correlations() {
         </div>
       </div>
     </Layout>
+    </TierGate>
   );
 }

@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useChain } from "@/contexts/ChainContext";
@@ -103,6 +104,7 @@ export default function YieldIntelligence() {
   const riskTotalPages = Math.ceil(riskAdjusted.length / pageSize);
 
   return (
+    <TierGate requiredTier="pro_plus">
     <Layout>
       <div className="space-y-6 page-enter">
         <div className="flex items-center gap-3">
@@ -268,5 +270,6 @@ export default function YieldIntelligence() {
         </Card>
       </div>
     </Layout>
+    </TierGate>
   );
 }

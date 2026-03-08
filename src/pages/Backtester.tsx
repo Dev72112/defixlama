@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ export default function Backtester() {
   const selectedProtocol = protocols.find((p: any) => p.slug === params.protocolSlug);
 
   return (
+    <TierGate requiredTier="pro">
     <Layout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
@@ -201,5 +203,6 @@ export default function Backtester() {
         </Card>
       </div>
     </Layout>
+    </TierGate>
   );
 }

@@ -1,3 +1,4 @@
+import { TierGate } from "@/components/TierGate";
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
@@ -142,6 +143,7 @@ export default function RiskDashboard() {
   ];
 
   return (
+    <TierGate requiredTier="pro">
     <Layout>
       <div className="space-y-6 animate-fade-in">
         <div>
@@ -246,5 +248,6 @@ export default function RiskDashboard() {
         </Card>
       </div>
     </Layout>
+    </TierGate>
   );
 }
