@@ -145,7 +145,7 @@ function DashboardContent() {
       });
     }
 
-    // Top chains (no timestamp) — synthetic timestamps spaced further back
+    // Top chains — ranked items, no real timestamps
     for (let i = 0; i < topChains.length && i < 3; i++) {
       const c = topChains[i];
       items.push({
@@ -153,7 +153,7 @@ function DashboardContent() {
         id: c?.name || `chain-${i}`,
         title: c?.name || "unknown",
         subtitle: `${formatCurrency(c?.tvl ?? 0)} TVL`,
-        timestamp: Math.floor(Date.now() / 1000) - (i + 1) * 120,
+        timestamp: 0, // No real timestamp
         meta: c,
       });
     }
