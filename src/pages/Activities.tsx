@@ -43,7 +43,8 @@ export default function Activities() {
     const now = Math.floor(Date.now() / 1000);
 
     // protocols with real timestamps (listedAt from DefiLlama)
-    for (const p of protocols) {
+    for (let idx = 0; idx < protocols.length; idx++) {
+      const p = protocols[idx];
       if (!p) continue;
       out.push({
         id: `protocol-${p.id || p.slug || p.name}`,
