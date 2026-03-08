@@ -20,6 +20,10 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 
 export default function SecurityDetail() {
+  return <ErrorBoundary><SecurityDetailContent /></ErrorBoundary>;
+}
+
+function SecurityDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: protocols, isLoading } = useAllProtocols();
 
