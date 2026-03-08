@@ -59,14 +59,17 @@ function ChainDetailContent() {
     return sorted.findIndex((c) => c.name === chain.name) + 1;
   }, [chains, chain]);
 
+  const [dateRange, setDateRange] = useState<DateRange>("90d");
+
   // Format chart data
   const chartData = useMemo(() => {
     if (!history) return [];
-    return history.slice(-90).map((d: any) => ({
+    const days = dateRange === "all" ? history.length : dateRange === "1y" ? 365 : dateRange === "90d" ? 90 : dateRange === "30d" ? 30 : 7;
+    return history.slice(-days).map((d: any) => ({
       date: new Date(d.date * 1000).toLocaleDateString(),
       tvl: d.tvl || 0,
     }));
-  }, [history]);
+  }, [history, dateRange]);
 
   // Pie chart data for comparison with top chains
   const pieData = useMemo(() => {
