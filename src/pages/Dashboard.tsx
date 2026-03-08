@@ -24,7 +24,7 @@ import { StablecoinStats } from "@/components/dashboard/StablecoinStats";
 import { FeesOverview } from "@/components/dashboard/FeesOverview";
 import { TopChainsCard } from "@/components/dashboard/TopChainsCard";
 import { formatCurrency, timeAgo } from "@/lib/api/defillama";
-import { Database, ArrowLeftRight, TrendingUp, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
+import { Database, ArrowLeftRight, TrendingUp, TrendingDown, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
