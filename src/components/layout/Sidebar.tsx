@@ -65,18 +65,18 @@ const moreItems: NavItem[] = [
 ];
 
 const advancedItems: NavItem[] = [
-  { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "PRO" },
-  { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO" },
-  { labelKey: "Yield Intelligence", href: "/yield-intelligence", icon: TrendingUp, badge: "PRO" },
-  { labelKey: "Correlations", href: "/correlations", icon: Activity, badge: "PRO" },
   { labelKey: "Backtester", href: "/backtester", icon: BarChart3, badge: "PRO" },
   { labelKey: "Risk Dashboard", href: "/risk-dashboard", icon: Shield, badge: "PRO" },
   { labelKey: "Alert Config", href: "/alert-config", icon: Bell, badge: "PRO" },
   { labelKey: "Predictions", href: "/predictions", icon: Brain, badge: "PRO" },
   { labelKey: "Protocol Comparison", href: "/protocol-comparison", icon: GitCompare, badge: "PRO" },
   { labelKey: "Governance", href: "/governance", icon: Vote, badge: "PRO" },
-  { labelKey: "Sentiment", href: "/community-sentiment", icon: MessageCircle, badge: "PRO" },
-  { labelKey: "Watchlist Exports", href: "/watchlist-exports", icon: Star, badge: "PRO" },
+  { labelKey: "Whale Activity", href: "/whale-activity", icon: Waves, badge: "PRO+" },
+  { labelKey: "Market Structure", href: "/market-structure", icon: Landmark, badge: "PRO+" },
+  { labelKey: "Yield Intelligence", href: "/yield-intelligence", icon: TrendingUp, badge: "PRO+" },
+  { labelKey: "Correlations", href: "/correlations", icon: Activity, badge: "PRO+" },
+  { labelKey: "Sentiment", href: "/community-sentiment", icon: MessageCircle, badge: "PRO+" },
+  { labelKey: "Watchlist Exports", href: "/watchlist-exports", icon: Star, badge: "PRO+" },
 ];
 
 interface SidebarProps {
