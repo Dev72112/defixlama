@@ -33,9 +33,10 @@ export function HistoricalFeesChart({
       switch (dateRange) {
         case "7d": return item.total7d || 0;
         case "30d": return item.total30d || 0;
-        case "90d": return (item.total30d || 0) * 3; // Approximate
-        case "1y": return (item.total30d || 0) * 12; // Approximate
-        case "all": return (item.total30d || 0) * 12; // Approximate
+        // For longer ranges, show 30d data (best available) — labeled honestly
+        case "90d": return item.total30d || 0;
+        case "1y": return item.total30d || 0;
+        case "all": return item.total30d || 0;
         default: return item.total24h || 0;
       }
     };
