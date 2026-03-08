@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercentage, getChangeColor, Protocol } from "@/lib/api/defillama";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 
 interface TVLFlowTableProps {
   protocols: Protocol[];
@@ -23,16 +23,48 @@ export function TVLFlowTable({ protocols, loading, limit = 15 }: TVLFlowTablePro
       .slice(0, limit);
   }, [protocols, limit]);
 
-  if (loading) {
-    return (
-      <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <div className="skeleton h-5 w-40" />
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="skeleton h-10 w-full" />
-        ))}
-      </div>
-    );
-  }
+  const columns: ResponsiveColumn<any>[] = [
+    {
+      key: "name", label: "Protocol", priority: "always",
+      render: (p: any) => (
+        <div className="flex items-center gap-2 min-w-0">
+          {p.logo && <img src={p.logo} alt="" className="h-5 w-5 rounded-full flex-shrink-0" />}
+          <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">{p.name}</span>
+        </div>
+      ),
+    },
+    {
+      key: "category", label: "Category", priority: "expanded",
+      render: (p: any) => <span className="text-muted-foreground text-xs">{p.category || "—"}</span>,
+    },
+    {
+      key: "tvl", label: "TVL", priority: "expanded", align: "right",
+      render: (p: any) => <span className="font-mono text-sm">{formatCurrency(p.tvl)}</span>,
+    },
+    {
+      key: "change_1d", label: "24h Change", priority: "always", align: "right",
+      render: (p: any) => {
+        const isPositive = (p.change_1d || 0) >= 0;
+        return (
+          <div className={`flex items-center justify-end gap-1 font-mono text-sm ${getChangeColor(p.change_1d)}`}>
+            {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            {formatPercentage(p.change_1d)}
+          </div>
+        );
+      },
+    },
+    {
+      key: "flow", label: "Flow", priority: "expanded", align: "right",
+      render: (p: any) => {
+        const isPositive = (p.change_1d || 0) >= 0;
+        return (
+          <span className={`font-mono text-sm ${getChangeColor(p.change_1d)}`}>
+            {isPositive ? "+" : ""}{formatCurrency(Math.abs(p.tvlChange))}
+          </span>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -40,53 +72,14 @@ export function TVLFlowTable({ protocols, loading, limit = 15 }: TVLFlowTablePro
         <h3 className="text-base font-semibold text-foreground">TVL Flow Analysis</h3>
         <p className="text-xs text-muted-foreground mt-0.5">Largest absolute TVL movements in 24h</p>
       </div>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Protocol</TableHead>
-              <TableHead className="hidden sm:table-cell">Category</TableHead>
-              <TableHead className="text-right">TVL</TableHead>
-              <TableHead className="text-right">24h Change</TableHead>
-              <TableHead className="text-right hidden sm:table-cell">Flow</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {movers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  No significant TVL movements detected
-                </TableCell>
-              </TableRow>
-            ) : (
-              movers.map((p) => {
-                const isPositive = (p.change_1d || 0) >= 0;
-                return (
-                  <TableRow key={p.id || p.name}>
-                    <TableCell>
-                      <div className="flex items-center gap-2 min-w-0">
-                        {p.logo && <img src={p.logo} alt="" className="h-5 w-5 rounded-full flex-shrink-0" />}
-                        <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none">{p.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell text-muted-foreground text-xs">{p.category || "—"}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">{formatCurrency(p.tvl)}</TableCell>
-                    <TableCell className={`text-right font-mono text-sm ${getChangeColor(p.change_1d)}`}>
-                      <div className="flex items-center justify-end gap-1">
-                        {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                        {formatPercentage(p.change_1d)}
-                      </div>
-                    </TableCell>
-                    <TableCell className={`text-right font-mono text-sm hidden sm:table-cell ${getChangeColor(p.change_1d)}`}>
-                      {isPositive ? "+" : ""}{formatCurrency(Math.abs(p.tvlChange))}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <ResponsiveDataTable
+        columns={columns}
+        data={movers}
+        keyField={(p: any) => p.id || p.name}
+        loading={loading}
+        loadingRows={5}
+        emptyMessage="No significant TVL movements detected"
+      />
     </div>
   );
 }

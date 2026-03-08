@@ -9,8 +9,9 @@ import { DateRangeSelector, DateRange, filterByDateRange } from "@/components/da
 import { Activity, GitCompare, AlertTriangle, TrendingUp, TrendingDown, BarChart3, History } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from "recharts";
 import { Badge } from "@/components/ui/badge";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 
 const PAGE_SIZE = 15;
 
@@ -63,9 +64,7 @@ export default function Correlations() {
     }
     return Array.from(map.entries())
       .map(([cat, data]) => ({
-        category: cat,
-        tvl: data.tvl,
-        count: data.count,
+        category: cat, tvl: data.tvl, count: data.count,
         avg1h: data.change1h.length ? data.change1h.reduce((a, b) => a + b, 0) / data.change1h.length : 0,
         avg1d: data.change1d.length ? data.change1d.reduce((a, b) => a + b, 0) / data.change1d.length : 0,
         avg7d: data.change7d.length ? data.change7d.reduce((a, b) => a + b, 0) / data.change7d.length : 0,
@@ -91,8 +90,7 @@ export default function Correlations() {
       .sort((a, b) => Math.abs(b.change_1d || 0) - Math.abs(a.change_1d || 0))
       .slice(0, 15)
       .map((p) => ({
-        ...p,
-        catAvg: catAvg.get(p.category || "Other") || 0,
+        ...p, catAvg: catAvg.get(p.category || "Other") || 0,
         divergence: Math.abs((p.change_1d || 0) - (catAvg.get(p.category || "Other") || 0)),
       }));
   }, [protocolList, sectorRotation]);
@@ -102,20 +100,26 @@ export default function Correlations() {
       .filter((s) => s.tvl > 0)
       .map((s) => ({
         name: s.category.length > 14 ? s.category.slice(0, 12) + "…" : s.category,
-        change: s.avg1d,
-        dollarChange: s.tvl * (s.avg1d / 100),
+        change: s.avg1d, dollarChange: s.tvl * (s.avg1d / 100),
       }))
       .sort((a, b) => b.change - a.change)
       .slice(0, 12);
   }, [sectorRotation]);
 
+  const sectorColumns: ResponsiveColumn<any>[] = [
+    { key: "category", label: "Category", priority: "always", render: (s: any) => <span className="font-medium text-foreground">{s.category}</span> },
+    { key: "count", label: "Protocols", priority: "expanded", align: "right", render: (s: any) => <span className="text-muted-foreground">{s.count}</span> },
+    { key: "tvl", label: "TVL", priority: "expanded", align: "right", render: (s: any) => <span className="font-mono">{formatCurrency(s.tvl)}</span> },
+    { key: "avg1h", label: "1h Avg", priority: "expanded", align: "right", render: (s: any) => <span className={cn("font-mono", getChangeColor(s.avg1h))}>{formatPercentage(s.avg1h)}</span> },
+    { key: "avg1d", label: "1d Avg", priority: "always", align: "right", render: (s: any) => <span className={cn("font-mono font-bold", getChangeColor(s.avg1d))}>{formatPercentage(s.avg1d)}</span> },
+    { key: "avg7d", label: "7d Avg", priority: "expanded", align: "right", render: (s: any) => <span className={cn("font-mono", getChangeColor(s.avg7d))}>{formatPercentage(s.avg7d)}</span> },
+  ];
+
   return (
     <Layout>
       <div className="space-y-6 page-enter">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">
-            {selectedChain.name} Correlations
-          </h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{selectedChain.name} Correlations</h1>
           <Badge variant="outline" className="text-primary border-primary/30">PRO</Badge>
         </div>
         <p className="text-muted-foreground text-sm">TVL co-movement analysis, sector rotation tracking, and divergence alerts</p>
@@ -142,11 +146,8 @@ export default function Correlations() {
                         {p.name.length > 10 ? p.name.slice(0, 8) + "…" : p.name}
                       </th>
                     ))}
-                    {/* Mobile: show abbreviated headers */}
                     {top15.map((p, i) => (
-                      <th key={`m-${p.name}`} className="p-0.5 text-muted-foreground font-normal sm:hidden" style={{ writingMode: "vertical-rl", maxWidth: 20 }}>
-                        {i + 1}
-                      </th>
+                      <th key={`m-${p.name}`} className="p-0.5 text-muted-foreground font-normal sm:hidden" style={{ writingMode: "vertical-rl", maxWidth: 20 }}>{i + 1}</th>
                     ))}
                   </tr>
                 </thead>
@@ -158,10 +159,7 @@ export default function Correlations() {
                         <td key={ci} className="p-0.5">
                           <div className={cn(
                             "w-5 h-5 sm:w-5 sm:h-5 rounded-sm",
-                            ri === ci ? "bg-muted" :
-                            cell === "up" ? "bg-success/40" :
-                            cell === "down" ? "bg-destructive/40" :
-                            "bg-muted/30"
+                            ri === ci ? "bg-muted" : cell === "up" ? "bg-success/40" : cell === "down" ? "bg-destructive/40" : "bg-muted/30"
                           )} />
                         </td>
                       ))}
@@ -178,7 +176,7 @@ export default function Correlations() {
           )}
         </div>
 
-        {/* Sector Rotation Tracker with pagination */}
+        {/* Sector Rotation Tracker */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-1">
             <Activity className="h-4 w-4 text-primary" />
@@ -191,48 +189,18 @@ export default function Correlations() {
             <ChartEmptyState />
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th className="text-right hidden sm:table-cell">Protocols</th>
-                      <th className="text-right hidden sm:table-cell">TVL</th>
-                      <th className="text-right hidden md:table-cell">1h Avg</th>
-                      <th className="text-right">1d Avg</th>
-                      <th className="text-right hidden sm:table-cell">7d Avg</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sectorPageData.map((s) => (
-                      <tr key={s.category}>
-                        <td className="font-medium text-foreground">{s.category}</td>
-                        <td className="text-right text-muted-foreground hidden sm:table-cell">{s.count}</td>
-                        <td className="text-right font-mono hidden sm:table-cell">{formatCurrency(s.tvl)}</td>
-                        <td className={cn("text-right font-mono hidden md:table-cell", getChangeColor(s.avg1h))}>{formatPercentage(s.avg1h)}</td>
-                        <td className={cn("text-right font-mono font-bold", getChangeColor(s.avg1d))}>{formatPercentage(s.avg1d)}</td>
-                        <td className={cn("text-right font-mono hidden sm:table-cell", getChangeColor(s.avg7d))}>{formatPercentage(s.avg7d)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ResponsiveDataTable
+                columns={sectorColumns}
+                data={sectorPageData}
+                keyField={(s: any) => s.category}
+                emptyMessage="No sector data"
+              />
               {sectorTotalPages > 1 && (
-                <Pagination className="mt-4">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious onClick={() => setSectorPage(p => Math.max(1, p - 1))} className={sectorPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                    </PaginationItem>
-                    {Array.from({ length: Math.min(sectorTotalPages, 5) }, (_, i) => i + 1).map(p => (
-                      <PaginationItem key={p}>
-                        <PaginationLink isActive={sectorPage === p} onClick={() => setSectorPage(p)} className="cursor-pointer">{p}</PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext onClick={() => setSectorPage(p => Math.min(sectorTotalPages, p + 1))} className={sectorPage === sectorTotalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                <div className="flex items-center justify-center gap-2 mt-4">
+                  <Button variant="ghost" size="sm" onClick={() => setSectorPage(p => Math.max(1, p - 1))} disabled={sectorPage === 1}>Prev</Button>
+                  <span className="text-sm text-muted-foreground">{sectorPage}/{sectorTotalPages}</span>
+                  <Button variant="ghost" size="sm" onClick={() => setSectorPage(p => Math.min(sectorTotalPages, p + 1))} disabled={sectorPage === sectorTotalPages}>Next</Button>
+                </div>
               )}
             </>
           )}
@@ -261,9 +229,7 @@ export default function Correlations() {
                       <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
                       <p className="text-[10px] text-muted-foreground">{p.category} avg: {formatPercentage(p.catAvg)}</p>
                     </div>
-                    <div className={cn("text-sm font-mono font-bold", getChangeColor(p.change_1d))}>
-                      {formatPercentage(p.change_1d)}
-                    </div>
+                    <div className={cn("text-sm font-mono font-bold", getChangeColor(p.change_1d))}>{formatPercentage(p.change_1d)}</div>
                   </div>
                 ))}
               </div>
@@ -286,14 +252,9 @@ export default function Correlations() {
                 <BarChart data={categoryMomentum} margin={{ left: 0, right: 16 }}>
                   <XAxis dataKey="name" tick={AXIS_TICK_STYLE} angle={-30} textAnchor="end" height={50} />
                   <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} tick={AXIS_TICK_STYLE} />
-                  <Tooltip
-                    formatter={(v: number, _: any, entry: any) => [`${v.toFixed(2)}% (${formatCurrency(entry.payload.dollarChange)})`, "24h Change"]}
-                    contentStyle={CHART_TOOLTIP_STYLE}
-                  />
+                  <Tooltip formatter={(v: number, _: any, entry: any) => [`${v.toFixed(2)}% (${formatCurrency(entry.payload.dollarChange)})`, "24h Change"]} contentStyle={CHART_TOOLTIP_STYLE} />
                   <Bar dataKey="change" radius={[4, 4, 0, 0]}>
-                    {categoryMomentum.map((d, i) => (
-                      <Cell key={i} fill={d.change >= 0 ? "hsl(142, 76%, 46%)" : "hsl(0, 70%, 55%)"} />
-                    ))}
+                    {categoryMomentum.map((d, i) => (<Cell key={i} fill={d.change >= 0 ? "hsl(142, 76%, 46%)" : "hsl(0, 70%, 55%)"} />))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -322,18 +283,9 @@ export default function Correlations() {
                     <stop offset="95%" stopColor="hsl(180, 80%, 45%)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(v) => new Date(v * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  tick={AXIS_TICK_STYLE}
-                  minTickGap={40}
-                />
+                <XAxis dataKey="date" tickFormatter={(v) => new Date(v * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })} tick={AXIS_TICK_STYLE} minTickGap={40} />
                 <YAxis tickFormatter={(v) => formatCurrency(v, 0)} tick={AXIS_TICK_STYLE} />
-                <Tooltip
-                  labelFormatter={(v) => new Date(Number(v) * 1000).toLocaleDateString()}
-                  formatter={(v: number) => [formatCurrency(v), "TVL"]}
-                  contentStyle={CHART_TOOLTIP_STYLE}
-                />
+                <Tooltip labelFormatter={(v) => new Date(Number(v) * 1000).toLocaleDateString()} formatter={(v: number) => [formatCurrency(v), "TVL"]} contentStyle={CHART_TOOLTIP_STYLE} />
                 <Area type="monotone" dataKey="tvl" stroke="hsl(180, 80%, 45%)" fill="url(#corrTvlGrad)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
