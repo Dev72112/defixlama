@@ -49,6 +49,28 @@ export default function Portfolio() {
     totalPnlPercent,
     tokenPrices 
   } = usePortfolio();
+
+  // Get live WebSocket prices for held symbols
+  const heldSymbols = useMemo(() => holdings.map(h => h.symbol.toUpperCase()), [holdings]);
+  const { prices: livePrices, isConnected: wsConnected } = useLivePrices(heldSymbols);
+
+  // Enhance holdings with live prices where available
+  const liveHoldings = useMemo(() => holdings.map(h => {
+    const livePrice = livePrices[h.symbol.toUpperCase()];
+    if (livePrice && livePrice > 0) {
+      const value = h.quantity * livePrice;
+      const costBasis = h.purchasePrice ? h.quantity * h.purchasePrice : 0;
+      const pnl = costBasis > 0 ? value - costBasis : 0;
+      const pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
+      return { ...h, currentPrice: livePrice, value, costBasis, pnl, pnlPercent };
+    }
+    return h;
+  }), [holdings, livePrices]);
+
+  const liveTotalValue = liveHoldings.reduce((s, h) => s + h.value, 0);
+  const liveTotalCost = liveHoldings.reduce((s, h) => s + h.costBasis, 0);
+  const liveTotalPnl = liveTotalCost > 0 ? liveTotalValue - liveTotalCost : 0;
+  const liveTotalPnlPct = liveTotalCost > 0 ? (liveTotalPnl / liveTotalCost) * 100 : 0;
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState("");
