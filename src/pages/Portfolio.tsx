@@ -185,15 +185,16 @@ export default function Portfolio() {
             icon={(liveTotalPnl || totalPnl) >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
-            title={t("portfolio.holdings")}
-            value={holdings.length.toString()}
-            icon={Activity}
+            title="Best Performer"
+            value={bestPerformer ? `${bestPerformer.symbol} (${bestPerformer.pnlPercent >= 0 ? "+" : ""}${bestPerformer.pnlPercent.toFixed(1)}%)` : "-"}
+            change={bestPerformer?.pnlPercent || 0}
+            icon={TrendingUp}
           />
           <StatCard
-            title={t("portfolio.pnlPercent")}
-            value={`${(liveTotalPnlPct || totalPnlPercent) >= 0 ? "+" : ""}${(liveTotalPnlPct || totalPnlPercent).toFixed(2)}%`}
-            change={liveTotalPnlPct || totalPnlPercent}
-            icon={Percent}
+            title="Worst Performer"
+            value={worstPerformer ? `${worstPerformer.symbol} (${worstPerformer.pnlPercent >= 0 ? "+" : ""}${worstPerformer.pnlPercent.toFixed(1)}%)` : "-"}
+            change={worstPerformer?.pnlPercent || 0}
+            icon={TrendingDown}
           />
         </div>
 
