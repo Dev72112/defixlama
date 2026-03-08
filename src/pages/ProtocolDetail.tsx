@@ -25,6 +25,9 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { DateRangeSelector, DateRange } from "@/components/dashboard/DateRangeSelector";
+import { useState } from "react";
 
 export default function ProtocolDetail() {
   return (
