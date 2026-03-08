@@ -6,13 +6,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const TIER_PRICES: Record<string, number> = {
+  pro: 29,
+  pro_plus: 49,
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -28,7 +32,6 @@ Deno.serve(async (req) => {
     );
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -36,93 +39,61 @@ Deno.serve(async (req) => {
       });
     }
 
-    const userId = user.id;
-    const userEmail = user.email;
-
     const { tierKey } = await req.json();
-
     if (!tierKey || !["pro", "pro_plus"].includes(tierKey)) {
       return new Response(
         JSON.stringify({ error: "Invalid tier. Use 'pro' or 'pro_plus'." }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const priceId =
-      tierKey === "pro"
-        ? Deno.env.get("PADDLE_PRICE_PRO")
-        : Deno.env.get("PADDLE_PRICE_PRO_PLUS");
-
-    if (!priceId) {
+    const apiKey = Deno.env.get("NOWPAYMENTS_API_KEY");
+    if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "Price not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: "Payment provider not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const paddleApiKey = Deno.env.get("PADDLE_API_KEY");
-    if (!paddleApiKey) {
+    const orderId = `${user.id}_${tierKey}_${Date.now()}`;
+    const tierLabel = tierKey === "pro" ? "Pro" : "Pro+";
+    const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/nowpayments-webhook`;
+    const successUrl = "https://defixlama.lovable.app/billing?status=success";
+    const cancelUrl = "https://defixlama.lovable.app/billing?status=cancel";
+
+    const res = await fetch("https://api.nowpayments.io/v1/invoice", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        price_amount: TIER_PRICES[tierKey],
+        price_currency: "usd",
+        order_id: orderId,
+        order_description: `DefiXlama ${tierLabel} Monthly Subscription`,
+        ipn_callback_url: webhookUrl,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("NOWPayments API error:", data);
       return new Response(
-        JSON.stringify({ error: "Paddle not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: "Failed to create invoice", details: data }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create Paddle transaction (checkout)
-    const paddleRes = await fetch(
-      "https://api.paddle.com/transactions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${paddleApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: [{ price_id: priceId, quantity: 1 }],
-          customer_email: userEmail,
-          custom_data: { user_id: userId },
-          checkout: {
-            url: null, // Use Paddle's hosted checkout overlay
-          },
-        }),
-      }
-    );
-
-    const paddleData = await paddleRes.json();
-
-    if (!paddleRes.ok) {
-      console.error("Paddle API error:", paddleData);
-      return new Response(
-        JSON.stringify({
-          error: "Failed to create checkout",
-          details: paddleData,
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Return the transaction ID for Paddle.js overlay checkout
     return new Response(
       JSON.stringify({
-        transactionId: paddleData.data?.id,
-        checkoutUrl: paddleData.data?.checkout?.url,
+        invoice_url: data.invoice_url,
+        invoice_id: data.id,
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Checkout error:", err);

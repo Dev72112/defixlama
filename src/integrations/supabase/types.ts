@@ -255,6 +255,8 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           id: string
+          nowpayments_invoice_id: string | null
+          nowpayments_payment_id: string | null
           paddle_customer_id: string | null
           paddle_subscription_id: string | null
           status: Database["public"]["Enums"]["subscription_status"]
@@ -268,6 +270,8 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           id?: string
+          nowpayments_invoice_id?: string | null
+          nowpayments_payment_id?: string | null
           paddle_customer_id?: string | null
           paddle_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
@@ -281,6 +285,8 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           id?: string
+          nowpayments_invoice_id?: string | null
+          nowpayments_payment_id?: string | null
           paddle_customer_id?: string | null
           paddle_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]

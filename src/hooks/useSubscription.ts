@@ -9,8 +9,6 @@ interface SubscriptionState {
   isTrialActive: boolean;
   trialEndsAt: Date | null;
   isLoading: boolean;
-  paddleSubscriptionId: string | null;
-  paddleCustomerId: string | null;
   status: string | null;
 }
 
@@ -24,19 +22,16 @@ export function useSubscription(): SubscriptionState {
     isTrialActive: true,
     trialEndsAt: null,
     isLoading: true,
-    paddleSubscriptionId: null,
-    paddleCustomerId: null,
     status: null,
   });
 
   useEffect(() => {
     if (!user) {
-      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, paddleSubscriptionId: null, paddleCustomerId: null, status: null });
+      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, status: null });
       return;
     }
 
     const load = async () => {
-      // 1. Check subscriptions table for active subscription
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("*")
@@ -54,15 +49,13 @@ export function useSubscription(): SubscriptionState {
             isTrialActive: false,
             trialEndsAt: null,
             isLoading: false,
-            paddleSubscriptionId: sub.paddle_subscription_id,
-            paddleCustomerId: sub.paddle_customer_id,
             status: sub.status,
           });
           return;
         }
       }
 
-      // 2. Fall back to trial logic
+      // Fall back to trial logic
       const createdAt = new Date(user.created_at || Date.now());
       const trialEnd = new Date(createdAt.getTime() + TRIAL_DURATION_MS);
       const isTrialActive = trialEnd > new Date();
@@ -72,8 +65,6 @@ export function useSubscription(): SubscriptionState {
         isTrialActive,
         trialEndsAt: trialEnd,
         isLoading: false,
-        paddleSubscriptionId: sub?.paddle_subscription_id || null,
-        paddleCustomerId: sub?.paddle_customer_id || null,
         status: sub?.status || null,
       });
     };
