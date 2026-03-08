@@ -131,6 +131,14 @@ class WebSocketManager {
       this.ws.onclose = () => {
         this.isConnected = false;
         this.ws = null;
+        // Debounce: only show disconnected after STABLE_DELAY
+        if (!this.stableTimeout) {
+          this.stableTimeout = setTimeout(() => {
+            this.stableIsConnected = false;
+            this.stableTimeout = null;
+            this.notify();
+          }, this.STABLE_DELAY);
+        }
         this.notify();
         
         // Only reconnect if not manually disconnected and there are active listeners
