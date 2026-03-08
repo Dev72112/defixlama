@@ -665,6 +665,59 @@ function SecurityDetailContent() {
             </div>
           </div>
         </div>
+
+        {/* PRO Analytics Sections */}
+        <ProDetailSection title="Risk Score Composite">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Audit Score</p>
+              <p className="text-2xl font-bold text-primary">{isAudited ? "40" : "0"}/40</p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Stability Score</p>
+              <p className="text-2xl font-bold">
+                {tvlAnalytics && Math.abs(tvlAnalytics.change7d) < 10 ? "20" : "0"}/20
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Age Score</p>
+              <p className="text-2xl font-bold">
+                {(() => {
+                  const age = proto.listedAt ? (Date.now() / 1000 - proto.listedAt) / 86400 : 0;
+                  return age > 365 ? "20" : age > 90 ? "10" : "0";
+                })()}/20
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Category Score</p>
+              <p className="text-2xl font-bold">
+                {(() => {
+                  const cat = (proto.category || "").toLowerCase();
+                  return cat.includes("dex") || cat.includes("lend") ? "20" : "10";
+                })()}/20
+              </p>
+            </div>
+          </div>
+        </ProDetailSection>
+
+        <ProDetailSection title="TVL Stability Index">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Volatility (30d)</p>
+              <p className="text-2xl font-bold text-primary">{tvlAnalytics?.volatility.toFixed(2) || 0}%</p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Stability Rating</p>
+              <p className="text-2xl font-bold">
+                {(tvlAnalytics?.volatility || 0) < 10 ? "Excellent" : (tvlAnalytics?.volatility || 0) < 25 ? "Good" : (tvlAnalytics?.volatility || 0) < 50 ? "Fair" : "Poor"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Avg TVL (30d)</p>
+              <p className="text-2xl font-bold">{formatCurrency(tvlAnalytics?.avgTvl || 0)}</p>
+            </div>
+          </div>
+        </ProDetailSection>
       </div>
     </Layout>
   );
