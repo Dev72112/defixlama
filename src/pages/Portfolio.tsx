@@ -175,14 +175,14 @@ export default function Portfolio() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title={t("portfolio.totalValue")}
-            value={formatCurrency(totalValue)}
+            value={formatCurrency(liveTotalValue || totalValue)}
             icon={Wallet}
           />
           <StatCard
             title={t("portfolio.totalPnl")}
-            value={`${totalPnl >= 0 ? "+" : ""}${formatCurrency(totalPnl)}`}
-            change={totalPnlPercent}
-            icon={totalPnl >= 0 ? TrendingUp : TrendingDown}
+            value={`${(liveTotalPnl || totalPnl) >= 0 ? "+" : ""}${formatCurrency(liveTotalPnl || totalPnl)}`}
+            change={liveTotalPnlPct || totalPnlPercent}
+            icon={(liveTotalPnl || totalPnl) >= 0 ? TrendingUp : TrendingDown}
           />
           <StatCard
             title={t("portfolio.holdings")}
@@ -191,11 +191,19 @@ export default function Portfolio() {
           />
           <StatCard
             title={t("portfolio.pnlPercent")}
-            value={`${totalPnlPercent >= 0 ? "+" : ""}${totalPnlPercent.toFixed(2)}%`}
-            change={totalPnlPercent}
+            value={`${(liveTotalPnlPct || totalPnlPercent) >= 0 ? "+" : ""}${(liveTotalPnlPct || totalPnlPercent).toFixed(2)}%`}
+            change={liveTotalPnlPct || totalPnlPercent}
             icon={Percent}
           />
         </div>
+
+        {wsConnected && liveHoldings.some(h => livePrices[h.symbol.toUpperCase()]) && (
+          <div className="flex items-center gap-2 text-xs text-success">
+            <Zap className="h-3 w-3" />
+            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+            Live WebSocket prices active for {Object.keys(livePrices).filter(k => livePrices[k] > 0).length} assets
+          </div>
+        )}
 
         {/* Portfolio Content */}
         {holdings.length === 0 ? (
