@@ -835,22 +835,22 @@ function ProtocolDetailContent() {
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Revenue per $1 TVL</p>
               <p className="text-2xl font-bold text-primary">
-                {protocol.tvl && protocol.fees_24h
-                  ? `$${(protocol.fees_24h / protocol.tvl).toFixed(6)}`
+                {protocol.tvl && (protocol as any).fees_24h
+                  ? `$${((protocol as any).fees_24h / protocol.tvl).toFixed(6)}`
                   : "N/A"}
               </p>
             </div>
             <div className="rounded-lg bg-muted/30 p-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Annualized Revenue</p>
               <p className="text-2xl font-bold">
-                {protocol.fees_24h ? formatCurrency((protocol.fees_24h || 0) * 365) : "N/A"}
+                {(protocol as any).fees_24h ? formatCurrency(((protocol as any).fees_24h || 0) * 365) : "N/A"}
               </p>
             </div>
             <div className="rounded-lg bg-muted/30 p-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Fee/TVL Ratio (bps)</p>
               <p className="text-2xl font-bold">
-                {protocol.tvl && protocol.fees_24h
-                  ? `${((protocol.fees_24h / protocol.tvl) * 10000).toFixed(2)}`
+                {protocol.tvl && (protocol as any).fees_24h
+                  ? `${(((protocol as any).fees_24h / protocol.tvl) * 10000).toFixed(2)}`
                   : "N/A"}
               </p>
             </div>

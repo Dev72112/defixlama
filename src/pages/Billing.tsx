@@ -186,8 +186,30 @@ export default function Billing() {
           </Card>
         )}
 
+        {/* Expired Banner */}
+        {isExpired && (
+          <Card className="p-4 border-destructive/50 bg-destructive/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-medium text-foreground">Subscription Expired</p>
+                <p className="text-sm text-muted-foreground">
+                  Your subscription has expired. Renew to continue accessing premium features.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => handleUpgrade(tier === "pro_plus" || tier === "free" ? "pro" : tier as "pro" | "pro_plus")}
+                disabled={!!loadingTier}
+              >
+                {loadingTier ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                Renew Now
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Expiry Warning Banner */}
-        {isExpiringSoon && currentPeriodEnd && (
+        {isExpiringSoon && currentPeriodEnd && !isExpired && (
           <Card className="p-4 border-destructive/50 bg-destructive/10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
