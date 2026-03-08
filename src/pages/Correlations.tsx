@@ -122,7 +122,7 @@ export default function Correlations() {
       <div className="space-y-6 page-enter">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl md:text-3xl font-bold text-gradient-primary">{selectedChain.name} Correlations</h1>
-          <Badge variant="outline" className="text-primary border-primary/30">PRO</Badge>
+          <Badge variant="outline" className="text-primary border-primary/30">PRO+</Badge>
         </div>
         <p className="text-muted-foreground text-sm">TVL co-movement analysis, sector rotation tracking, and divergence alerts</p>
 

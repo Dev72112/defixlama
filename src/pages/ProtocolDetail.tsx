@@ -25,6 +25,9 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { DateRangeSelector, DateRange } from "@/components/dashboard/DateRangeSelector";
+import { useState } from "react";
 
 export default function ProtocolDetail() {
   return (
@@ -39,6 +42,7 @@ function ProtocolDetailContent() {
   const { data: protocols, isLoading: protocolsLoading } = useAllProtocols();
   const { data: tvlHistory, isLoading: historyLoading } = useProtocolTVLHistory(slug || null);
   const { data: protocolDetails, isLoading: detailsLoading } = useProtocolDetails(slug || null);
+  const [dateRange, setDateRange] = useState<DateRange>("90d");
 
   // Find protocol
   const protocol = protocols?.find((p) => p.slug === slug || p.name.toLowerCase().replace(/\s+/g, "-") === slug);
@@ -51,7 +55,8 @@ function ProtocolDetailContent() {
     try {
       const arr = Array.isArray(tvlHistory) ? tvlHistory : [];
       // guard against extremely large payloads
-      const safe = arr.slice(-90);
+      const days = dateRange === "all" ? arr.length : dateRange === "1y" ? 365 : dateRange === "90d" ? 90 : dateRange === "30d" ? 30 : 7;
+      const safe = arr.slice(-days);
       return safe.map((item: any) => ({
         date: isNaN(Number(item?.date)) ? "" : new Date(item.date * 1000).toLocaleDateString(),
         tvl: typeof item?.totalLiquidityUSD === "number" && !isNaN(item.totalLiquidityUSD) ? item.totalLiquidityUSD : 0,
@@ -60,7 +65,7 @@ function ProtocolDetailContent() {
       console.error("Error formatting chart data:", e);
       return [];
     }
-  }, [tvlHistory]);
+  }, [tvlHistory, dateRange]);
 
   // TVL Analytics - ALWAYS CALL
   const tvlAnalytics = useMemo(() => {
@@ -359,7 +364,10 @@ function ProtocolDetailContent() {
 
         {/* TVL Chart */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-6">TVL History (90 Days)</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h2 className="text-lg font-semibold text-foreground">TVL History</h2>
+            <DateRangeSelector value={dateRange} onChange={setDateRange} />
+          </div>
           <div className="h-[300px] md:h-[400px]">
             {historyLoading ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -377,24 +385,19 @@ function ProtocolDetailContent() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(value) => formatCurrency(value)}
                     domain={["auto", "auto"]}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
                     formatter={(value: number) => [formatCurrency(value), "TVL"]}
                   />
                   <Area

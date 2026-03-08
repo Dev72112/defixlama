@@ -19,6 +19,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useState, useMemo } from "react";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 
 export default function TokenDetail() {
   const { id } = useParams<{ id: string }>();
@@ -365,7 +366,7 @@ export default function TokenDetail() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h2 className="text-lg font-semibold text-foreground">Price Chart</h2>
             <div className="flex gap-2">
-              {[1, 7, 30, 90].map((d) => (
+              {[1, 7, 30, 90, 365].map((d) => (
                 <Button
                   key={d}
                   variant={days === d ? "default" : "outline"}
@@ -395,24 +396,19 @@ export default function TokenDetail() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(value) => formatTokenPrice(value)}
                     domain={["auto", "auto"]}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
                     formatter={(value: number) => [formatTokenPrice(value), "Price"]}
                   />
                   <Area
@@ -600,7 +596,32 @@ export default function TokenDetail() {
               </div>
             </div>
             {oklinkInfo && (
-              <pre className="mt-4 text-xs text-muted-foreground overflow-auto max-h-40">{JSON.stringify(oklinkInfo, null, 2)}</pre>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {oklinkInfo.holders && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Holders</p>
+                    <p className="font-mono font-bold text-foreground">{Number(oklinkInfo.holders).toLocaleString()}</p>
+                  </div>
+                )}
+                {oklinkInfo.totalSupply && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Total Supply</p>
+                    <p className="font-mono font-bold text-foreground">{Number(oklinkInfo.totalSupply).toLocaleString()}</p>
+                  </div>
+                )}
+                {oklinkInfo.volume24h && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">24h Volume</p>
+                    <p className="font-mono font-bold text-foreground">{formatCurrency(oklinkInfo.volume24h)}</p>
+                  </div>
+                )}
+                {oklinkInfo.marketCap && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Market Cap</p>
+                    <p className="font-mono font-bold text-foreground">{formatCurrency(oklinkInfo.marketCap)}</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

@@ -16,8 +16,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 
 export default function SecurityDetail() {
+  return <ErrorBoundary><SecurityDetailContent /></ErrorBoundary>;
+}
+
+function SecurityDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: protocols, isLoading } = useAllProtocols();
 
@@ -339,22 +345,18 @@ export default function SecurityDetail() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v) => formatCurrency(v)}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
                     formatter={(value: number) => [formatCurrency(value), "TVL"]}
                   />
                   <Area

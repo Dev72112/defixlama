@@ -13,10 +13,11 @@ import {
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
-  Tooltip, CartesianGrid, Cell,
+  Tooltip, CartesianGrid, Cell, PieChart, Pie,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, CHART_COLORS } from "@/lib/chartStyles";
 import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 
 function useHackHistory() {
@@ -155,7 +156,7 @@ export default function RiskDashboard() {
           <p className="text-muted-foreground mt-1">Protocol risk scoring, audit status, and DeFi hack history</p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="p-4">
             <p className="text-xs text-muted-foreground">Total Hacks Tracked</p>
             <p className="text-2xl font-bold">{hacks.length}</p>
@@ -172,7 +173,54 @@ export default function RiskDashboard() {
             <p className="text-xs text-muted-foreground">Audited Protocols</p>
             <p className="text-2xl font-bold text-success">{risks.filter((r) => r.audited).length}</p>
           </Card>
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Avg Risk Score</p>
+            <p className="text-2xl font-bold">{risks.length > 0 ? (risks.reduce((s, r) => s + r.riskScore, 0) / risks.length).toFixed(0) : "—"}</p>
+          </Card>
         </div>
+
+        {/* Risk Distribution Donut */}
+        {risks.length > 0 && (() => {
+          const high = risks.filter(r => r.riskLevel === "High").length;
+          const medium = risks.filter(r => r.riskLevel === "Medium").length;
+          const low = risks.filter(r => r.riskLevel === "Low").length;
+          const distData = [
+            { name: "High Risk", value: high, color: "hsl(var(--destructive))" },
+            { name: "Medium Risk", value: medium, color: "hsl(45, 100%, 50%)" },
+            { name: "Low Risk", value: low, color: "hsl(var(--success))" },
+          ].filter(d => d.value > 0);
+          return (
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />Risk Distribution
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="h-[250px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={distData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={3} dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                        {distData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                      </Pie>
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-col justify-center space-y-4">
+                  {distData.map(d => (
+                    <div key={d.name} className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: d.color }} />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{d.name}</p>
+                        <p className="text-xs text-muted-foreground">{d.value} protocols ({risks.length > 0 ? ((d.value / risks.length) * 100).toFixed(1) : 0}%)</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          );
+        })()}
 
         {/* Hack History Chart */}
         <Card className="p-6">

@@ -6,6 +6,8 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeft, DollarSign, Globe, TrendingUp, Layers, ExternalLink, PieChart, Zap, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import {
   PieChart as RechartsPie,
   Pie,
@@ -20,6 +22,10 @@ import {
 } from "recharts";
 
 export default function StablecoinDetail() {
+  return <ErrorBoundary><StablecoinDetailContent /></ErrorBoundary>;
+}
+
+function StablecoinDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: stablecoins, isLoading } = useStablecoins();
 
@@ -299,21 +305,17 @@ export default function StablecoinDetail() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       dataKey="chain"
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={AXIS_TICK_STYLE}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
                     <YAxis
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={AXIS_TICK_STYLE}
                       label={{ value: "Percentage (%)", angle: -90, position: "insideLeft" }}
                     />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(value: number) => `${value.toFixed(1)}%`}
                     />
                     <Bar dataKey="percentage" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
@@ -348,11 +350,7 @@ export default function StablecoinDetail() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(value: number) => [formatCurrency(value), "Supply"]}
                     />
                   </RechartsPie>
@@ -386,21 +384,17 @@ export default function StablecoinDetail() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis
                       type="number"
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={AXIS_TICK_STYLE}
                       tickFormatter={(v) => formatCurrency(v)}
                     />
                     <YAxis
                       type="category"
                       dataKey="name"
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={AXIS_TICK_STYLE}
                       width={80}
                     />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(value: number) => [formatCurrency(value), "Supply"]}
                     />
                     <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />

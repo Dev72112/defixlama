@@ -17,9 +17,16 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeft, Globe, Layers, TrendingUp, Activity, ExternalLink, Sprout, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { DateRangeSelector, DateRange } from "@/components/dashboard/DateRangeSelector";
 
 export default function ChainDetail() {
+  return <ErrorBoundary><ChainDetailContent /></ErrorBoundary>;
+}
+
+function ChainDetailContent() {
   const { id } = useParams<{ id: string }>();
   const { data: chains, isLoading } = useChainsTVL();
   const { data: protocols } = useAllProtocols();
@@ -52,14 +59,17 @@ export default function ChainDetail() {
     return sorted.findIndex((c) => c.name === chain.name) + 1;
   }, [chains, chain]);
 
+  const [dateRange, setDateRange] = useState<DateRange>("90d");
+
   // Format chart data
   const chartData = useMemo(() => {
     if (!history) return [];
-    return history.slice(-90).map((d: any) => ({
+    const days = dateRange === "all" ? history.length : dateRange === "1y" ? 365 : dateRange === "90d" ? 90 : dateRange === "30d" ? 30 : 7;
+    return history.slice(-days).map((d: any) => ({
       date: new Date(d.date * 1000).toLocaleDateString(),
       tvl: d.tvl || 0,
     }));
-  }, [history]);
+  }, [history, dateRange]);
 
   // Pie chart data for comparison with top chains
   const pieData = useMemo(() => {
@@ -328,7 +338,10 @@ export default function ChainDetail() {
 
         {/* TVL History Chart */}
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">TVL History (90 Days)</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <h3 className="text-lg font-semibold text-foreground">TVL History</h3>
+            <DateRangeSelector value={dateRange} onChange={setDateRange} />
+          </div>
           <div className="h-[300px] md:h-[380px]">
             {historyLoading ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -346,23 +359,19 @@ export default function ChainDetail() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v) => formatCurrency(v)}
                     domain={["auto", "auto"]}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
                     formatter={(value: number) => [formatCurrency(value), "TVL"]}
                   />
                   <Area
@@ -409,11 +418,7 @@ export default function ChainDetail() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                       formatter={(value: number) => [formatCurrency(value), "TVL"]}
                     />
                   </PieChart>
