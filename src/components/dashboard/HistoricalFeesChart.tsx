@@ -130,7 +130,7 @@ export function HistoricalFeesChart({
                 }}
                 formatter={(value: number, name: string) => [
                   formatCurrency(value),
-                  name === "fees" ? `${dateRange === "7d" ? "7d" : dateRange === "30d" ? "30d" : dateRange} Fees` : "24h Fees"
+                  name === "fees" ? `${["90d", "1y", "all"].includes(dateRange) ? "30d" : dateRange} Fees` : "24h Fees"
                 ]}
                 labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
               />
