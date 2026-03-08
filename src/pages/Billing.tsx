@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard, Check, Crown, Zap, Shield, Sparkles,
+  CreditCard, Check, Crown, Zap, Shield, Sparkles, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const tiers = [
   {
@@ -23,7 +27,7 @@ const tiers = [
       "Community access",
     ],
     cta: "Current Plan",
-    tierKey: "free",
+    tierKey: "free" as const,
     icon: Zap,
   },
   {
@@ -42,7 +46,7 @@ const tiers = [
       "API Access (10k req/mo)",
     ],
     cta: "Upgrade to Pro",
-    tierKey: "pro",
+    tierKey: "pro" as const,
     popular: true,
     icon: Crown,
   },
@@ -62,7 +66,7 @@ const tiers = [
       "Unlimited API access",
     ],
     cta: "Upgrade to Pro+",
-    tierKey: "pro_plus",
+    tierKey: "pro_plus" as const,
     icon: Sparkles,
   },
   {
@@ -78,14 +82,50 @@ const tiers = [
       "SLA guarantee",
     ],
     cta: "Coming Soon",
-    tierKey: "enterprise",
+    tierKey: "enterprise" as const,
     comingSoon: true,
     icon: Shield,
   },
 ];
 
+const TIER_RANK: Record<string, number> = { free: 0, pro: 1, pro_plus: 2, enterprise: 3 };
+
 export default function Billing() {
-  const { tier, isTrialActive, trialEndsAt } = useSubscription();
+  const { tier, isTrialActive, trialEndsAt, paddleSubscriptionId, status } = useSubscription();
+  const { user } = useAuth();
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+
+  const handleUpgrade = async (tierKey: "pro" | "pro_plus") => {
+    if (!user) {
+      toast.error("Please sign in to upgrade");
+      return;
+    }
+
+    setLoadingTier(tierKey);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { tierKey },
+      });
+
+      if (error) throw error;
+
+      // If we get a checkout URL, redirect
+      if (data?.checkoutUrl) {
+        window.open(data.checkoutUrl, "_blank");
+      } else if (data?.transactionId) {
+        // Paddle.js overlay would use transactionId
+        // For now, show info
+        toast.success("Checkout created! Transaction: " + data.transactionId);
+      }
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      toast.error(err.message || "Failed to create checkout");
+    } finally {
+      setLoadingTier(null);
+    }
+  };
+
+  const hasActiveSubscription = status === "active" && paddleSubscriptionId;
 
   return (
     <Layout>
@@ -106,16 +146,25 @@ export default function Billing() {
             <div>
               <p className="text-sm text-muted-foreground">Current Plan</p>
               <p className="text-xl font-bold">
-                {isTrialActive ? "Free Trial (Pro+ Access)" : tier.toUpperCase()}
+                {hasActiveSubscription
+                  ? tier === "pro_plus" ? "Pro+" : tier.charAt(0).toUpperCase() + tier.slice(1)
+                  : isTrialActive
+                  ? "Free Trial (Pro+ Access)"
+                  : "Free"}
               </p>
-              {isTrialActive && trialEndsAt && (
+              {isTrialActive && trialEndsAt && !hasActiveSubscription && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Trial ends {format(trialEndsAt, "MMM d, yyyy")} — All Pro+ features unlocked
                 </p>
               )}
+              {hasActiveSubscription && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Active subscription via Paddle
+                </p>
+              )}
             </div>
             <Badge className="bg-primary/20 text-primary px-3 py-1 text-sm w-fit">
-              {isTrialActive ? "Trial Active" : "Active"}
+              {hasActiveSubscription ? "Subscribed" : isTrialActive ? "Trial Active" : "Free"}
             </Badge>
           </div>
         </Card>
@@ -125,7 +174,10 @@ export default function Billing() {
           {tiers.map((t) => {
             const Icon = t.icon;
             const isCurrentTier = !isTrialActive && tier === t.tierKey;
-            const isDisabled = t.comingSoon || isCurrentTier;
+            const isDowngrade = TIER_RANK[t.tierKey] < TIER_RANK[tier];
+            const isDisabled = t.comingSoon || isCurrentTier || isDowngrade || (hasActiveSubscription && TIER_RANK[t.tierKey] <= TIER_RANK[tier]);
+            const isLoading = loadingTier === t.tierKey;
+            const canUpgrade = !isDisabled && t.tierKey !== "free" && t.tierKey !== "enterprise";
 
             return (
               <Card
@@ -166,9 +218,16 @@ export default function Billing() {
                 <Button
                   className="w-full mt-auto"
                   variant={t.popular ? "default" : "outline"}
-                  disabled={isDisabled}
+                  disabled={isDisabled || isLoading}
+                  onClick={() => canUpgrade ? handleUpgrade(t.tierKey as "pro" | "pro_plus") : undefined}
                 >
-                  {isCurrentTier ? "Current Plan" : t.cta}
+                  {isLoading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating checkout…</>
+                  ) : isCurrentTier ? (
+                    "Current Plan"
+                  ) : (
+                    t.cta
+                  )}
                 </Button>
               </Card>
             );
@@ -177,7 +236,10 @@ export default function Billing() {
 
         <Card className="p-4 bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            💳 Payments powered by Paddle. Payment processing coming soon — all Pro+ features are currently available during the free trial period.
+            💳 Payments powered by Paddle.{" "}
+            {hasActiveSubscription
+              ? "Manage your subscription from your Paddle customer portal."
+              : "All Pro+ features are currently available during the free trial period."}
           </p>
         </Card>
       </div>

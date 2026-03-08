@@ -9,6 +9,8 @@ interface SubscriptionState {
   isTrialActive: boolean;
   trialEndsAt: Date | null;
   isLoading: boolean;
+  paddleSubscriptionId: string | null;
+  status: string | null;
 }
 
 // 3-month free trial from account creation
@@ -21,26 +23,58 @@ export function useSubscription(): SubscriptionState {
     isTrialActive: true,
     trialEndsAt: null,
     isLoading: true,
+    paddleSubscriptionId: null,
+    status: null,
   });
 
   useEffect(() => {
     if (!user) {
-      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false });
+      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, paddleSubscriptionId: null, status: null });
       return;
     }
 
-    // For now, all users get free trial (everything unlocked)
-    // When subscriptions table exists, this will query it
-    const createdAt = new Date(user.created_at || Date.now());
-    const trialEnd = new Date(createdAt.getTime() + TRIAL_DURATION_MS);
-    const isTrialActive = trialEnd > new Date();
+    const load = async () => {
+      // 1. Check subscriptions table for active subscription
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    setState({
-      tier: isTrialActive ? "pro_plus" : "free",
-      isTrialActive,
-      trialEndsAt: trialEnd,
-      isLoading: false,
-    });
+      if (sub && (sub.status === "active" || sub.status === "trialing")) {
+        const isExpired = sub.current_period_end
+          ? new Date(sub.current_period_end) < new Date()
+          : false;
+
+        if (!isExpired) {
+          setState({
+            tier: sub.tier as SubscriptionTier,
+            isTrialActive: false,
+            trialEndsAt: null,
+            isLoading: false,
+            paddleSubscriptionId: sub.paddle_subscription_id,
+            status: sub.status,
+          });
+          return;
+        }
+      }
+
+      // 2. Fall back to trial logic
+      const createdAt = new Date(user.created_at || Date.now());
+      const trialEnd = new Date(createdAt.getTime() + TRIAL_DURATION_MS);
+      const isTrialActive = trialEnd > new Date();
+
+      setState({
+        tier: isTrialActive ? "pro_plus" : "free",
+        isTrialActive,
+        trialEndsAt: trialEnd,
+        isLoading: false,
+        paddleSubscriptionId: sub?.paddle_subscription_id || null,
+        status: sub?.status || null,
+      });
+    };
+
+    load();
   }, [user]);
 
   return state;

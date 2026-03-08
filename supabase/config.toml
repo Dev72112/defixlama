@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.api-gateway]
 verify_jwt = false
+
+[functions.paddle-webhook]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
