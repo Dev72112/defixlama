@@ -600,7 +600,32 @@ export default function TokenDetail() {
               </div>
             </div>
             {oklinkInfo && (
-              <pre className="mt-4 text-xs text-muted-foreground overflow-auto max-h-40">{JSON.stringify(oklinkInfo, null, 2)}</pre>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {oklinkInfo.holders && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Holders</p>
+                    <p className="font-mono font-bold text-foreground">{Number(oklinkInfo.holders).toLocaleString()}</p>
+                  </div>
+                )}
+                {oklinkInfo.totalSupply && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Total Supply</p>
+                    <p className="font-mono font-bold text-foreground">{Number(oklinkInfo.totalSupply).toLocaleString()}</p>
+                  </div>
+                )}
+                {oklinkInfo.volume24h && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">24h Volume</p>
+                    <p className="font-mono font-bold text-foreground">{formatCurrency(oklinkInfo.volume24h)}</p>
+                  </div>
+                )}
+                {oklinkInfo.marketCap && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Market Cap</p>
+                    <p className="font-mono font-bold text-foreground">{formatCurrency(oklinkInfo.marketCap)}</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
