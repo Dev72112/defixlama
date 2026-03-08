@@ -231,6 +231,7 @@ export default function AlertConfig() {
                   );
                 })}
               </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

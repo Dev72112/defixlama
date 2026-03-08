@@ -203,7 +203,7 @@ export default function CommunitySentiment() {
 
             <TabsContent value="sources" className="space-y-4">
               <Card className="p-4">
-                <h3 className="font-semibold text-foreground mb-3">Sentiment Source Distribution</h3>
+                <h3 className="font-semibold text-foreground mb-3">Sentiment Distribution</h3>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>

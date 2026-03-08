@@ -138,7 +138,7 @@ export function HistoricalFeesChart({
               <Line
                 type="monotone"
                 dataKey="fees"
-                name={`${dateRange === "7d" ? "7d" : dateRange === "30d" ? "30d" : dateRange} Fees`}
+                name={`${["90d", "1y", "all"].includes(dateRange) ? "30d" : dateRange} Fees`}
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ fill: "hsl(var(--primary))", r: 4 }}
