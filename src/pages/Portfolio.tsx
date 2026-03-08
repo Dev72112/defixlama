@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { useTranslation } from "react-i18next";
 import { 
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, 
-  PieChart, DollarSign, Percent, Activity, Zap
+  PieChart, DollarSign, Zap
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
