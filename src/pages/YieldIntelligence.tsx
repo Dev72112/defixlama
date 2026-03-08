@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
 
 export default function YieldIntelligence() {
   const { selectedChain } = useChain();
