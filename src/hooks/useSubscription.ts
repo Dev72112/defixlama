@@ -10,6 +10,7 @@ interface SubscriptionState {
   trialEndsAt: Date | null;
   isLoading: boolean;
   paddleSubscriptionId: string | null;
+  paddleCustomerId: string | null;
   status: string | null;
 }
 
@@ -24,12 +25,13 @@ export function useSubscription(): SubscriptionState {
     trialEndsAt: null,
     isLoading: true,
     paddleSubscriptionId: null,
+    paddleCustomerId: null,
     status: null,
   });
 
   useEffect(() => {
     if (!user) {
-      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, paddleSubscriptionId: null, status: null });
+      setState({ tier: "free", isTrialActive: true, trialEndsAt: null, isLoading: false, paddleSubscriptionId: null, paddleCustomerId: null, status: null });
       return;
     }
 
@@ -53,6 +55,7 @@ export function useSubscription(): SubscriptionState {
             trialEndsAt: null,
             isLoading: false,
             paddleSubscriptionId: sub.paddle_subscription_id,
+            paddleCustomerId: sub.paddle_customer_id,
             status: sub.status,
           });
           return;
@@ -70,6 +73,7 @@ export function useSubscription(): SubscriptionState {
         trialEndsAt: trialEnd,
         isLoading: false,
         paddleSubscriptionId: sub?.paddle_subscription_id || null,
+        paddleCustomerId: sub?.paddle_customer_id || null,
         status: sub?.status || null,
       });
     };
