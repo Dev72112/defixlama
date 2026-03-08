@@ -6,6 +6,8 @@ import { formatCurrency } from "@/lib/api/defillama";
 import { ArrowLeft, DollarSign, Globe, TrendingUp, Layers, ExternalLink, PieChart, Zap, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
 import {
   PieChart as RechartsPie,
   Pie,
