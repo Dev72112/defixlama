@@ -249,6 +249,36 @@ function DashboardContent() {
         />
       </div>
 
+      {/* Live WebSocket Prices */}
+      {Object.keys(livePrices).length > 0 && (
+        <div className="rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Live Market Prices</h3>
+            {wsConnected && (
+              <span className="flex items-center gap-1 text-[10px] text-success font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                WebSocket
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {["BTC", "ETH", "SOL", "BNB", "XRP"].map((sym) => {
+              const p = livePrices[sym];
+              if (!p) return null;
+              return (
+                <div key={sym} className="rounded-md border border-border bg-card/50 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">{sym}</span>
+                  <p className="text-base font-bold font-mono text-foreground price-flash">
+                    ${p >= 1 ? p.toLocaleString(undefined, { maximumFractionDigits: 2 }) : p.toFixed(6)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* New Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <NetworkStatsCard 
