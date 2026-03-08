@@ -20,6 +20,9 @@ import {
 } from "recharts";
 import { useState, useMemo } from "react";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/lib/chartStyles";
+import { useLivePrice } from "@/hooks/useLivePrice";
+
+const WS_SUPPORTED_SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "DOT", "USDT", "USDC"];
 
 export default function TokenDetail() {
   const { id } = useParams<{ id: string }>();
