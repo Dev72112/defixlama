@@ -175,7 +175,7 @@ export default function Chains() {
         {isLoading ? (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="data-table w-full min-w-[400px]">
+              <table className="data-table w-full">
                 <thead>
                   <tr className="bg-muted/30">
                     <th className="w-12">#</th>
