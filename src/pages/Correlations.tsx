@@ -117,6 +117,7 @@ export default function Correlations() {
   ];
 
   return (
+    <TierGate requiredTier="pro_plus">
     <Layout>
       <div className="space-y-6 page-enter">
         <div className="flex items-center gap-3">
