@@ -43,15 +43,16 @@ export default function Activities() {
     const now = Math.floor(Date.now() / 1000);
 
     // protocols with real timestamps (listedAt from DefiLlama)
-    for (const p of protocols) {
+    for (let idx = 0; idx < protocols.length; idx++) {
+      const p = protocols[idx];
       if (!p) continue;
       out.push({
         id: `protocol-${p.id || p.slug || p.name}`,
         type: "protocol",
         title: p.name,
         subtitle: p.category || p.chain || "",
-        // Use listedAt if available, otherwise use a staggered recent timestamp
-        timestamp: p.listedAt || (now - Math.floor(Math.random() * 86400)),
+      // Use listedAt if available, otherwise deterministic hash of name
+      timestamp: p.listedAt || (now - ((p.name || '').split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0) % 86400) - (idx * 120)),
         meta: p,
       });
     }

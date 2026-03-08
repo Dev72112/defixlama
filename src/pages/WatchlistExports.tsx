@@ -25,10 +25,7 @@ export default function WatchlistExports() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || "quick";
 
-  const [exportHistory, setExportHistory] = useState<ExportHistoryEntry[]>([
-    { id: "e1", format: "CSV", items: 12, date: "2026-03-07 14:30" },
-    { id: "e2", format: "JSON", items: 8, date: "2026-03-05 09:15" },
-  ]);
+  const [exportHistory, setExportHistory] = useState<ExportHistoryEntry[]>([]);
 
   const exportCSV = () => {
     if (!watchlist.length) { toast({ title: "No items", description: "Add items to your watchlist first" }); return; }

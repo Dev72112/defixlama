@@ -71,11 +71,15 @@ export default function CommunitySentiment() {
     }));
   }, [protocols]);
 
-  const sourceBreakdown = useMemo(() => [
-    { name: "Twitter/X", value: 45 },
-    { name: "Reddit", value: 30 },
-    { name: "GitHub", value: 25 },
-  ], []);
+  const neutralCount = sentimentData.filter((s) => s.trend === "neutral").length;
+  const sourceBreakdown = useMemo(() => {
+    const total = sentimentData.length || 1;
+    return [
+      { name: "Bullish", value: Math.round((sentimentData.filter(s => s.trend === "bullish").length / total) * 100) },
+      { name: "Neutral", value: Math.round((sentimentData.filter(s => s.trend === "neutral").length / total) * 100) },
+      { name: "Bearish", value: Math.round((sentimentData.filter(s => s.trend === "bearish").length / total) * 100) },
+    ];
+  }, [sentimentData]);
 
   const bullishCount = sentimentData.filter((s) => s.trend === "bullish").length;
   const bearishCount = sentimentData.filter((s) => s.trend === "bearish").length;
@@ -137,7 +141,7 @@ export default function CommunitySentiment() {
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="current" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Current Sentiment</TabsTrigger>
               <TabsTrigger value="trend" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Trend Analysis</TabsTrigger>
-              <TabsTrigger value="sources" className="gap-1.5"><PieIcon className="h-3.5 w-3.5" /> Source Breakdown</TabsTrigger>
+              <TabsTrigger value="sources" className="gap-1.5"><PieIcon className="h-3.5 w-3.5" /> Sentiment Distribution</TabsTrigger>
             </TabsList>
 
             <TabsContent value="current" className="space-y-4">
@@ -199,7 +203,7 @@ export default function CommunitySentiment() {
 
             <TabsContent value="sources" className="space-y-4">
               <Card className="p-4">
-                <h3 className="font-semibold text-foreground mb-3">Sentiment Source Distribution</h3>
+                <h3 className="font-semibold text-foreground mb-3">Sentiment Distribution</h3>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>

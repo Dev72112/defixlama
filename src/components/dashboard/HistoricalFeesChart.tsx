@@ -33,9 +33,10 @@ export function HistoricalFeesChart({
       switch (dateRange) {
         case "7d": return item.total7d || 0;
         case "30d": return item.total30d || 0;
-        case "90d": return (item.total30d || 0) * 3; // Approximate
-        case "1y": return (item.total30d || 0) * 12; // Approximate
-        case "all": return (item.total30d || 0) * 12; // Approximate
+        // For longer ranges, show 30d data (best available) — labeled honestly
+        case "90d": return item.total30d || 0;
+        case "1y": return item.total30d || 0;
+        case "all": return item.total30d || 0;
         default: return item.total24h || 0;
       }
     };
@@ -129,7 +130,7 @@ export function HistoricalFeesChart({
                 }}
                 formatter={(value: number, name: string) => [
                   formatCurrency(value),
-                  name === "fees" ? `${dateRange === "7d" ? "7d" : dateRange === "30d" ? "30d" : dateRange} Fees` : "24h Fees"
+                  name === "fees" ? `${["90d", "1y", "all"].includes(dateRange) ? "30d" : dateRange} Fees` : "24h Fees"
                 ]}
                 labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
               />
@@ -137,7 +138,7 @@ export function HistoricalFeesChart({
               <Line
                 type="monotone"
                 dataKey="fees"
-                name={`${dateRange === "7d" ? "7d" : dateRange === "30d" ? "30d" : dateRange} Fees`}
+                name={`${["90d", "1y", "all"].includes(dateRange) ? "30d" : dateRange} Fees`}
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ fill: "hsl(var(--primary))", r: 4 }}

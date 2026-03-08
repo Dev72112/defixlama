@@ -55,29 +55,17 @@ export default function AlertConfig() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || "active";
 
-  const [alerts, setAlerts] = useState<AlertRule[]>([
-    { id: "1", type: "tvl_drop", symbol: "AAVE", condition: "drops_below", threshold: 10, enabled: true },
-    { id: "2", type: "price", symbol: "ETH", condition: "drops_below", threshold: 5, enabled: true },
-    { id: "3", type: "hack", symbol: "ALL", condition: "any", threshold: 0, enabled: false },
-  ]);
+  const [alerts, setAlerts] = useState<AlertRule[]>([]);
   const [newType, setNewType] = useState<AlertType>("tvl_drop");
   const [newSymbol, setNewSymbol] = useState("");
   const [newThreshold, setNewThreshold] = useState("");
 
-  const alertHistory = useMemo<AlertHistoryEntry[]>(() => [
-    { id: "h1", type: "tvl_drop", symbol: "AAVE", triggeredAt: "2026-03-07 14:32", message: "TVL dropped 12.3% in 24h" },
-    { id: "h2", type: "price", symbol: "ETH", triggeredAt: "2026-03-06 09:15", message: "Price moved -6.1% in 4h" },
-    { id: "h3", type: "hack", symbol: "COMPOUND", triggeredAt: "2026-03-05 22:01", message: "Security incident detected" },
-    { id: "h4", type: "governance", symbol: "UNI", triggeredAt: "2026-03-04 16:45", message: "New proposal: Fee Switch" },
-    { id: "h5", type: "tvl_drop", symbol: "CURVE", triggeredAt: "2026-03-03 11:20", message: "TVL dropped 8.7% in 24h" },
-  ], []);
+  const [alertHistory] = useState<AlertHistoryEntry[]>([]);
 
-  const smartSuggestions = useMemo<SmartSuggestion[]>(() => [
-    { id: "s1", type: "tvl_drop", symbol: "LIDO", reason: "High TVL concentration — monitor for outflows", threshold: 8, confidence: 85 },
-    { id: "s2", type: "price", symbol: "BTC", reason: "Approaching resistance level — high volatility expected", threshold: 3, confidence: 72 },
-    { id: "s3", type: "hack", symbol: "ALL", reason: "Multiple unaudited protocols gaining TVL", threshold: 0, confidence: 60 },
-    { id: "s4", type: "governance", symbol: "MKR", reason: "Major proposal vote ending in 48h", threshold: 0, confidence: 90 },
-  ], []);
+  const smartSuggestions = useMemo<SmartSuggestion[]>(() => {
+    // Will be empty until we have real protocol data to derive suggestions from
+    return [];
+  }, []);
 
   const addAlert = () => {
     if (!newSymbol) return;
@@ -209,7 +197,14 @@ export default function AlertConfig() {
             </TabsContent>
 
             <TabsContent value="suggestions" className="space-y-4">
-              <p className="text-sm text-muted-foreground">AI-powered suggestions based on market conditions and your portfolio</p>
+              <p className="text-sm text-muted-foreground">Suggestions based on market conditions will appear here as protocols experience significant changes</p>
+              {smartSuggestions.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground mb-2">No Suggestions Yet</h3>
+                  <p className="text-sm text-muted-foreground">Smart suggestions will appear when significant market movements are detected</p>
+                </Card>
+              ) : (
               <div className="space-y-3">
                 {smartSuggestions.map((s) => {
                   const at = ALERT_TYPES.find((a) => a.type === s.type);
@@ -236,6 +231,7 @@ export default function AlertConfig() {
                   );
                 })}
               </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

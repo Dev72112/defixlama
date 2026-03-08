@@ -28,13 +28,21 @@ export function HistoricalComparisonChart({
     // Sample data to avoid too many points
     const step = Math.max(1, Math.floor(filtered.length / 50));
     
-    return filtered
-      .filter((_, i) => i % step === 0 || i === filtered.length - 1)
-      .map((item, index, arr) => ({
+    const sampled = filtered.filter((_, i) => i % step === 0 || i === filtered.length - 1);
+    
+    // Calculate TVL deltas for proportional volume distribution
+    const deltas = sampled.map((item, i, arr) => {
+      if (i === 0) return 1;
+      const prev = arr[i - 1].tvl || 1;
+      return Math.abs((item.tvl || 0) - prev) / prev + 0.1;
+    });
+    const deltaSum = deltas.reduce((a, b) => a + b, 0) || 1;
+    
+    return sampled.map((item, index) => ({
         date: item.date,
         tvl: item.tvl || 0,
-        // Simulate volume trend based on TVL changes
-        volume: totalVolume * (0.8 + Math.random() * 0.4) / arr.length,
+        // Distribute volume proportionally based on TVL changes
+        volume: totalVolume * (deltas[index] / deltaSum),
         formattedDate: format(new Date(item.date * 1000), "MMM d"),
       }));
   }, [tvlData, volumeData, dateRange]);
