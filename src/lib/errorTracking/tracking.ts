@@ -122,5 +122,15 @@ export function exportErrorLog(): string {
 // Restore from session on load
 try {
   const stored = sessionStorage.getItem(STORAGE_KEY);
-  if (stored) errors = JSON.parse(stored);
+  if (stored) {
+    errors = JSON.parse(stored);
+  } else {
+    // Migrate from legacy key
+    const legacy = sessionStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      errors = JSON.parse(legacy);
+      sessionStorage.setItem(STORAGE_KEY, legacy);
+      sessionStorage.removeItem(LEGACY_KEY);
+    }
+  }
 } catch {}
