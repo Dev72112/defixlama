@@ -27,6 +27,7 @@ import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, TrendingDown, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ProFeatureTeaser } from "@/components/dashboard/ProFeatureTeaser";
 
 // Lazy load heavier tables to improve initial render performance
 const ProtocolTable = lazy(() => import("@/components/dashboard/ProtocolTable").then(mod => ({ default: mod.ProtocolTable })));
@@ -538,9 +539,25 @@ function DashboardContent() {
           />
           <PriceAlertsPanel />
         </div>
+        </div>
+
+        {/* Premium Feature Teasers */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ProFeatureTeaser
+            title="Whale Activity Tracker"
+            description="Monitor large wallet movements, accumulation patterns, and smart money flows in real-time."
+            requiredTier="pro_plus"
+            features={["Large transaction alerts", "Accumulation heatmaps", "Smart money tracking"]}
+          />
+          <ProFeatureTeaser
+            title="Risk Alerts & Scoring"
+            description="Get instant alerts on protocol risks, TVL drops, and security vulnerabilities."
+            requiredTier="pro"
+            features={["Protocol risk scores", "TVL drop notifications", "Security incident alerts"]}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
 }
 
 export default function Dashboard() {
