@@ -27,6 +27,7 @@ import { formatCurrency, timeAgo } from "@/lib/api/defillama";
 import { Database, ArrowLeftRight, TrendingUp, TrendingDown, Layers, Globe, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ProFeatureTeaser } from "@/components/dashboard/ProFeatureTeaser";
 
 // Lazy load heavier tables to improve initial render performance
 const ProtocolTable = lazy(() => import("@/components/dashboard/ProtocolTable").then(mod => ({ default: mod.ProtocolTable })));
