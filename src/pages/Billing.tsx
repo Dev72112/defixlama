@@ -274,14 +274,14 @@ export default function Billing() {
                   : hasActiveSubscription
                   ? tier === "pro_plus" ? "Pro+" : tier.charAt(0).toUpperCase() + tier.slice(1)
                   : isTrialActive
-                  ? "Trial (Pro+ Access)"
+                  ? "Trial (Pro Access)"
                   : isPendingPayment
                   ? "Payment Pending"
                   : "Free"}
               </p>
               {isTrialActive && trialEndsAt && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Trial ends {format(trialEndsAt, "MMM d, yyyy")} — All Pro+ features unlocked
+                  Trial ends {format(trialEndsAt, "MMM d, yyyy")} — Pro features unlocked
                 </p>
               )}
               {hasActiveSubscription && currentPeriodEnd && !isTrialActive && (
