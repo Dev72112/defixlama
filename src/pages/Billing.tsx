@@ -19,12 +19,13 @@ const tiers = [
     name: "Trial",
     price: "$1",
     period: "/ 7 days",
-    description: "Try all Pro+ features",
+    description: "Try Pro features for 7 days",
     features: [
-      "Full Pro+ access for 7 days",
-      "All analytics & tools",
-      "Whale Activity & Yield Intelligence",
-      "Unlimited API access",
+      "Full Pro access for 7 days",
+      "Backtester & Risk Dashboard",
+      "Predictions & Governance",
+      "Protocol Comparison",
+      "API Access (10k req/mo)",
       "No auto-renewal",
     ],
     cta: "Start Trial — $1",
@@ -88,7 +89,7 @@ const tiers = [
   },
 ];
 
-const TIER_RANK: Record<string, number> = { free: 0, trial: 2, pro: 1, pro_plus: 2, enterprise: 3 };
+const TIER_RANK: Record<string, number> = { free: 0, trial: 1, pro: 1, pro_plus: 2, enterprise: 3 };
 
 export default function Billing() {
   const { tier, isTrialActive, trialEndsAt, status, currentPeriodEnd, refetch, isExpired, isPendingPayment, isAdmin } = useSubscription();
