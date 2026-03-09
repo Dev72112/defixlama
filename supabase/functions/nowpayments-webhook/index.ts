@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     const now = new Date();
 
     if (tierKey === "trial") {
-      // Trial: 7 days of Pro+ access
+      // Trial: 7 days of Pro access
       const trialEnd = new Date(now);
       trialEnd.setDate(trialEnd.getDate() + 7);
 
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
         .upsert(
           {
             user_id: userId,
-            tier: "pro_plus",
+            tier: "pro",
             status: "trialing",
             trial_start: now.toISOString(),
             trial_end: trialEnd.toISOString(),
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      console.log(`Trial activated: user=${userId}, ends=${trialEnd.toISOString()}`);
+      console.log(`Trial activated: user=${userId}, tier=pro, ends=${trialEnd.toISOString()}`);
     } else {
       // Regular subscription: 30 days
       const periodEnd = new Date(now);

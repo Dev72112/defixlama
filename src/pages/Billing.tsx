@@ -371,7 +371,7 @@ export default function Billing() {
             🪙 Pay with 200+ cryptocurrencies via NOWPayments.{" "}
             {hasActiveSubscription
               ? "Your subscription is active. Renewals are manual — you'll receive a reminder before expiry."
-              : "Start with a $1 trial to unlock all Pro+ features for 7 days."}
+              : "Start with a $1 trial to unlock Pro features for 7 days."}
           </p>
         </Card>
       </div>

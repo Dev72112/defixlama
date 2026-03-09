@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const pendingTier = tierKey === "trial" ? "pro_plus" : tierKey;
+    const pendingTier = tierKey === "trial" ? "pro" : tierKey;
 
     await supabaseAdmin
       .from("subscriptions")

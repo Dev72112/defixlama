@@ -16,7 +16,8 @@ export interface Breadcrumb {
 
 const MAX_ERRORS = 50;
 const MAX_BREADCRUMBS = 30;
-const STORAGE_KEY = "xlayer-error-log";
+const STORAGE_KEY = "defixlama-error-log";
+const LEGACY_KEY = "xlayer-error-log";
 
 let errors: TrackedError[] = [];
 let breadcrumbs: Breadcrumb[] = [];

@@ -88,7 +88,7 @@ export function useSubscription(): SubscriptionState & { refetch: () => void } {
 
         if (trialActive) {
           setState({
-            tier: (sub.tier as SubscriptionTier) || "pro_plus",
+            tier: (sub.tier as SubscriptionTier) || "pro",
             isTrialActive: true,
             trialEndsAt: trialEnd,
             isLoading: false,

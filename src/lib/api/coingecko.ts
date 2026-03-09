@@ -24,7 +24,15 @@ async function fetchFromCoinGeckoProxy(endpoint: string, params?: Record<string,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint, params }),
     });
-    if (!response.ok) throw new Error(`CoinGecko proxy error: ${response.status}`);
+    if (!response.ok) {
+      // Return null directly for service unavailability — never throw so React Query doesn't log it as an error
+      consecutiveFailures++;
+      if (consecutiveFailures >= CIRCUIT_THRESHOLD) {
+        circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
+        console.warn(`CoinGecko proxy circuit breaker open (${response.status}) — skipping for ${CIRCUIT_COOLDOWN_MS / 1000}s`);
+      }
+      return null;
+    }
     consecutiveFailures = 0; // Reset on success
     return await response.json();
   } catch (error) {
@@ -32,8 +40,6 @@ async function fetchFromCoinGeckoProxy(endpoint: string, params?: Record<string,
     if (consecutiveFailures >= CIRCUIT_THRESHOLD) {
       circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
       console.warn(`CoinGecko proxy circuit breaker open — skipping for ${CIRCUIT_COOLDOWN_MS / 1000}s`);
-    } else {
-      console.warn("CoinGecko proxy error:", error);
     }
     return null;
   }
