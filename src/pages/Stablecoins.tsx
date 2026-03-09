@@ -114,11 +114,7 @@ export default function Stablecoins() {
     if (!filteredStablecoins.length) return [];
     const chainMap = new Map<string, number>();
     filteredStablecoins.forEach((s) => {
-      if (s.chainCirculating) {
-        Object.entries(s.chainCirculating).forEach(([chain, amount]) => {
-          chainMap.set(chain, (chainMap.get(chain) || 0) + (amount as number));
-        });
-      } else if (s.chains) {
+      if (s.chains) {
         const circ = s.circulating ? Object.values(s.circulating).reduce((a, b) => a + b, 0) : 0;
         const perChain = circ / s.chains.length;
         s.chains.forEach((chain) => chainMap.set(chain, (chainMap.get(chain) || 0) + perChain));
