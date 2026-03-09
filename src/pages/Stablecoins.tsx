@@ -3,68 +3,61 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { PegTracker } from "@/components/dashboard/PegTracker";
 import { useStablecoins } from "@/hooks/useDefiData";
 import { formatCurrency, Stablecoin } from "@/lib/api/defillama";
-import { Coins, TrendingUp, Search, DollarSign, Activity, PieChart } from "lucide-react";
+import { Coins, TrendingUp, Search, DollarSign, Activity, PieChart, Shield, ArrowLeftRight } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
+  Pagination, PaginationContent, PaginationItem, PaginationLink,
+  PaginationNext, PaginationPrevious, PaginationEllipsis,
 } from "@/components/ui/pagination";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ErrorState } from "@/components/ErrorState";
 import { useChain } from "@/contexts/ChainContext";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ProFeatureTeaser } from "@/components/dashboard/ProFeatureTeaser";
 
 export default function Stablecoins() {
   const { t } = useTranslation();
   const { selectedChain } = useChain();
   const { data: stablecoins, isLoading, isError, error, refetch } = useStablecoins();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "overview";
   const [searchQuery, setSearchQuery] = useState("");
   const [pegFilter, setPegFilter] = useState("all");
   const [sortBy, setSortBy] = useState("marketcap");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // Extract peg types
+  const setTab = (tab: string) => {
+    setSearchParams({ tab });
+    setCurrentPage(1);
+  };
+
   const pegTypes = useMemo(() => {
     if (!stablecoins) return [];
     const types = new Set(stablecoins.map((s) => s.pegType || "USD"));
     return Array.from(types).sort();
   }, [stablecoins]);
 
-  // Filter stablecoins by selected chain
   const filteredStablecoins = useMemo(() => {
     if (!stablecoins) return [];
-    
     let filtered = stablecoins.filter((s) => {
       const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.symbol.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesPeg = pegFilter === "all" || (s.pegType || "USD") === pegFilter;
-      if (selectedChain.id === "all") {
-        return matchesSearch && matchesPeg;
-      }
+      if (selectedChain.id === "all") return matchesSearch && matchesPeg;
       const chainSlug = selectedChain.slug.toLowerCase();
       const isRelevant = s.chains?.some(
         (c) => c.toLowerCase() === chainSlug || c.toLowerCase().replace(/[\s-]/g, "") === chainSlug.replace(/[\s-]/g, "")
       ) || ["USDT", "USDC", "DAI", "FRAX", "LUSD", "TUSD"].includes(s.symbol);
       return matchesSearch && matchesPeg && isRelevant;
     });
-    
-    // Sort
     filtered.sort((a, b) => {
       const aCirc = a.circulating ? Object.values(a.circulating).reduce((x, y) => x + y, 0) : 0;
       const bCirc = b.circulating ? Object.values(b.circulating).reduce((x, y) => x + y, 0) : 0;
@@ -75,41 +68,31 @@ export default function Stablecoins() {
         default: return 0;
       }
     });
-    
     return filtered;
   }, [stablecoins, searchQuery, selectedChain, pegFilter, sortBy]);
 
-  // Paginated data
   const totalPages = Math.ceil(filteredStablecoins.length / itemsPerPage);
   const paginatedStablecoins = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredStablecoins.slice(start, start + itemsPerPage);
   }, [filteredStablecoins, currentPage, itemsPerPage]);
 
-  // Reset page when filters change
   useMemo(() => { setCurrentPage(1); }, [searchQuery, pegFilter, sortBy, selectedChain]);
 
-  // Calculate metrics
   const totalMarketCap = filteredStablecoins.reduce((acc, s) => {
     const circulating = s.circulating ? Object.values(s.circulating).reduce((a, b) => a + b, 0) : 0;
     return acc + circulating;
   }, 0);
   const stablecoinCount = filteredStablecoins.length;
 
-  // Dominance chart data
   const dominanceData = useMemo(() => {
     const COLORS = ["hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
     return filteredStablecoins.slice(0, 5).map((s, i) => {
       const circulating = s.circulating ? Object.values(s.circulating).reduce((a, b) => a + b, 0) : 0;
-      return {
-        name: s.symbol,
-        value: circulating,
-        color: COLORS[i % COLORS.length],
-      };
+      return { name: s.symbol, value: circulating, color: COLORS[i % COLORS.length] };
     });
   }, [filteredStablecoins]);
 
-  // Calculate stability score
   const stabilityScore = useMemo(() => {
     const stables = filteredStablecoins.filter((s) => s.price !== undefined);
     if (stables.length === 0) return 100;
@@ -117,16 +100,39 @@ export default function Stablecoins() {
     return Math.max(0, 100 - avgDeviation * 10);
   }, [filteredStablecoins]);
 
+  // Health tab: depegged and at-risk stablecoins
+  const healthData = useMemo(() => {
+    if (!filteredStablecoins.length) return { depegged: [], atRisk: [], healthy: [] };
+    const depegged = filteredStablecoins.filter((s) => s.price !== undefined && Math.abs(1 - (s.price || 1)) * 100 >= 1);
+    const atRisk = filteredStablecoins.filter((s) => s.price !== undefined && Math.abs(1 - (s.price || 1)) * 100 >= 0.3 && Math.abs(1 - (s.price || 1)) * 100 < 1);
+    const healthy = filteredStablecoins.filter((s) => s.price === undefined || Math.abs(1 - (s.price || 1)) * 100 < 0.3);
+    return { depegged, atRisk, healthy };
+  }, [filteredStablecoins]);
+
+  // Flows tab: chain distribution
+  const chainDistribution = useMemo(() => {
+    if (!filteredStablecoins.length) return [];
+    const chainMap = new Map<string, number>();
+    filteredStablecoins.forEach((s) => {
+      if (s.chains) {
+        const circ = s.circulating ? Object.values(s.circulating).reduce((a, b) => a + b, 0) : 0;
+        const perChain = circ / s.chains.length;
+        s.chains.forEach((chain) => chainMap.set(chain, (chainMap.get(chain) || 0) + perChain));
+      }
+    });
+    return Array.from(chainMap.entries())
+      .map(([chain, value]) => ({ chain, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 20);
+  }, [filteredStablecoins]);
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} {t('stablecoins.title')}</h1>
-            <p className="text-muted-foreground mt-1">
-              {t('stablecoins.subtitle')}
-            </p>
+            <p className="text-muted-foreground mt-1">{t('stablecoins.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Activity className="h-4 w-4 text-primary animate-pulse" />
@@ -134,164 +140,208 @@ export default function Stablecoins() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title={t('stablecoins.totalMarketCap')}
-            value={formatCurrency(totalMarketCap)}
-            icon={DollarSign}
-            loading={isLoading}
-          />
-          <StatCard
-            title={t('stablecoins.stablecoinsAvailable')}
-            value={stablecoinCount.toString()}
-            icon={Coins}
-            loading={isLoading}
-          />
-          <StatCard
-            title={t('stablecoins.mostUsed')}
-            value={filteredStablecoins[0]?.symbol || "-"}
-            icon={Activity}
-            loading={isLoading}
-          />
-          <StatCard
-            title={t('stablecoins.stabilityScore')}
-            value={`${stabilityScore.toFixed(1)}%`}
-            icon={TrendingUp}
-            loading={isLoading}
-          />
+          <StatCard title={t('stablecoins.totalMarketCap')} value={formatCurrency(totalMarketCap)} icon={DollarSign} loading={isLoading} />
+          <StatCard title={t('stablecoins.stablecoinsAvailable')} value={stablecoinCount.toString()} icon={Coins} loading={isLoading} />
+          <StatCard title={t('stablecoins.mostUsed')} value={filteredStablecoins[0]?.symbol || "-"} icon={Activity} loading={isLoading} />
+          <StatCard title={t('stablecoins.stabilityScore')} value={`${stabilityScore.toFixed(1)}%`} icon={TrendingUp} loading={isLoading} />
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Dominance Chart */}
-          <div className="rounded-lg border border-border bg-card p-4">
-            <h3 className="font-semibold text-foreground mb-4">{t('stablecoins.marketCapDominance')}</h3>
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPie>
-                  <Pie
-                    data={dominanceData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    dataKey="value"
-                    paddingAngle={2}
-                  >
-                    {dominanceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+        <Tabs value={currentTab} onValueChange={setTab}>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="health">Health</TabsTrigger>
+            <TabsTrigger value="flows">Flows</TabsTrigger>
+          </TabsList>
+
+          {/* Tab: Overview */}
+          <TabsContent value="overview">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <h3 className="font-semibold text-foreground mb-4">{t('stablecoins.marketCapDominance')}</h3>
+                  <div className="h-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPie>
+                        <Pie data={dominanceData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" paddingAngle={2}>
+                          {dominanceData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
+                          formatter={(value: number) => [formatCurrency(value), t('stablecoins.marketCap')]}
+                        />
+                      </RechartsPie>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap gap-3 mt-3 justify-center">
+                    {dominanceData.map((item) => (
+                      <div key={item.name} className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-xs text-muted-foreground">{item.name}</span>
+                      </div>
                     ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(value: number) => [formatCurrency(value), t('stablecoins.marketCap')]}
-                  />
-                </RechartsPie>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap gap-3 mt-3 justify-center">
-              {dominanceData.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-xs text-muted-foreground">{item.name}</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Peg Tracker */}
-          <PegTracker stablecoins={filteredStablecoins} loading={isLoading} />
-        </div>
-
-        {/* Search + Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t('stablecoins.searchStablecoins')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={pegFilter} onValueChange={setPegFilter}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Peg Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Pegs</SelectItem>
-              {pegTypes.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="marketcap">Market Cap</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="peg">Peg Stability</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Stablecoins Grid */}
-        {isError ? (
-          <ErrorState 
-            error={error as Error}
-            onRetry={() => refetch()}
-          />
-        ) : isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array(6).fill(0).map((_, i) => (
-              <div key={i} className="rounded-lg border border-border bg-card p-6">
-                <div className="skeleton h-10 w-10 rounded-full mb-4" />
-                <div className="skeleton h-6 w-24 mb-2" />
-                <div className="skeleton h-4 w-32" />
+                <PegTracker stablecoins={filteredStablecoins} loading={isLoading} />
               </div>
-            ))}
-          </div>
-        ) : filteredStablecoins.length === 0 ? (
-          <div className="rounded-lg border border-border bg-card p-8 text-center">
-            <Coins className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">{t('stablecoins.noStablecoinsFound')}</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {paginatedStablecoins.map((stablecoin) => (
-                <StablecoinCard key={stablecoin.id} stablecoin={stablecoin} />
-              ))}
-            </div>
-            {totalPages > 1 && (
-              <Pagination className="mt-6">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                  </PaginationItem>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((p) => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
-                    .map((p, idx, arr) => (
-                      <PaginationItem key={p}>
-                        {idx > 0 && arr[idx - 1] !== p - 1 && <PaginationEllipsis />}
-                        <PaginationLink isActive={p === currentPage} onClick={() => setCurrentPage(p)} className="cursor-pointer">{p}</PaginationLink>
-                      </PaginationItem>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input placeholder={t('stablecoins.searchStablecoins')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+                </div>
+                <Select value={pegFilter} onValueChange={setPegFilter}>
+                  <SelectTrigger className="w-[120px]"><SelectValue placeholder="Peg Type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Pegs</SelectItem>
+                    {pegTypes.map((pt) => (<SelectItem key={pt} value={pt}>{pt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[140px]"><SelectValue placeholder="Sort by" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="marketcap">Market Cap</SelectItem>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="peg">Peg Stability</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {isError ? (
+                <ErrorState error={error as Error} onRetry={() => refetch()} />
+              ) : isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array(6).fill(0).map((_, i) => (
+                    <div key={i} className="rounded-lg border border-border bg-card p-6">
+                      <div className="skeleton h-10 w-10 rounded-full mb-4" />
+                      <div className="skeleton h-6 w-24 mb-2" />
+                      <div className="skeleton h-4 w-32" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredStablecoins.length === 0 ? (
+                <div className="rounded-lg border border-border bg-card p-8 text-center">
+                  <Coins className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">{t('stablecoins.noStablecoinsFound')}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {paginatedStablecoins.map((stablecoin) => (
+                      <StablecoinCard key={stablecoin.id} stablecoin={stablecoin} />
                     ))}
-                  <PaginationItem>
-                    <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </>
-        )}
+                  </div>
+                  {totalPages > 1 && (
+                    <Pagination className="mt-6">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                        </PaginationItem>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter((p) => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
+                          .map((p, idx, arr) => (
+                            <PaginationItem key={p}>
+                              {idx > 0 && arr[idx - 1] !== p - 1 && <PaginationEllipsis />}
+                              <PaginationLink isActive={p === currentPage} onClick={() => setCurrentPage(p)} className="cursor-pointer">{p}</PaginationLink>
+                            </PaginationItem>
+                          ))}
+                        <PaginationItem>
+                          <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Tab: Health */}
+          <TabsContent value="health">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatCard title="Healthy" value={healthData.healthy.length.toString()} icon={Shield} loading={isLoading} />
+                <StatCard title="At Risk (0.3-1%)" value={healthData.atRisk.length.toString()} icon={Activity} loading={isLoading} />
+                <StatCard title="Depegged (>1%)" value={healthData.depegged.length.toString()} icon={TrendingUp} loading={isLoading} />
+              </div>
+
+              {healthData.depegged.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-foreground">Depegged Stablecoins</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {healthData.depegged.slice(0, 9).map((s) => (
+                      <StablecoinCard key={s.id} stablecoin={s} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {healthData.atRisk.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-foreground">At Risk</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {healthData.atRisk.slice(0, 9).map((s) => (
+                      <StablecoinCard key={s.id} stablecoin={s} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <ProFeatureTeaser
+                title="Real-Time Peg Monitoring"
+                description="Get instant alerts when stablecoins depeg, with collateral composition analysis and historical stability data."
+                requiredTier="pro"
+                features={["De-peg probability scoring", "Collateral backing breakdown", "Historical peg deviation charts"]}
+              />
+            </div>
+          </TabsContent>
+
+          {/* Tab: Flows */}
+          <TabsContent value="flows">
+            <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">Stablecoin distribution across chains by estimated circulating supply</p>
+              {isLoading ? (
+                <div className="space-y-3">
+                  {Array(5).fill(0).map((_, i) => (
+                    <div key={i} className="rounded-lg border border-border bg-card p-4 animate-pulse h-14" />
+                  ))}
+                </div>
+              ) : chainDistribution.length === 0 ? (
+                <div className="rounded-lg border border-border bg-card p-8 text-center">
+                  <ArrowLeftRight className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">No chain distribution data available</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {chainDistribution.map((item) => {
+                    const maxVal = chainDistribution[0]?.value || 1;
+                    const pct = (item.value / maxVal) * 100;
+                    return (
+                      <div key={item.chain} className="rounded-lg border border-border bg-card p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-foreground text-sm">{item.chain}</span>
+                          <span className="font-mono text-sm text-muted-foreground">{formatCurrency(item.value)}</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <ProFeatureTeaser
+                title="Cross-Chain Flow Analysis"
+                description="Track stablecoin movements between chains, bridge flows, and liquidity migration patterns."
+                requiredTier="pro_plus"
+                features={["Real-time bridge flow tracking", "Liquidity migration heatmaps", "Chain-to-chain flow matrix"]}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
@@ -299,66 +349,49 @@ export default function Stablecoins() {
 
 function StablecoinCard({ stablecoin }: { stablecoin: Stablecoin }) {
   const { t } = useTranslation();
-  const circulating = stablecoin.circulating 
-    ? Object.values(stablecoin.circulating).reduce((a, b) => a + b, 0) 
-    : 0;
+  const circulating = stablecoin.circulating
+    ? Object.values(stablecoin.circulating).reduce((a, b) => a + b, 0) : 0;
   const pegDeviation = stablecoin.price ? Math.abs(1 - stablecoin.price) * 100 : 0;
   const isPegged = pegDeviation < 1;
 
   return (
     <Link to={`/stablecoins/${stablecoin.symbol.toLowerCase()}`} className="block">
       <div className="rounded-lg border border-border bg-card p-6 card-hover group">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-            {stablecoin.symbol.slice(0, 2)}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+              {stablecoin.symbol.slice(0, 2)}
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">{stablecoin.name}</h3>
+              <p className="text-sm text-muted-foreground">{stablecoin.symbol}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-foreground">{stablecoin.name}</h3>
-            <p className="text-sm text-muted-foreground">{stablecoin.symbol}</p>
+          <div className={cn("px-2 py-1 rounded-full text-xs font-medium", isPegged ? "bg-success/10 text-success" : "bg-warning/10 text-warning")}>
+            {isPegged ? t('stablecoins.pegged') : t('stablecoins.depegged')}
           </div>
         </div>
-        <div
-          className={cn(
-            "px-2 py-1 rounded-full text-xs font-medium",
-            isPegged
-              ? "bg-success/10 text-success"
-              : "bg-warning/10 text-warning"
-          )}
-        >
-          {isPegged ? t('stablecoins.pegged') : t('stablecoins.depegged')}
-        </div>
-      </div>
-      
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">{t('stablecoins.marketCap')}</span>
-          <span className="font-mono font-medium text-foreground">
-            {formatCurrency(circulating)}
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">{t('stablecoins.price')}</span>
-          <span className="font-mono font-medium text-foreground">
-            ${stablecoin.price?.toFixed(4) || "1.0000"}
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">{t('stablecoins.pegType')}</span>
-          <span className="text-sm text-foreground capitalize">
-            {stablecoin.pegType || "USD"}
-          </span>
-        </div>
-        {stablecoin.chains && (
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">{t('stablecoins.chains')}</span>
-            <span className="text-sm text-foreground">
-              {stablecoin.chains.length}
-            </span>
+            <span className="text-sm text-muted-foreground">{t('stablecoins.marketCap')}</span>
+            <span className="font-mono font-medium text-foreground">{formatCurrency(circulating)}</span>
           </div>
-        )}
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">{t('stablecoins.price')}</span>
+            <span className="font-mono font-medium text-foreground">${stablecoin.price?.toFixed(4) || "1.0000"}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">{t('stablecoins.pegType')}</span>
+            <span className="text-sm text-foreground capitalize">{stablecoin.pegType || "USD"}</span>
+          </div>
+          {stablecoin.chains && (
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">{t('stablecoins.chains')}</span>
+              <span className="text-sm text-foreground">{stablecoin.chains.length}</span>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </Link>
   );
 }
