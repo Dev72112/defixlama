@@ -16,7 +16,8 @@ export interface Breadcrumb {
 
 const MAX_ERRORS = 50;
 const MAX_BREADCRUMBS = 30;
-const STORAGE_KEY = "xlayer-error-log";
+const STORAGE_KEY = "defixlama-error-log";
+const LEGACY_KEY = "xlayer-error-log";
 
 let errors: TrackedError[] = [];
 let breadcrumbs: Breadcrumb[] = [];
@@ -121,5 +122,15 @@ export function exportErrorLog(): string {
 // Restore from session on load
 try {
   const stored = sessionStorage.getItem(STORAGE_KEY);
-  if (stored) errors = JSON.parse(stored);
+  if (stored) {
+    errors = JSON.parse(stored);
+  } else {
+    // Migrate from legacy key
+    const legacy = sessionStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      errors = JSON.parse(legacy);
+      sessionStorage.setItem(STORAGE_KEY, legacy);
+      sessionStorage.removeItem(LEGACY_KEY);
+    }
+  }
 } catch {}

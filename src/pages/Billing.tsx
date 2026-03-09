@@ -19,12 +19,13 @@ const tiers = [
     name: "Trial",
     price: "$1",
     period: "/ 7 days",
-    description: "Try all Pro+ features",
+    description: "Try Pro features for 7 days",
     features: [
-      "Full Pro+ access for 7 days",
-      "All analytics & tools",
-      "Whale Activity & Yield Intelligence",
-      "Unlimited API access",
+      "Full Pro access for 7 days",
+      "Backtester & Risk Dashboard",
+      "Predictions & Governance",
+      "Protocol Comparison",
+      "API Access (10k req/mo)",
       "No auto-renewal",
     ],
     cta: "Start Trial — $1",
@@ -88,7 +89,7 @@ const tiers = [
   },
 ];
 
-const TIER_RANK: Record<string, number> = { free: 0, trial: 2, pro: 1, pro_plus: 2, enterprise: 3 };
+const TIER_RANK: Record<string, number> = { free: 0, trial: 1, pro: 1, pro_plus: 2, enterprise: 3 };
 
 export default function Billing() {
   const { tier, isTrialActive, trialEndsAt, status, currentPeriodEnd, refetch, isExpired, isPendingPayment, isAdmin } = useSubscription();
@@ -273,14 +274,14 @@ export default function Billing() {
                   : hasActiveSubscription
                   ? tier === "pro_plus" ? "Pro+" : tier.charAt(0).toUpperCase() + tier.slice(1)
                   : isTrialActive
-                  ? "Trial (Pro+ Access)"
+                  ? "Trial (Pro Access)"
                   : isPendingPayment
                   ? "Payment Pending"
                   : "Free"}
               </p>
               {isTrialActive && trialEndsAt && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Trial ends {format(trialEndsAt, "MMM d, yyyy")} — All Pro+ features unlocked
+                  Trial ends {format(trialEndsAt, "MMM d, yyyy")} — Pro features unlocked
                 </p>
               )}
               {hasActiveSubscription && currentPeriodEnd && !isTrialActive && (
@@ -370,7 +371,7 @@ export default function Billing() {
             🪙 Pay with 200+ cryptocurrencies via NOWPayments.{" "}
             {hasActiveSubscription
               ? "Your subscription is active. Renewals are manual — you'll receive a reminder before expiry."
-              : "Start with a $1 trial to unlock all Pro+ features for 7 days."}
+              : "Start with a $1 trial to unlock Pro features for 7 days."}
           </p>
         </Card>
       </div>
