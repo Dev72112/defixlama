@@ -33,26 +33,23 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
   const hasAccess = tierLevel[tier] >= tierLevel[requiredTier];
 
   if (!hasAccess) {
-    return (
-      <>
-        {isExpired && <ExpiredBanner />}
-        {isPendingPayment && <PendingPaymentBanner />}
-        <UpgradePrompt requiredTier={requiredTier} />
-      </>
-    );
-  }
-
-  const daysLeft = currentPeriodEnd ? differenceInDays(currentPeriodEnd, new Date()) : null;
-  const showExpiryWarning = status === "active" && daysLeft !== null && daysLeft <= 7;
-
   return (
     <>
-      {showExpiryWarning && currentPeriodEnd && <ExpiryBanner daysLeft={daysLeft!} expiryDate={currentPeriodEnd} />}
+      {isExpired && <ExpiredBanner />}
       {isPendingPayment && <PendingPaymentBanner />}
-      {children}
+      <div className="relative">
+        <div className="pointer-events-none select-none blur-sm 
+                        opacity-30 max-h-[500px] overflow-hidden">
+          {children}
+        </div>
+        <div className="absolute inset-0 flex items-center 
+                        justify-center bg-background/50 backdrop-blur-sm">
+          <UpgradePrompt requiredTier={requiredTier} />
+        </div>
+      </div>
     </>
   );
-}
+  }
 
 function PendingPaymentBanner() {
   const navigate = useNavigate();
