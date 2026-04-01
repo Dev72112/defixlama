@@ -51,6 +51,9 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
   );
   }
 
+  return <>{children}</>;
+}
+
 function PendingPaymentBanner() {
   const navigate = useNavigate();
 
