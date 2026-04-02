@@ -33,6 +33,8 @@ export default function MarketStructure() {
   const [feeSearch, setFeeSearch] = useState("");
   const [feePage, setFeePage] = useState(1);
   const [chainPage, setChainPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "overview";
 
   useEffect(() => { setFeePage(1); setChainPage(1); }, [selectedChain.id]);
 
