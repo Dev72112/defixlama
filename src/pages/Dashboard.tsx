@@ -345,7 +345,7 @@ function DashboardContent() {
       </div>
 
       {/* Quick Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         <StatCard title={t("dashboard.marketCap")} value={formatCurrency(marketCap)} icon={Database} loading={protocols?.isLoading ?? true} />
         <StatCard title={t("dashboard.newProtocols")} value={String(newProtocolsCount)} icon={Layers} loading={protocols?.isLoading ?? true} />
         <StatCard title={t("dashboard.topCategories")} value={categoryCount.length.toString()} icon={TrendingUp} loading={protocols?.isLoading ?? true} />
