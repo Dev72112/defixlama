@@ -20,7 +20,7 @@ interface SubscriptionState {
 const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function useSubscription(): SubscriptionState & { refetch: () => void } {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, adminLoading } = useAuth();
   const [state, setState] = useState<SubscriptionState>({
     tier: "free",
     isTrialActive: false,
@@ -34,6 +34,11 @@ export function useSubscription(): SubscriptionState & { refetch: () => void } {
   });
 
   const load = useCallback(async () => {
+    // Wait for admin check to complete before resolving
+    if (adminLoading) {
+      return;
+    }
+
     if (!user) {
       setState({ tier: "free", isTrialActive: false, trialEndsAt: null, isLoading: false, status: null, currentPeriodEnd: null, isExpired: false, isPendingPayment: false, isAdmin: false });
       return;
@@ -147,7 +152,7 @@ export function useSubscription(): SubscriptionState & { refetch: () => void } {
       isPendingPayment: false,
       isAdmin: false,
     });
-  }, [user, isAdmin]);
+  }, [user, isAdmin, adminLoading]);
 
   useEffect(() => {
     load();
