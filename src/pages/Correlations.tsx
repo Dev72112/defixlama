@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useSearchParams } from "react-router-dom";
 
 const PAGE_SIZE = 15;
 
@@ -28,6 +30,8 @@ export default function Correlations() {
   const isLoading = protocols.isLoading;
   const [historyRange, setHistoryRange] = useState<DateRange>("30d");
   const [sectorPage, setSectorPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "matrix";
 
   useEffect(() => { setSectorPage(1); }, [chainId]);
 
@@ -128,6 +132,14 @@ export default function Correlations() {
         </div>
         <p className="text-muted-foreground text-sm">TVL co-movement analysis, sector rotation tracking, and divergence alerts</p>
 
+        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="matrix">Co-Movement</TabsTrigger>
+            <TabsTrigger value="sectors">Sectors</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="matrix" className="space-y-6">
         {/* Co-Movement Matrix */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-1">
@@ -180,6 +192,9 @@ export default function Correlations() {
           )}
         </div>
 
+        </TabsContent>
+
+        <TabsContent value="sectors" className="space-y-6">
         {/* Sector Rotation Tracker */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-1">
@@ -266,6 +281,9 @@ export default function Correlations() {
           </div>
         </div>
 
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-6">
         {/* Historical TVL Trend */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -295,6 +313,8 @@ export default function Correlations() {
             </ResponsiveContainer>
           )}
         </div>
+        </TabsContent>
+        </Tabs>
       </div>
       </ErrorBoundary>
     </TierGate>

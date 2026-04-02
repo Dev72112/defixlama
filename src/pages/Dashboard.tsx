@@ -281,7 +281,7 @@ function DashboardContent() {
       )}
 
       {/* New Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <NetworkStatsCard 
           loading={protocols?.isLoading} 
           protocols={protocols?.data ?? []} 
@@ -294,7 +294,7 @@ function DashboardContent() {
 
       {/* TVL Chart */}
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <TVLChart data={tvlHistory?.data ?? []} loading={tvlHistory?.isLoading ?? true} height={350} />
+        <TVLChart data={tvlHistory?.data ?? []} loading={tvlHistory?.isLoading ?? true} height={window.innerWidth < 640 ? 250 : 350} />
       </ErrorBoundary>
 
       {/* Historical Charts with Date Range */}
@@ -313,7 +313,7 @@ function DashboardContent() {
       </div>
 
       {/* Market Intelligence Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MarketSentiment 
           protocols={protocols?.data ?? []} 
           tokens={tokens ?? []}
@@ -345,7 +345,7 @@ function DashboardContent() {
       </div>
 
       {/* Quick Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         <StatCard title={t("dashboard.marketCap")} value={formatCurrency(marketCap)} icon={Database} loading={protocols?.isLoading ?? true} />
         <StatCard title={t("dashboard.newProtocols")} value={String(newProtocolsCount)} icon={Layers} loading={protocols?.isLoading ?? true} />
         <StatCard title={t("dashboard.topCategories")} value={categoryCount.length.toString()} icon={TrendingUp} loading={protocols?.isLoading ?? true} />
@@ -542,7 +542,7 @@ function DashboardContent() {
         </div>
 
         {/* Premium Feature Teasers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <ProFeatureTeaser
             title="Whale Activity Tracker"
             description="Monitor large wallet movements, accumulation patterns, and smart money flows in real-time."
@@ -554,6 +554,12 @@ function DashboardContent() {
             description="Get instant alerts on protocol risks, TVL drops, and security vulnerabilities."
             requiredTier="pro"
             features={["Protocol risk scores", "TVL drop notifications", "Security incident alerts"]}
+          />
+          <ProFeatureTeaser
+            title="Market Structure Analysis"
+            description="Deep dive into liquidity dynamics, DEX concentration, and capital efficiency metrics."
+            requiredTier="pro_plus"
+            features={["Liquidity fragmentation", "Fee-to-TVL efficiency", "Cross-chain capital flows"]}
           />
         </div>
       </div>

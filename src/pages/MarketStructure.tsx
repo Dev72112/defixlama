@@ -5,6 +5,7 @@ import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols, useChainDexVolumes, useChainFees, useChainsTVL, useChainTVLData } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { Landmark, Activity, BarChart3, Layers, Gauge, TrendingUp, Clock, Search, Zap } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { CategoryTreemap } from "@/components/dashboard/CategoryTreemap";
 import { ProtocolLifecycle } from "@/components/dashboard/ProtocolLifecycle";
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const PAGE_SIZE = 20;
 
@@ -31,6 +33,8 @@ export default function MarketStructure() {
   const [feeSearch, setFeeSearch] = useState("");
   const [feePage, setFeePage] = useState(1);
   const [chainPage, setChainPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "overview";
 
   useEffect(() => { setFeePage(1); setChainPage(1); }, [selectedChain.id]);
 
@@ -133,6 +137,15 @@ export default function MarketStructure() {
           <p className="text-muted-foreground mt-1 text-sm">Liquidity dynamics, structural analysis, and protocol efficiency metrics</p>
         </div>
 
+        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="efficiency">Efficiency</TabsTrigger>
+            <TabsTrigger value="chains">Cross-Chain</TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+
         {/* Ecosystem Structure Insight */}
         {!isLoading && protocolList.length > 0 && (
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
@@ -210,6 +223,9 @@ export default function MarketStructure() {
           </div>
         </div>
 
+        </TabsContent>
+
+        <TabsContent value="efficiency" className="space-y-6">
         {/* Fee-to-TVL Efficiency Chart */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-1">
@@ -271,6 +287,9 @@ export default function MarketStructure() {
 
         <ProtocolLifecycle protocols={protocolList} loading={isLoading} />
 
+        </TabsContent>
+
+        <TabsContent value="chains" className="space-y-6">
         {/* Top Chains by TVL */}
         <div className="rounded-lg border border-border bg-card p-4">
           <h3 className="text-base font-semibold text-foreground mb-1">Top Chains by TVL</h3>
@@ -290,6 +309,8 @@ export default function MarketStructure() {
             </>
           )}
         </div>
+        </TabsContent>
+        </Tabs>
       </div>
       </ErrorBoundary>
     </TierGate>

@@ -12,6 +12,7 @@ import {
   Shield, AlertTriangle, CheckCircle2, XCircle,
   Loader2, Clock, TrendingDown,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
   Tooltip, CartesianGrid, Cell, PieChart, Pie,
@@ -20,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, CHART_COLORS } from "@/lib/chartStyles";
 import { ResponsiveDataTable, ResponsiveColumn } from "@/components/ui/responsive-table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 function useHackHistory() {
   return useQuery({
@@ -80,6 +82,8 @@ export default function RiskDashboard() {
   const { data: risks = [], isLoading: loadingRisks } = useProtocolRisks(selectedChain.id);
   const [riskPage, setRiskPage] = useState(1);
   const [hackPage, setHackPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "overview";
 
   useEffect(() => { setRiskPage(1); setHackPage(1); }, [selectedChain.id]);
 
@@ -149,6 +153,14 @@ export default function RiskDashboard() {
           <p className="text-muted-foreground mt-1">Protocol risk scoring, audit status, and DeFi hack history</p>
         </div>
 
+        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="protocols">Protocols</TabsTrigger>
+            <TabsTrigger value="hacks">Hack History</TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="p-4">
             <p className="text-xs text-muted-foreground">Total Hacks Tracked</p>
@@ -239,6 +251,9 @@ export default function RiskDashboard() {
           )}
         </Card>
 
+        </TabsContent>
+
+        <TabsContent value="protocols" className="space-y-6">
         {/* Risk Table */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -254,6 +269,9 @@ export default function RiskDashboard() {
           )}
         </Card>
 
+        </TabsContent>
+
+        <TabsContent value="hacks" className="space-y-6">
         {/* Recent Hacks */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -280,6 +298,8 @@ export default function RiskDashboard() {
             </div>
           )}
         </Card>
+        </TabsContent>
+        </Tabs>
       </div>
       </ErrorBoundary>
     </TierGate>
