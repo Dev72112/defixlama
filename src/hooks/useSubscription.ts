@@ -34,6 +34,11 @@ export function useSubscription(): SubscriptionState & { refetch: () => void } {
   });
 
   const load = useCallback(async () => {
+    // Wait for admin check to complete before resolving
+    if (adminLoading) {
+      return;
+    }
+
     if (!user) {
       setState({ tier: "free", isTrialActive: false, trialEndsAt: null, isLoading: false, status: null, currentPeriodEnd: null, isExpired: false, isPendingPayment: false, isAdmin: false });
       return;
