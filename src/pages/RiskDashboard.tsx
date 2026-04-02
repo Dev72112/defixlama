@@ -82,6 +82,8 @@ export default function RiskDashboard() {
   const { data: risks = [], isLoading: loadingRisks } = useProtocolRisks(selectedChain.id);
   const [riskPage, setRiskPage] = useState(1);
   const [hackPage, setHackPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "overview";
 
   useEffect(() => { setRiskPage(1); setHackPage(1); }, [selectedChain.id]);
 
