@@ -309,6 +309,8 @@ export default function MarketStructure() {
             </>
           )}
         </div>
+        </TabsContent>
+        </Tabs>
       </div>
       </ErrorBoundary>
     </TierGate>
