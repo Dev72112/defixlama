@@ -269,6 +269,9 @@ export default function RiskDashboard() {
           )}
         </Card>
 
+        </TabsContent>
+
+        <TabsContent value="hacks" className="space-y-6">
         {/* Recent Hacks */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
