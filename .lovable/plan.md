@@ -1,32 +1,47 @@
 
 
-# Final Sprint: Tabs & Pro Teasers for Remaining Pages
+# Fix Subscription Flash + Continue Plan
 
-## Pages Still Missing Tabs + Teasers
+## Problem: Paywall Flash on Premium Pages
 
-Based on the codebase review, three free-tier pages still lack the standardized 3-tab architecture:
+**Root cause**: `useAuth()` is a plain hook with local state — every component calling it creates an independent copy. When `useSubscription()` calls `useAuth()`, it gets its own `isAdmin = false` initially. The admin check is async, so the sequence is:
 
-### 1. Fees Page (`src/pages/Fees.tsx`)
-- **Tab 1: "Overview"** - Current table + charts (FeeTrendChart, RevenueBreakdown, HistoricalFeesChart)
-- **Tab 2: "Revenue"** - Revenue-focused view ranking protocols by fee-to-TVL ratio, revenue efficiency
-- **Tab 3: "Trends"** - Historical fee trend analysis, fee growth leaders
-- **Pro Teaser**: "Fee Optimization Intelligence" (Pro), "Revenue Forecasting" (Pro+)
+1. Page loads → `useAuth()` in `useSubscription` starts with `isAdmin = false`
+2. `useSubscription` sees user + not admin → queries DB → returns `tier: "free"` → `isLoading: false`
+3. `TierGate` renders the paywall
+4. Meanwhile, the admin check completes → `isAdmin = true`
+5. `useSubscription` re-runs → now returns `tier: "pro_plus"`
+6. Paywall disappears — but the user already saw it flash
 
-### 2. Chains Page (`src/pages/Chains.tsx`)
-- **Tab 1: "Overview"** - Current table + charts (ChainComparisonChart, TVLDistributionChart)
-- **Tab 2: "Growth"** - Chains ranked by TVL growth, new chain additions
-- **Tab 3: "Ecosystem"** - Protocol count per chain, ecosystem diversity metrics
-- **Pro Teaser**: "Cross-Chain Flow Analysis" (Pro), "Chain Risk Scoring" (Pro+)
+Additionally, `adminLoading` is never checked by `useSubscription`, so it doesn't wait for the admin check to finish.
 
-### 3. Security Page (`src/pages/Security.tsx`)
-- **Tab 1: "Overview"** - Current filtered protocol list with audit status
-- **Tab 2: "Audit Map"** - Visual breakdown of audited vs unaudited TVL by category
-- **Tab 3: "Risks"** - Unaudited protocols sorted by TVL (highest risk exposure)
-- **Pro Teaser**: "Real-Time Exploit Monitoring" (Pro), "Smart Contract Risk Scanner" (Pro+)
+## Fix: Shared Auth Context + Loading Gate
 
-## Technical Approach
-- Same pattern as completed pages: `useSearchParams` for tab state, `Tabs`/`TabsList`/`TabsTrigger`/`TabsContent` from Radix
-- Reuse existing chart components already imported in each page
-- Add `ProFeatureTeaser` at bottom of each tab where relevant
-- Mobile-responsive tab lists with `overflow-x-auto`
+### Step 1: Create AuthContext Provider (new file)
+- Move all auth logic from `useAuth` hook into a React Context (`AuthProvider`)
+- Single source of truth — every component shares the same `user`, `isAdmin`, `adminLoading` state
+- Export `useAuth()` as a context consumer hook
+- Wrap the app in `<AuthProvider>` in `App.tsx`
+
+### Step 2: Fix useSubscription to wait for admin check
+- Add `adminLoading` to the destructured values from `useAuth()`
+- Keep `isLoading: true` while `adminLoading` is still true (don't resolve to "free" prematurely)
+- This prevents the paywall from rendering before the admin check completes
+
+### Step 3: TierGate silent loading
+- Already returns `null` when `isLoading` — this will now work correctly because `isLoading` stays true until admin status is resolved
+- No visual change needed, just the timing fix
+
+## Files to modify
+
+1. **New: `src/contexts/AuthContext.tsx`** — AuthProvider with shared state, auth listener, admin check
+2. **`src/hooks/useAuth.ts`** — Reduce to thin re-export from AuthContext
+3. **`src/App.tsx`** — Wrap in `<AuthProvider>`
+4. **`src/hooks/useSubscription.ts`** — Wait for `adminLoading` before resolving state
+
+## Remaining plan phases (after fix)
+
+5. **Phase 3: Pro page tab standardization** — Already done for Backtester, YieldIntelligence, WhaleActivity
+6. **Phase 5: Mobile polish** — Optimize stat card grids and chart heights for small screens
+7. **Phase 6: Cross-selling** — Add "Related Pro Features" suggestions on free pages
 
