@@ -20,7 +20,7 @@ interface SubscriptionState {
 const TRIAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function useSubscription(): SubscriptionState & { refetch: () => void } {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, adminLoading } = useAuth();
   const [state, setState] = useState<SubscriptionState>({
     tier: "free",
     isTrialActive: false,
