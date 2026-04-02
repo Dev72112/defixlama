@@ -152,7 +152,7 @@ export function useSubscription(): SubscriptionState & { refetch: () => void } {
       isPendingPayment: false,
       isAdmin: false,
     });
-  }, [user, isAdmin]);
+  }, [user, isAdmin, adminLoading]);
 
   useEffect(() => {
     load();
