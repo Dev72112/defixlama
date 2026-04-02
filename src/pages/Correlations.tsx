@@ -313,6 +313,8 @@ export default function Correlations() {
             </ResponsiveContainer>
           )}
         </div>
+        </TabsContent>
+        </Tabs>
       </div>
       </ErrorBoundary>
     </TierGate>
