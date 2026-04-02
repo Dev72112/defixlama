@@ -192,6 +192,9 @@ export default function Correlations() {
           )}
         </div>
 
+        </TabsContent>
+
+        <TabsContent value="sectors" className="space-y-6">
         {/* Sector Rotation Tracker */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-1">
