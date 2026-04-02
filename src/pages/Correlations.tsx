@@ -281,6 +281,9 @@ export default function Correlations() {
           </div>
         </div>
 
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-6">
         {/* Historical TVL Trend */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
