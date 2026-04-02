@@ -287,6 +287,9 @@ export default function MarketStructure() {
 
         <ProtocolLifecycle protocols={protocolList} loading={isLoading} />
 
+        </TabsContent>
+
+        <TabsContent value="chains" className="space-y-6">
         {/* Top Chains by TVL */}
         <div className="rounded-lg border border-border bg-card p-4">
           <h3 className="text-base font-semibold text-foreground mb-1">Top Chains by TVL</h3>
