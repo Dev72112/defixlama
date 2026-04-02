@@ -5,6 +5,7 @@ import { useChain } from "@/contexts/ChainContext";
 import { useChainProtocols, useChainDexVolumes, useChainFees, useChainsTVL, useChainTVLData } from "@/hooks/useDefiData";
 import { formatCurrency } from "@/lib/api/defillama";
 import { Landmark, Activity, BarChart3, Layers, Gauge, TrendingUp, Clock, Search, Zap } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { CategoryTreemap } from "@/components/dashboard/CategoryTreemap";
 import { ProtocolLifecycle } from "@/components/dashboard/ProtocolLifecycle";
