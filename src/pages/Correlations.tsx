@@ -30,6 +30,8 @@ export default function Correlations() {
   const isLoading = protocols.isLoading;
   const [historyRange, setHistoryRange] = useState<DateRange>("30d");
   const [sectorPage, setSectorPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "matrix";
 
   useEffect(() => { setSectorPage(1); }, [chainId]);
 
