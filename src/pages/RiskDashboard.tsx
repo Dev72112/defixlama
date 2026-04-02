@@ -12,6 +12,7 @@ import {
   Shield, AlertTriangle, CheckCircle2, XCircle,
   Loader2, Clock, TrendingDown,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
   Tooltip, CartesianGrid, Cell, PieChart, Pie,
