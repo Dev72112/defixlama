@@ -251,6 +251,9 @@ export default function RiskDashboard() {
           )}
         </Card>
 
+        </TabsContent>
+
+        <TabsContent value="protocols" className="space-y-6">
         {/* Risk Table */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
