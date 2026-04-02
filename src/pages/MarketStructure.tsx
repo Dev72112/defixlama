@@ -223,6 +223,9 @@ export default function MarketStructure() {
           </div>
         </div>
 
+        </TabsContent>
+
+        <TabsContent value="efficiency" className="space-y-6">
         {/* Fee-to-TVL Efficiency Chart */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-1">
