@@ -137,6 +137,15 @@ export default function MarketStructure() {
           <p className="text-muted-foreground mt-1 text-sm">Liquidity dynamics, structural analysis, and protocol efficiency metrics</p>
         </div>
 
+        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="efficiency">Efficiency</TabsTrigger>
+            <TabsTrigger value="chains">Cross-Chain</TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+
         {/* Ecosystem Structure Insight */}
         {!isLoading && protocolList.length > 0 && (
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
