@@ -294,7 +294,7 @@ function DashboardContent() {
 
       {/* TVL Chart */}
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <TVLChart data={tvlHistory?.data ?? []} loading={tvlHistory?.isLoading ?? true} height={350} />
+        <TVLChart data={tvlHistory?.data ?? []} loading={tvlHistory?.isLoading ?? true} height={window.innerWidth < 640 ? 250 : 350} />
       </ErrorBoundary>
 
       {/* Historical Charts with Date Range */}
