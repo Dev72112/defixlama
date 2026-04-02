@@ -132,6 +132,14 @@ export default function Correlations() {
         </div>
         <p className="text-muted-foreground text-sm">TVL co-movement analysis, sector rotation tracking, and divergence alerts</p>
 
+        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="matrix">Co-Movement</TabsTrigger>
+            <TabsTrigger value="sectors">Sectors</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="matrix" className="space-y-6">
         {/* Co-Movement Matrix */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-1">
