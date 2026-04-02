@@ -153,6 +153,14 @@ export default function RiskDashboard() {
           <p className="text-muted-foreground mt-1">Protocol risk scoring, audit status, and DeFi hack history</p>
         </div>
 
+        <Tabs value={currentTab} onValueChange={(v) => setSearchParams({ tab: v })} className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="protocols">Protocols</TabsTrigger>
+            <TabsTrigger value="hacks">Hack History</TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="p-4">
             <p className="text-xs text-muted-foreground">Total Hacks Tracked</p>
