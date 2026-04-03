@@ -76,7 +76,7 @@ export default function Auth() {
     if (!validateForm()) return;
 
     setLoading(true);
-    const { error } = await signUp(email, password, displayName);
+    const { data, error } = await signUp(email, password, displayName);
     setLoading(false);
 
     if (error) {
@@ -87,6 +87,21 @@ export default function Auth() {
       }
     } else {
       toast.success('Account created successfully!');
+      // Detect country and save to profile
+      try {
+        const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+          const geo = await res.json();
+          if (geo.country_code && data?.user?.id) {
+            await (await import('@/integrations/supabase/client')).supabase
+              .from('profiles')
+              .update({ country: geo.country_code })
+              .eq('id', data.user.id);
+          }
+        }
+      } catch {
+        // Non-critical, ignore
+      }
       navigate('/');
     }
   };
