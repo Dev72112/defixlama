@@ -10,14 +10,15 @@ import {
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserCurrency } from "@/hooks/useUserCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
-const tiers = [
+const tierDefinitions = [
   {
     name: "Trial",
-    price: "$1",
+    usdPrice: 1,
     period: "/ 7 days",
     description: "Try Pro features for 7 days",
     features: [
@@ -28,13 +29,13 @@ const tiers = [
       "API Access (10k req/mo)",
       "No auto-renewal",
     ],
-    cta: "Start Trial — $1",
+    ctaTemplate: "Start Trial",
     tierKey: "trial" as const,
     icon: Clock,
   },
   {
     name: "Pro",
-    price: "$29",
+    usdPrice: 29,
     period: "/month",
     description: "Advanced analytics & tools",
     features: [
@@ -46,14 +47,14 @@ const tiers = [
       "Protocol Comparison",
       "API Access (10k req/mo)",
     ],
-    cta: "Upgrade to Pro",
+    ctaTemplate: "Upgrade to Pro",
     tierKey: "pro" as const,
     popular: true,
     icon: Crown,
   },
   {
     name: "Pro+",
-    price: "$49",
+    usdPrice: 49,
     period: "/month",
     description: "Full analytics suite",
     features: [
@@ -66,13 +67,13 @@ const tiers = [
       "Watchlist Exports",
       "Unlimited API access",
     ],
-    cta: "Upgrade to Pro+",
+    ctaTemplate: "Upgrade to Pro+",
     tierKey: "pro_plus" as const,
     icon: Sparkles,
   },
   {
     name: "Enterprise",
-    price: "Custom",
+    usdPrice: 0,
     period: "",
     description: "For institutions & teams",
     features: [
@@ -82,7 +83,7 @@ const tiers = [
       "Dedicated support",
       "SLA guarantee",
     ],
-    cta: "Coming Soon",
+    ctaTemplate: "Coming Soon",
     tierKey: "enterprise" as const,
     comingSoon: true,
     icon: Shield,
@@ -94,10 +95,12 @@ const TIER_RANK: Record<string, number> = { free: 0, trial: 1, pro: 1, pro_plus:
 export default function Billing() {
   const { tier, isTrialActive, trialEndsAt, status, currentPeriodEnd, refetch, isExpired, isPendingPayment, isAdmin } = useSubscription();
   const { user } = useAuth();
+  const { formatPrice, currency } = useUserCurrency();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const [verifying, setVerifying] = useState(false);
 
+  const paymentMode = typeof window !== 'undefined' ? (localStorage.getItem('defiXlama_paymentMode') || 'test') : 'test';
   const hasActiveSubscription = (status === "active" || status === "trialing") && !isExpired;
 
   useEffect(() => {
@@ -137,14 +140,14 @@ export default function Billing() {
 
     setLoadingTier(tierKey);
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { tierKey },
+      const { data, error } = await supabase.functions.invoke("yoco-checkout", {
+        body: { tierKey, mode: paymentMode },
       });
 
       if (error) throw error;
 
-      if (data?.invoice_url) {
-        window.open(data.invoice_url, "_blank");
+      if (data?.redirectUrl) {
+        window.location.href = data.redirectUrl;
       } else {
         toast.error("Could not open checkout");
       }
@@ -169,19 +172,27 @@ export default function Billing() {
           </p>
         </div>
 
-        {/* Admin Banner */}
+        {/* Admin Mode Badge */}
         {isAdmin && (
-          <Card className="p-4 border-primary/50 bg-primary/10">
-            <div className="flex items-center gap-3">
-              <Crown className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-medium text-foreground">Admin Account</p>
-                <p className="text-sm text-muted-foreground">
-                  You have complimentary Pro+ access as an administrator.
-                </p>
+          <div className="flex gap-3 flex-wrap">
+            <Card className="p-4 border-primary/50 bg-primary/10 flex-1">
+              <div className="flex items-center gap-3">
+                <Crown className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium text-foreground">Admin Account</p>
+                  <p className="text-sm text-muted-foreground">
+                    You have complimentary Pro+ access as an administrator.
+                  </p>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+            <Card className="p-4 border-border bg-muted/30 flex items-center gap-2">
+              <span className={cn("h-2.5 w-2.5 rounded-full", paymentMode === 'live' ? "bg-green-500" : "bg-orange-500")} />
+              <span className="text-sm font-medium text-muted-foreground">
+                {paymentMode === 'live' ? 'Live' : 'Test'} Mode
+              </span>
+            </Card>
+          </div>
         )}
 
         {/* Verifying Payment Banner */}
@@ -192,7 +203,7 @@ export default function Billing() {
               <div>
                 <p className="font-medium text-foreground">Verifying payment…</p>
                 <p className="text-sm text-muted-foreground">
-                  Waiting for blockchain confirmation. This may take a few minutes.
+                  Waiting for payment confirmation. This may take a moment.
                 </p>
               </div>
             </div>
@@ -248,7 +259,6 @@ export default function Billing() {
                 <p className="text-sm text-muted-foreground">
                   Your {tier === "pro_plus" ? "Pro+" : "Pro"} plan expires on{" "}
                   {format(currentPeriodEnd, "MMM d, yyyy")} ({daysUntilExpiry} day{daysUntilExpiry !== 1 ? "s" : ""} left).
-                  Crypto payments don't auto-renew.
                 </p>
               </div>
               <Button
@@ -286,7 +296,7 @@ export default function Billing() {
               )}
               {hasActiveSubscription && currentPeriodEnd && !isTrialActive && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Active until {format(currentPeriodEnd, "MMM d, yyyy")} — paid with crypto
+                  Active until {format(currentPeriodEnd, "MMM d, yyyy")}
                 </p>
               )}
             </div>
@@ -298,7 +308,7 @@ export default function Billing() {
 
         {/* Pricing Tiers */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          {tiers.map((t) => {
+          {tierDefinitions.map((t) => {
             const Icon = t.icon;
             const isCurrentTier = !isTrialActive && tier === t.tierKey;
             const isTrialTier = t.tierKey === "trial";
@@ -308,6 +318,8 @@ export default function Billing() {
               (!isTrialTier && t.tierKey !== "enterprise" && hasActiveSubscription && TIER_RANK[t.tierKey] <= TIER_RANK[tier]);
             const isLoading = loadingTier === t.tierKey;
             const canUpgrade = !isDisabled && !t.comingSoon && t.tierKey !== "enterprise";
+
+            const priceDisplay = t.comingSoon ? "Custom" : formatPrice(t.usdPrice);
 
             return (
               <Card
@@ -332,9 +344,12 @@ export default function Billing() {
                   <Icon className="h-7 w-7 mx-auto mb-2 text-primary" />
                   <h3 className="text-lg font-bold">{t.name}</h3>
                   <div className="mt-1">
-                    <span className="text-2xl font-bold">{t.price}</span>
+                    <span className="text-2xl font-bold">{priceDisplay}</span>
                     <span className="text-muted-foreground text-sm">{t.period}</span>
                   </div>
+                  {!t.comingSoon && currency === 'ZAR' && (
+                    <p className="text-xs text-muted-foreground mt-0.5">(${t.usdPrice} USD)</p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
                 </div>
                 <ul className="space-y-2 mb-4 flex-1">
@@ -358,7 +373,7 @@ export default function Billing() {
                   ) : isAdmin ? (
                     "Admin Access"
                   ) : (
-                    t.cta
+                    t.ctaTemplate
                   )}
                 </Button>
               </Card>
@@ -368,10 +383,11 @@ export default function Billing() {
 
         <Card className="p-4 bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            🪙 Pay with 200+ cryptocurrencies via NOWPayments.{" "}
+            💳 Secure payments powered by Yoco.{" "}
+            {currency === 'ZAR' ? 'Prices shown in South African Rand. ' : ''}
             {hasActiveSubscription
               ? "Your subscription is active. Renewals are manual — you'll receive a reminder before expiry."
-              : "Start with a $1 trial to unlock Pro features for 7 days."}
+              : "Start with a trial to unlock Pro features for 7 days."}
           </p>
         </Card>
       </div>

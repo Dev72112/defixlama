@@ -295,6 +295,31 @@ export function Sidebar({ mobile = false, onClose, collapsed = false, onToggleCo
 
         {/* Footer */}
         <div className="border-t border-sidebar-border p-2">
+          {/* Admin: Test/Live payment mode toggle */}
+          {isAdmin && !isCollapsed && (
+            <div className="px-3 py-2 flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground">Payment Mode</span>
+              <button
+                onClick={() => {
+                  const current = localStorage.getItem('defiXlama_paymentMode') || 'test';
+                  const next = current === 'test' ? 'live' : 'test';
+                  localStorage.setItem('defiXlama_paymentMode', next);
+                  window.dispatchEvent(new Event('storage'));
+                  // Force re-render
+                  window.location.reload();
+                }}
+                className="flex items-center gap-1.5 text-[10px] font-medium"
+              >
+                <span className={cn(
+                  "h-2 w-2 rounded-full",
+                  (localStorage.getItem('defiXlama_paymentMode') || 'test') === 'live' ? "bg-green-500" : "bg-orange-500"
+                )} />
+                <span className="text-muted-foreground">
+                  {(localStorage.getItem('defiXlama_paymentMode') || 'test') === 'live' ? 'Live' : 'Test'}
+                </span>
+              </button>
+            </div>
+          )}
           {!mobile && onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
