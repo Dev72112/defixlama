@@ -1,47 +1,100 @@
 
 
-# Fix Subscription Flash + Continue Plan
+# Yoco Payment Integration + Country-Based Currency Display
 
-## Problem: Paywall Flash on Premium Pages
+## Overview
+Replace NOWPayments crypto checkout with Yoco (South African payment gateway) supporting both test and live modes. Add country detection to display prices in the user's local currency (ZAR for South Africa, USD otherwise) with live conversion rates.
 
-**Root cause**: `useAuth()` is a plain hook with local state — every component calling it creates an independent copy. When `useSubscription()` calls `useAuth()`, it gets its own `isAdmin = false` initially. The admin check is async, so the sequence is:
+## 1. Yoco Checkout Edge Function
 
-1. Page loads → `useAuth()` in `useSubscription` starts with `isAdmin = false`
-2. `useSubscription` sees user + not admin → queries DB → returns `tier: "free"` → `isLoading: false`
-3. `TierGate` renders the paywall
-4. Meanwhile, the admin check completes → `isAdmin = true`
-5. `useSubscription` re-runs → now returns `tier: "pro_plus"`
-6. Paywall disappears — but the user already saw it flash
+**New file: `supabase/functions/yoco-checkout/index.ts`**
 
-Additionally, `adminLoading` is never checked by `useSubscription`, so it doesn't wait for the admin check to finish.
+- Accept `tierKey` and `mode` (test/live) from the client
+- Use `TEST_SECRET_KEY` or `LIVE_SECRET_KEY` based on mode
+- POST to `https://payments.yoco.com/api/checkouts` with:
+  - `amount` in cents (trial: 100, pro: 2900, pro_plus: 4900)
+  - `currency: "ZAR"` 
+  - `successUrl` and `cancelUrl` pointing to `/billing?status=success`
+  - `metadata` with `userId`, `tierKey`
+- Write pending subscription record (same pattern as existing `create-checkout`)
+- Return `redirectUrl` for the client to redirect to
 
-## Fix: Shared Auth Context + Loading Gate
+## 2. Yoco Webhook Edge Function
 
-### Step 1: Create AuthContext Provider (new file)
-- Move all auth logic from `useAuth` hook into a React Context (`AuthProvider`)
-- Single source of truth — every component shares the same `user`, `isAdmin`, `adminLoading` state
-- Export `useAuth()` as a context consumer hook
-- Wrap the app in `<AuthProvider>` in `App.tsx`
+**New file: `supabase/functions/yoco-webhook/index.ts`**
 
-### Step 2: Fix useSubscription to wait for admin check
-- Add `adminLoading` to the destructured values from `useAuth()`
-- Keep `isLoading: true` while `adminLoading` is still true (don't resolve to "free" prematurely)
-- This prevents the paywall from rendering before the admin check completes
+- Accepts `checkout.completed` events from Yoco
+- Verify webhook signature using the `webhook-id`, `webhook-timestamp`, and `webhook-signature` headers with HMAC-SHA256 + base64 (Yoco's `whsec_` prefixed secret)
+- Uses two secrets: `YOCO_WEBHOOK_SECRET_TEST` and `YOCO_WEBHOOK_SECRET_LIVE` — you'll add these after creating webhooks in Yoco dashboard
+- The webhook URL will be: `https://nxlncqmwpjiufsnwkfnd.supabase.co/functions/v1/yoco-webhook`
+- Parse `clientReferenceId` (format: `{userId}_{tierKey}_{timestamp}`) to extract user and tier
+- Activate subscription (same logic as existing `nowpayments-webhook`)
 
-### Step 3: TierGate silent loading
-- Already returns `null` when `isLoading` — this will now work correctly because `isLoading` stays true until admin status is resolved
-- No visual change needed, just the timing fix
+## 3. Test/Live Mode Toggle in Sidebar
 
-## Files to modify
+**Modify: `src/components/layout/Sidebar.tsx`**
 
-1. **New: `src/contexts/AuthContext.tsx`** — AuthProvider with shared state, auth listener, admin check
-2. **`src/hooks/useAuth.ts`** — Reduce to thin re-export from AuthContext
-3. **`src/App.tsx`** — Wrap in `<AuthProvider>`
-4. **`src/hooks/useSubscription.ts`** — Wait for `adminLoading` before resolving state
+- Add a small toggle at the bottom of the sidebar (only visible to admins)
+- Stores mode in localStorage: `defiXlama_paymentMode` (`test` | `live`)
+- Visual indicator: green dot for live, orange for test
 
-## Remaining plan phases (after fix)
+## 4. Billing Page Updates
 
-5. **Phase 3: Pro page tab standardization** — Already done for Backtester, YieldIntelligence, WhaleActivity
-6. **Phase 5: Mobile polish** — Optimize stat card grids and chart heights for small screens
-7. **Phase 6: Cross-selling** — Add "Related Pro Features" suggestions on free pages
+**Modify: `src/pages/Billing.tsx`**
+
+- Read payment mode from localStorage
+- Pass `mode` to the new `yoco-checkout` function instead of `create-checkout`
+- Show test/live badge on billing page for admins
+- Display prices in user's detected currency (ZAR or USD)
+- Update footer text from "NOWPayments" to "Yoco"
+
+## 5. Country Detection + Currency Context
+
+**New file: `src/hooks/useUserCurrency.ts`**
+
+- On mount, call a free geo-IP API (e.g., `https://ipapi.co/json/` or `navigator.language` fallback)
+- Detect if user is in South Africa → `ZAR`, otherwise `USD`
+- Store detected country in `profiles` table (new `country` column) so it persists
+- Fetch live USD→ZAR rate from a free API (e.g., exchangerate-api or similar)
+- Export: `{ currency, symbol, rate, convertPrice, country }`
+
+**New file: `src/components/CurrencyPrice.tsx`**
+
+- Reusable component: `<CurrencyPrice usdAmount={29} />`
+- If user currency is ZAR: shows `R529` (converted at live rate)
+- If USD: shows `$29`
+- If ZAR user: no secondary currency shown; if non-ZAR: shows `($29 USD)` equivalent
+
+## 6. Database Migration
+
+- Add `country` column to `profiles` table (nullable text, default null)
+- This stores the detected country code (e.g., "ZA", "US") for persistence
+
+## 7. Auth Page — Country Detection on Signup
+
+**Modify: `src/pages/Auth.tsx`**
+
+- After successful signup, detect country and save to profile
+- Used on subsequent logins to set currency preference without re-detecting
+
+## Files Summary
+
+| # | File | Action |
+|---|------|--------|
+| 1 | `supabase/functions/yoco-checkout/index.ts` | Create |
+| 2 | `supabase/functions/yoco-webhook/index.ts` | Create |
+| 3 | `src/hooks/useUserCurrency.ts` | Create |
+| 4 | `src/components/CurrencyPrice.tsx` | Create |
+| 5 | `src/pages/Billing.tsx` | Update (Yoco + currency display) |
+| 6 | `src/components/layout/Sidebar.tsx` | Update (test/live toggle for admins) |
+| 7 | `src/pages/Auth.tsx` | Update (country detection on signup) |
+| 8 | DB migration | Add `country` column to profiles |
+
+## Webhook URLs for Your Yoco Dashboard
+
+After implementation, create webhooks in your Yoco dashboard pointing to:
+```
+https://nxlncqmwpjiufsnwkfnd.supabase.co/functions/v1/yoco-webhook
+```
+Create one for test mode and one for live mode. Save the `whsec_...` secrets — I'll prompt you to add them as `YOCO_WEBHOOK_SECRET_TEST` and `YOCO_WEBHOOK_SECRET_LIVE`.
 
