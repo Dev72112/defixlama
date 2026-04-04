@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const TIER_PRICES_CENTS: Record<string, number> = {
-  trial: 100,
+  trial: 0,
   pro: 2900,
   pro_plus: 4900,
 };
