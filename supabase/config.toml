@@ -6,13 +6,10 @@ verify_jwt = false
 [functions.api-gateway]
 verify_jwt = false
 
-[functions.create-checkout]
-verify_jwt = false
-
-[functions.nowpayments-webhook]
-verify_jwt = false
-
 [functions.yoco-checkout]
+verify_jwt = false
+
+[functions.yoco-webhook]
 verify_jwt = false
 
 [functions.yoco-webhook]
