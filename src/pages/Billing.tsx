@@ -394,7 +394,7 @@ export default function Billing() {
             {currency === 'ZAR' ? 'Prices shown in South African Rand. ' : ''}
             {hasActiveSubscription
               ? "Your subscription is active. Renewals are manual — you'll receive a reminder before expiry."
-              : "Start with a trial to unlock Pro features for 7 days."}
+              : "Start with a free 7-day trial to unlock Pro features — no payment required."}
           </p>
         </Card>
       </div>
