@@ -12,13 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { LogIn, LogOut, User, Shield } from 'lucide-react';
+import { LogIn, LogOut, User, Shield, CreditCard, Crown } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 
 export function UserMenu() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, loading, isAdmin, signOut } = useAuth();
+  const { tier, isTrialActive, isLoading: subLoading } = useSubscription();
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -52,6 +54,7 @@ export function UserMenu() {
   }
 
   const initials = user.email?.slice(0, 2).toUpperCase() || 'U';
+  const tierLabel = isAdmin ? 'Admin' : isTrialActive ? 'Trial' : tier === 'pro_plus' ? 'Pro+' : tier === 'pro' ? 'Pro' : 'Free';
 
   return (
     <DropdownMenu>
@@ -71,14 +74,27 @@ export function UserMenu() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.email}</p>
-            {isAdmin && (
-              <Badge variant="outline" className="w-fit mt-1 text-xs gap-1">
-                <Shield className="h-3 w-3" />
-                Admin
-              </Badge>
-            )}
+            <div className="flex items-center gap-1.5 mt-1">
+              {isAdmin && (
+                <Badge variant="outline" className="w-fit text-xs gap-1">
+                  <Shield className="h-3 w-3" />
+                  Admin
+                </Badge>
+              )}
+              {!subLoading && (
+                <Badge variant="secondary" className="w-fit text-xs gap-1">
+                  <Crown className="h-3 w-3" />
+                  {tierLabel}
+                </Badge>
+              )}
+            </div>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate('/billing')}>
+          <CreditCard className="mr-2 h-4 w-4" />
+          Manage Billing
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
