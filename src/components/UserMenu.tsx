@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { LogIn, LogOut, User, Shield } from 'lucide-react';
+import { LogIn, LogOut, User, Shield, CreditCard, Crown } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 
 export function UserMenu() {
