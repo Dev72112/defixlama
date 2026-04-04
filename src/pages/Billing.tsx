@@ -18,8 +18,9 @@ import { toast } from "sonner";
 const tierDefinitions = [
   {
     name: "Trial",
-    usdPrice: 1,
+    usdPrice: 0,
     period: "/ 7 days",
+    description: "Try Pro features free for 7 days",
     description: "Try Pro features for 7 days",
     features: [
       "Full Pro access for 7 days",
