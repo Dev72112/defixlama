@@ -30,7 +30,7 @@ const tierDefinitions = [
       "API Access (10k req/mo)",
       "No auto-renewal",
     ],
-    ctaTemplate: "Start Trial",
+    ctaTemplate: "Start Free Trial",
     tierKey: "trial" as const,
     icon: Clock,
   },
