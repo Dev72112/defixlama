@@ -147,6 +147,13 @@ export default function Billing() {
 
       if (error) throw error;
 
+      // Free trial — activated instantly, no redirect
+      if (data?.trial && data?.success) {
+        toast.success("Free trial activated! You now have Pro access for 7 days.");
+        refetch();
+        return;
+      }
+
       if (data?.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
