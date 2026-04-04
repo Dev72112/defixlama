@@ -326,7 +326,7 @@ export default function Billing() {
             const isLoading = loadingTier === t.tierKey;
             const canUpgrade = !isDisabled && !t.comingSoon && t.tierKey !== "enterprise";
 
-            const priceDisplay = t.comingSoon ? "Custom" : formatPrice(t.usdPrice);
+            const priceDisplay = t.comingSoon ? "Custom" : t.usdPrice === 0 ? "Free" : formatPrice(t.usdPrice);
 
             return (
               <Card
