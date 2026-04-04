@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const TIER_PRICES_CENTS: Record<string, number> = {
-  trial: 100,
+  trial: 0,
   pro: 2900,
   pro_plus: 4900,
 };
@@ -58,7 +58,40 @@ Deno.serve(async (req) => {
     }
 
     const orderId = `${user.id}_${tierKey}_${Date.now()}`;
-    const tierLabel = tierKey === "trial" ? "7-Day Trial" : tierKey === "pro" ? "Pro" : "Pro+";
+    const tierLabel = tierKey === "trial" ? "7-Day Free Trial" : tierKey === "pro" ? "Pro" : "Pro+";
+
+    // Free trial — activate directly, no payment needed
+    if (tierKey === "trial") {
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      const now = new Date();
+      const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      await supabaseAdmin
+        .from("subscriptions")
+        .upsert(
+          {
+            user_id: user.id,
+            tier: "pro",
+            status: "trialing",
+            trial_start: now.toISOString(),
+            trial_end: trialEnd.toISOString(),
+            current_period_end: trialEnd.toISOString(),
+            updated_at: now.toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      return new Response(
+        JSON.stringify({ success: true, trial: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Paid tiers — redirect to Yoco checkout
     const successUrl = "https://defixlama.lovable.app/billing?status=success";
     const cancelUrl = "https://defixlama.lovable.app/billing?status=cancel";
 
@@ -97,14 +130,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const pendingTier = tierKey === "trial" ? "pro" : tierKey;
-
     await supabaseAdmin
       .from("subscriptions")
       .upsert(
         {
           user_id: user.id,
-          tier: pendingTier,
+          tier: tierKey,
           status: "pending",
           updated_at: new Date().toISOString(),
         },

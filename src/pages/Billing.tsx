@@ -18,9 +18,9 @@ import { toast } from "sonner";
 const tierDefinitions = [
   {
     name: "Trial",
-    usdPrice: 1,
+    usdPrice: 0,
     period: "/ 7 days",
-    description: "Try Pro features for 7 days",
+    description: "Try Pro features free for 7 days",
     features: [
       "Full Pro access for 7 days",
       "Backtester & Risk Dashboard",
@@ -29,7 +29,7 @@ const tierDefinitions = [
       "API Access (10k req/mo)",
       "No auto-renewal",
     ],
-    ctaTemplate: "Start Trial",
+    ctaTemplate: "Start Free Trial",
     tierKey: "trial" as const,
     icon: Clock,
   },
@@ -145,6 +145,13 @@ export default function Billing() {
       });
 
       if (error) throw error;
+
+      // Free trial — activated instantly, no redirect
+      if (data?.trial && data?.success) {
+        toast.success("Free trial activated! You now have Pro access for 7 days.");
+        refetch();
+        return;
+      }
 
       if (data?.redirectUrl) {
         window.location.href = data.redirectUrl;
@@ -319,7 +326,7 @@ export default function Billing() {
             const isLoading = loadingTier === t.tierKey;
             const canUpgrade = !isDisabled && !t.comingSoon && t.tierKey !== "enterprise";
 
-            const priceDisplay = t.comingSoon ? "Custom" : formatPrice(t.usdPrice);
+            const priceDisplay = t.comingSoon ? "Custom" : t.usdPrice === 0 ? "Free" : formatPrice(t.usdPrice);
 
             return (
               <Card
@@ -387,7 +394,7 @@ export default function Billing() {
             {currency === 'ZAR' ? 'Prices shown in South African Rand. ' : ''}
             {hasActiveSubscription
               ? "Your subscription is active. Renewals are manual — you'll receive a reminder before expiry."
-              : "Start with a trial to unlock Pro features for 7 days."}
+              : "Start with a free 7-day trial to unlock Pro features — no payment required."}
           </p>
         </Card>
       </div>
