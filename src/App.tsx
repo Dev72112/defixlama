@@ -54,6 +54,9 @@ const GovernancePage = lazyLoad(() => import("./pages/Governance"));
 const CommunitySentiment = lazyLoad(() => import("./pages/CommunitySentiment"));
 const WatchlistExports = lazyLoad(() => import("./pages/WatchlistExports"));
 
+// Account pages
+const Profile = lazyLoad(() => import("./pages/Profile"));
+
 // Legal pages
 const Terms = lazyLoad(() => import("./pages/Terms"));
 const Privacy = lazyLoad(() => import("./pages/Privacy"));
