@@ -27,9 +27,7 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
   // Admins always have access
   if (isAdmin) return <>{children}</>;
 
-  // Active trial (paid $1) grants access
-  if (isTrialActive) return <>{children}</>;
-
+  // Trial respects tier hierarchy — trial sets tier:"pro" so Pro+ stays locked
   const hasAccess = tierLevel[tier] >= tierLevel[requiredTier];
 
   if (!hasAccess) {

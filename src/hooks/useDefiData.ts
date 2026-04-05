@@ -148,7 +148,7 @@ export function useXLayerYieldPools() {
   });
 }
 
-// Hook to fetch stablecoins
+// Hook to fetch stablecoins (30s refresh — data doesn't change rapidly)
 export function useStablecoins() {
   return useQuery<Stablecoin[]>({
     queryKey: ["stablecoins"],
@@ -156,8 +156,10 @@ export function useStablecoins() {
       const data = await fetchStablecoins();
       return Array.isArray(data) ? data : [];
     },
-    staleTime: LIVE_REFRESH,
-    refetchInterval: LIVE_REFRESH,
+    staleTime: STANDARD_REFRESH,
+    refetchInterval: STANDARD_REFRESH,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
   });
 }
 
