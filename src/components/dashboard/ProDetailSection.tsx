@@ -24,7 +24,8 @@ export function ProDetailSection({ title, children, requiredTier = "pro" }: ProD
 
   if (isLoading) return null;
 
-  const hasAccess = isAdmin || isTrialActive || tierLevel[tier] >= tierLevel[requiredTier];
+  // Trial respects tier hierarchy — trial sets tier:"pro" so Pro+ sections stay locked
+  const hasAccess = isAdmin || tierLevel[tier] >= tierLevel[requiredTier];
   const tierLabel = requiredTier === "pro_plus" ? "PRO+" : "PRO";
 
   if (!hasAccess) {
