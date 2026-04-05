@@ -1,100 +1,77 @@
 
 
-# Yoco Payment Integration + Country-Based Currency Display
+# Comprehensive Fix & Enhancement Plan
 
-## Overview
-Replace NOWPayments crypto checkout with Yoco (South African payment gateway) supporting both test and live modes. Add country detection to display prices in the user's local currency (ZAR for South Africa, USD otherwise) with live conversion rates.
+## Issues Identified
 
-## 1. Yoco Checkout Edge Function
+### 1. Trial Grants Access to ALL Tiers (Critical Bug)
+**Root cause**: In `TierGate.tsx` line 31, `if (isTrialActive) return <>{children}</>` bypasses the `requiredTier` check entirely. Trial users get Pro+ pages (Whale Activity, Yield Intelligence, Market Structure, Correlations, Community Sentiment, Watchlist Exports) for free.
 
-**New file: `supabase/functions/yoco-checkout/index.ts`**
+Same bug in `ProDetailSection.tsx` line 27: `isTrialActive` is OR'd into `hasAccess` without checking `requiredTier`.
 
-- Accept `tierKey` and `mode` (test/live) from the client
-- Use `TEST_SECRET_KEY` or `LIVE_SECRET_KEY` based on mode
-- POST to `https://payments.yoco.com/api/checkouts` with:
-  - `amount` in cents (trial: 100, pro: 2900, pro_plus: 4900)
-  - `currency: "ZAR"` 
-  - `successUrl` and `cancelUrl` pointing to `/billing?status=success`
-  - `metadata` with `userId`, `tierKey`
-- Write pending subscription record (same pattern as existing `create-checkout`)
-- Return `redirectUrl` for the client to redirect to
+**Fix**: Change both components to respect the tier hierarchy during trial. Trial sets `tier: "pro"` in `useSubscription`, so remove the blanket `isTrialActive` bypass and let the normal `tierLevel[tier] >= tierLevel[requiredTier]` check handle it. Trial users get Pro features only, Pro+ pages remain locked.
 
-## 2. Yoco Webhook Edge Function
+### 2. Stablecoins Page — "Failed to fetch" Errors
+The console shows repeated `TypeError: Failed to fetch` for stablecoins. The DefiLlama stablecoins API (`stablecoins.llama.fi/stablecoins?includePrices=true`) is likely being blocked by CORS or rate-limited. The hook retries every 5 seconds (LIVE_REFRESH), hammering the endpoint.
 
-**New file: `supabase/functions/yoco-webhook/index.ts`**
+**Fix**: 
+- Increase staleTime/refetchInterval for stablecoins to STANDARD_REFRESH (30s) instead of LIVE_REFRESH (5s) — stablecoin data doesn't change every 5 seconds
+- Add retry backoff and max retries (3) to prevent infinite hammering
+- Add a graceful error state on the Stablecoins page when data fails
 
-- Accepts `checkout.completed` events from Yoco
-- Verify webhook signature using the `webhook-id`, `webhook-timestamp`, and `webhook-signature` headers with HMAC-SHA256 + base64 (Yoco's `whsec_` prefixed secret)
-- Uses two secrets: `YOCO_WEBHOOK_SECRET_TEST` and `YOCO_WEBHOOK_SECRET_LIVE` — you'll add these after creating webhooks in Yoco dashboard
-- The webhook URL will be: `https://nxlncqmwpjiufsnwkfnd.supabase.co/functions/v1/yoco-webhook`
-- Parse `clientReferenceId` (format: `{userId}_{tierKey}_{timestamp}`) to extract user and tier
-- Activate subscription (same logic as existing `nowpayments-webhook`)
+### 3. Risk Dashboard — 0 Data / Empty State
+The Risk Dashboard fetches from `api.llama.fi/hacks` and `api.llama.fi/protocols` directly. These work but may return empty for certain chain filters. No empty state is shown when data is empty.
 
-## 3. Test/Live Mode Toggle in Sidebar
+**Fix**: Add proper empty states with helpful messaging when no data matches the current chain filter.
 
-**Modify: `src/components/layout/Sidebar.tsx`**
+### 4. Pro Components Showing 0 Data
+Several Pro/Pro+ page components (Whale Activity, Market Structure, Correlations, etc.) use simulated/generated data that may render as "0" or empty. These pages need better empty state handling and clearer "live data" vs "analytics" labeling.
 
-- Add a small toggle at the bottom of the sidebar (only visible to admins)
-- Stores mode in localStorage: `defiXlama_paymentMode` (`test` | `live`)
-- Visual indicator: green dot for live, orange for test
+### 5. Documentation Page — Not Built Out
+`Docs.tsx` exists but is a placeholder with generic webhook examples. Needs real content about the platform's features, API endpoints, and tier descriptions.
 
-## 4. Billing Page Updates
+**Fix**: Rebuild the Docs page with proper sections: Platform Overview, Feature Guide by Tier, API Documentation, FAQ, and Changelog (pulling from `update_logs` table).
 
-**Modify: `src/pages/Billing.tsx`**
+### 6. Donations Page — Not Built Out  
+`Donations.tsx` references `useDonationStats` and `useDonations` hooks that likely return empty data since there's no actual donation tracking in the database.
 
-- Read payment mode from localStorage
-- Pass `mode` to the new `yoco-checkout` function instead of `create-checkout`
-- Show test/live badge on billing page for admins
-- Display prices in user's detected currency (ZAR or USD)
-- Update footer text from "NOWPayments" to "Yoco"
+**Fix**: Simplify to a static donation page with wallet addresses, QR codes, and a thank-you message. Remove the fake stats/leaderboard components that show 0.
 
-## 5. Country Detection + Currency Context
+### 7. Profile Page — Missing
+No profile page exists. Users can't view/edit their display name, country, or see subscription details.
 
-**New file: `src/hooks/useUserCurrency.ts`**
+**Fix**: Create a new `/profile` page with:
+- Display name editing
+- Country/currency display
+- Subscription status and history
+- Link to Billing page
+- Password change via Supabase Auth
 
-- On mount, call a free geo-IP API (e.g., `https://ipapi.co/json/` or `navigator.language` fallback)
-- Detect if user is in South Africa → `ZAR`, otherwise `USD`
-- Store detected country in `profiles` table (new `country` column) so it persists
-- Fetch live USD→ZAR rate from a free API (e.g., exchangerate-api or similar)
-- Export: `{ currency, symbol, rate, convertPrice, country }`
+---
 
-**New file: `src/components/CurrencyPrice.tsx`**
+## Files to Create/Modify
 
-- Reusable component: `<CurrencyPrice usdAmount={29} />`
-- If user currency is ZAR: shows `R529` (converted at live rate)
-- If USD: shows `$29`
-- If ZAR user: no secondary currency shown; if non-ZAR: shows `($29 USD)` equivalent
+| # | File | Action | Description |
+|---|------|--------|-------------|
+| 1 | `src/components/TierGate.tsx` | Modify | Remove blanket `isTrialActive` bypass, use tier-level check |
+| 2 | `src/components/dashboard/ProDetailSection.tsx` | Modify | Same fix — remove `isTrialActive` from OR chain |
+| 3 | `src/hooks/useDefiData.ts` | Modify | Change stablecoins to STANDARD_REFRESH, add retry config |
+| 4 | `src/pages/Stablecoins.tsx` | Modify | Better error/empty state handling |
+| 5 | `src/pages/RiskDashboard.tsx` | Modify | Add empty state for 0-data scenarios |
+| 6 | `src/pages/Docs.tsx` | Rewrite | Real documentation with feature guide, API docs, FAQ |
+| 7 | `src/pages/Donations.tsx` | Simplify | Remove fake stats, clean static donation page |
+| 8 | `src/pages/Profile.tsx` | Create | New profile page with account management |
+| 9 | `src/App.tsx` | Modify | Add `/profile` route |
+| 10 | `src/components/UserMenu.tsx` | Modify | Add "Profile" link |
 
-## 6. Database Migration
+## Implementation Order
 
-- Add `country` column to `profiles` table (nullable text, default null)
-- This stores the detected country code (e.g., "ZA", "US") for persistence
-
-## 7. Auth Page — Country Detection on Signup
-
-**Modify: `src/pages/Auth.tsx`**
-
-- After successful signup, detect country and save to profile
-- Used on subsequent logins to set currency preference without re-detecting
-
-## Files Summary
-
-| # | File | Action |
+| # | Task | Effort |
 |---|------|--------|
-| 1 | `supabase/functions/yoco-checkout/index.ts` | Create |
-| 2 | `supabase/functions/yoco-webhook/index.ts` | Create |
-| 3 | `src/hooks/useUserCurrency.ts` | Create |
-| 4 | `src/components/CurrencyPrice.tsx` | Create |
-| 5 | `src/pages/Billing.tsx` | Update (Yoco + currency display) |
-| 6 | `src/components/layout/Sidebar.tsx` | Update (test/live toggle for admins) |
-| 7 | `src/pages/Auth.tsx` | Update (country detection on signup) |
-| 8 | DB migration | Add `country` column to profiles |
-
-## Webhook URLs for Your Yoco Dashboard
-
-After implementation, create webhooks in your Yoco dashboard pointing to:
-```
-https://nxlncqmwpjiufsnwkfnd.supabase.co/functions/v1/yoco-webhook
-```
-Create one for test mode and one for live mode. Save the `whsec_...` secrets — I'll prompt you to add them as `YOCO_WEBHOOK_SECRET_TEST` and `YOCO_WEBHOOK_SECRET_LIVE`.
+| 1 | Fix trial tier bypass in TierGate + ProDetailSection | Small |
+| 2 | Fix stablecoins fetch (rate limit + error handling) | Small |
+| 3 | Add empty states to Risk Dashboard + Pro pages | Small |
+| 4 | Rebuild Documentation page | Medium |
+| 5 | Clean up Donations page | Small |
+| 6 | Create Profile page + route | Medium |
 
