@@ -54,16 +54,16 @@ export default function Predictions() {
     });
   }, [predictions]);
 
-  // Dynamic accuracy from real protocol data: compare 1d change as "actual" vs 7d trend / 7 as "predicted daily"
+  // Trend alignment: compare 1d change as "actual" vs 7d trend / 7 as "predicted daily"
   const accuracyData = useMemo<AccuracyEntry[]>(() => {
     if (!protocols || protocols.length < 6) return [];
     return protocols.slice(0, 6).map((p: any, i: number) => {
-      const predicted = (p.change_7d || 0) / 7; // daily average of 7d trend
+      const predicted = (p.change_7d || 0) / 7;
       const actual = p.change_1d || 0;
       const error = Math.abs(predicted - actual);
       const accuracy = Math.max(0, Math.round(100 - error * 5));
       return {
-        period: `Week ${i + 1}`,
+        period: p.name?.slice(0, 15) || `Protocol ${i + 1}`,
         predicted: Math.round(predicted * 100) / 100,
         actual: Math.round(actual * 100) / 100,
         accuracy,
