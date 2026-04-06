@@ -198,7 +198,7 @@ export default function Predictions() {
                 </div>
               </Card>
               <div>
-                <h3 className="font-semibold text-foreground mb-3">Accuracy Breakdown</h3>
+                <h3 className="font-semibold text-foreground mb-3">Alignment Breakdown</h3>
                 <ResponsiveDataTable columns={accuracyColumns} data={accuracyData} keyField="period" />
               </div>
             </TabsContent>

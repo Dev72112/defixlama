@@ -180,8 +180,13 @@ export default function Governance() {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-4">
+              <Card className="p-4 border-warning/30 bg-warning/5">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-warning">⚠ Simulated Events:</strong> These entries are derived from recent TVL movements and do not represent actual governance votes. Connect a real governance API (e.g., Snapshot) for live vote data.
+                </p>
+              </Card>
               <div>
-                <h3 className="font-semibold text-foreground mb-3">Recent Governance Votes</h3>
+                <h3 className="font-semibold text-foreground mb-3">TVL-Derived Activity (Estimated)</h3>
                 <ResponsiveDataTable columns={historyColumns} data={votingHistory} keyField="id" />
               </div>
             </TabsContent>

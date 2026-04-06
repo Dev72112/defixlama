@@ -96,10 +96,10 @@ export default function CommunitySentiment() {
   const columns: ResponsiveColumn<SentimentEntry>[] = [
     { key: "name", label: "Protocol", priority: "always", render: (s) => <span className="font-medium text-foreground">{s.name}</span> },
     { key: "tvl", label: "TVL", priority: "desktop", align: "right", render: (s) => <span className="font-mono text-foreground">{formatCurrency(s.tvl)}</span> },
-    { key: "sentimentScore", label: "Score", priority: "always", align: "right", render: (s) => <span className={cn("font-mono font-medium", s.sentimentScore >= 0 ? "text-success" : "text-destructive")}>{s.sentimentScore >= 0 ? "+" : ""}{s.sentimentScore}</span> },
-    { key: "tvlMomentum", label: "TVL Mom.", priority: "expanded", align: "right", render: (s) => <span className={cn("font-mono", s.tvlMomentum >= 0 ? "text-success" : "text-destructive")}>{s.tvlMomentum >= 0 ? "+" : ""}{s.tvlMomentum}%</span> },
-    { key: "volumeMomentum", label: "Vol Mom.", priority: "expanded", align: "right", render: (s) => <span className={cn("font-mono", s.volumeMomentum >= 0 ? "text-success" : "text-destructive")}>{s.volumeMomentum >= 0 ? "+" : ""}{s.volumeMomentum}%</span> },
-    { key: "socialActivity", label: "Social", priority: "expanded", align: "right", render: (s) => (
+    { key: "sentimentScore", label: "Momentum", priority: "always", align: "right", render: (s) => <span className={cn("font-mono font-medium", s.sentimentScore >= 0 ? "text-success" : "text-destructive")}>{s.sentimentScore >= 0 ? "+" : ""}{s.sentimentScore}</span> },
+    { key: "tvlMomentum", label: "TVL 7d", priority: "expanded", align: "right", render: (s) => <span className={cn("font-mono", s.tvlMomentum >= 0 ? "text-success" : "text-destructive")}>{s.tvlMomentum >= 0 ? "+" : ""}{s.tvlMomentum}%</span> },
+    { key: "volumeMomentum", label: "TVL 1d", priority: "expanded", align: "right", render: (s) => <span className={cn("font-mono", s.volumeMomentum >= 0 ? "text-success" : "text-destructive")}>{s.volumeMomentum >= 0 ? "+" : ""}{s.volumeMomentum}%</span> },
+    { key: "socialActivity", label: "Activity", priority: "expanded", align: "right", render: (s) => (
       <div className="flex items-center justify-end gap-2">
         <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-primary" style={{ width: `${s.socialActivity}%` }} /></div>
         <span className="text-xs text-muted-foreground">{s.socialActivity}</span>
