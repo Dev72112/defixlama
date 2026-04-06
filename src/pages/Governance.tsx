@@ -123,11 +123,17 @@ export default function Governance() {
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} Governance Tracker</h1>
+             <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} Governance Estimates</h1>
               <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
             </div>
-            <p className="text-muted-foreground mt-1">Track on-chain governance proposals and voting activity</p>
+            <p className="text-muted-foreground mt-1">TVL-derived governance estimates for DeFi protocols</p>
           </div>
+
+          <Card className="p-3 border-warning/30 bg-warning/5">
+            <p className="text-xs text-muted-foreground">
+              <strong className="text-warning">⚠ Estimated Data:</strong> Governance metrics are derived from TVL rankings and on-chain activity patterns — not from real governance APIs. Proposal counts, participation rates, and voting power are approximations based on protocol TVL and category.
+            </p>
+          </Card>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Protocols Tracked" value={governanceData.length.toString()} icon={Users} loading={isLoading} />
