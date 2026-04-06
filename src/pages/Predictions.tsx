@@ -176,9 +176,14 @@ export default function Predictions() {
             </TabsContent>
 
             <TabsContent value="accuracy" className="space-y-4">
+              <Card className="p-3 border-warning/30 bg-warning/5 mb-4">
+                <p className="text-xs text-muted-foreground">
+                  <strong className="text-warning">⚠ Snapshot Comparison:</strong> This compares each protocol's 7-day daily average vs actual 1-day change — it's a current alignment check, not historical prediction tracking.
+                </p>
+              </Card>
               <Card className="p-4">
-                <h3 className="font-semibold text-foreground mb-1">Prediction vs Actual</h3>
-                <p className="text-xs text-muted-foreground mb-4">Historical accuracy of the prediction model</p>
+                <h3 className="font-semibold text-foreground mb-1">Trend Alignment by Protocol</h3>
+                <p className="text-xs text-muted-foreground mb-4">How well 7-day trends align with recent 1-day movement</p>
                 <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={accuracyData}>
