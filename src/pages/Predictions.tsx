@@ -143,7 +143,7 @@ export default function Predictions() {
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="price" className="gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> Price Predictions</TabsTrigger>
               <TabsTrigger value="tvl" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> TVL Forecast</TabsTrigger>
-              <TabsTrigger value="accuracy" className="gap-1.5"><History className="h-3.5 w-3.5" /> Accuracy Tracker</TabsTrigger>
+              <TabsTrigger value="accuracy" className="gap-1.5"><History className="h-3.5 w-3.5" /> Trend Alignment</TabsTrigger>
             </TabsList>
 
             <TabsContent value="price" className="space-y-4">
