@@ -11,8 +11,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { User, Mail, Globe, Crown, CreditCard, Key, Loader2, Save } from "lucide-react";
+import { User, Mail, Globe, Crown, CreditCard, Key, Loader2, Save, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
+
+function FeatureLink({ label, href }: { label: string; href: string }) {
+  return (
+    <Link to={href} className="flex items-center gap-2 text-sm text-primary hover:underline">
+      <ExternalLink className="h-3 w-3" />
+      {label}
+    </Link>
+  );
+}
 
 export default function Profile() {
   const navigate = useNavigate();
