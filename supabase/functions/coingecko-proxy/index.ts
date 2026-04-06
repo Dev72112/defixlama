@@ -125,10 +125,11 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      const status = response.status === 404 ? 404 : 503;
       console.error(`CoinGecko API error: ${response.status}`);
       return new Response(
-        JSON.stringify({ error: "External API error" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: status === 404 ? "Token not found" : "External API error" }),
+        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

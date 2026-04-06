@@ -30,6 +30,10 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
   // Trial respects tier hierarchy — trial sets tier:"pro" so Pro+ stays locked
   const hasAccess = tierLevel[tier] >= tierLevel[requiredTier];
 
+  // Show expiry warning for users with access whose subscription is ending soon
+  const daysLeft = currentPeriodEnd ? differenceInDays(currentPeriodEnd, new Date()) : null;
+  const showExpiryWarning = hasAccess && daysLeft !== null && daysLeft >= 0 && daysLeft <= 7 && !isExpired;
+
   if (!hasAccess) {
   return (
     <>
@@ -49,7 +53,12 @@ export function TierGate({ children, requiredTier = "pro" }: TierGateProps) {
   );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {showExpiryWarning && currentPeriodEnd && <ExpiryBanner daysLeft={daysLeft!} expiryDate={currentPeriodEnd} />}
+      {children}
+    </>
+  );
 }
 
 function PendingPaymentBanner() {
