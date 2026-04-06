@@ -96,10 +96,10 @@ export default function CommunitySentiment() {
   const columns: ResponsiveColumn<SentimentEntry>[] = [
     { key: "name", label: "Protocol", priority: "always", render: (s) => <span className="font-medium text-foreground">{s.name}</span> },
     { key: "tvl", label: "TVL", priority: "desktop", align: "right", render: (s) => <span className="font-mono text-foreground">{formatCurrency(s.tvl)}</span> },
-    { key: "sentimentScore", label: "Score", priority: "always", align: "right", render: (s) => <span className={cn("font-mono font-medium", s.sentimentScore >= 0 ? "text-success" : "text-destructive")}>{s.sentimentScore >= 0 ? "+" : ""}{s.sentimentScore}</span> },
-    { key: "tvlMomentum", label: "TVL Mom.", priority: "expanded", align: "right", render: (s) => <span className={cn("font-mono", s.tvlMomentum >= 0 ? "text-success" : "text-destructive")}>{s.tvlMomentum >= 0 ? "+" : ""}{s.tvlMomentum}%</span> },
-    { key: "volumeMomentum", label: "Vol Mom.", priority: "expanded", align: "right", render: (s) => <span className={cn("font-mono", s.volumeMomentum >= 0 ? "text-success" : "text-destructive")}>{s.volumeMomentum >= 0 ? "+" : ""}{s.volumeMomentum}%</span> },
-    { key: "socialActivity", label: "Social", priority: "expanded", align: "right", render: (s) => (
+    { key: "sentimentScore", label: "Momentum", priority: "always", align: "right", render: (s) => <span className={cn("font-mono font-medium", s.sentimentScore >= 0 ? "text-success" : "text-destructive")}>{s.sentimentScore >= 0 ? "+" : ""}{s.sentimentScore}</span> },
+    { key: "tvlMomentum", label: "TVL 7d", priority: "expanded", align: "right", render: (s) => <span className={cn("font-mono", s.tvlMomentum >= 0 ? "text-success" : "text-destructive")}>{s.tvlMomentum >= 0 ? "+" : ""}{s.tvlMomentum}%</span> },
+    { key: "volumeMomentum", label: "TVL 1d", priority: "expanded", align: "right", render: (s) => <span className={cn("font-mono", s.volumeMomentum >= 0 ? "text-success" : "text-destructive")}>{s.volumeMomentum >= 0 ? "+" : ""}{s.volumeMomentum}%</span> },
+    { key: "socialActivity", label: "Activity", priority: "expanded", align: "right", render: (s) => (
       <div className="flex items-center justify-end gap-2">
         <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-primary" style={{ width: `${s.socialActivity}%` }} /></div>
         <span className="text-xs text-muted-foreground">{s.socialActivity}</span>
@@ -124,11 +124,17 @@ export default function CommunitySentiment() {
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} Community Sentiment</h1>
+             <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} TVL Momentum Analysis</h1>
               <Badge className="bg-primary/20 text-primary text-xs">PRO+</Badge>
             </div>
-            <p className="text-muted-foreground mt-1">Sentiment scores derived from volume, TVL momentum, and social activity</p>
+            <p className="text-muted-foreground mt-1">Momentum scores derived from TVL changes and protocol growth patterns</p>
           </div>
+
+          <Card className="p-3 border-warning/30 bg-warning/5">
+            <p className="text-xs text-muted-foreground">
+              <strong className="text-warning">⚠ TVL-Derived Data:</strong> Sentiment scores are calculated from TVL and volume momentum — not from social media or community polls. "Bullish/Bearish" labels reflect TVL trend direction only.
+            </p>
+          </Card>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Overall Sentiment" value={avgSentiment > 0 ? `+${avgSentiment}` : avgSentiment.toString()} icon={MessageCircle} loading={isLoading} />

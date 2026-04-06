@@ -11,8 +11,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { User, Mail, Globe, Crown, CreditCard, Key, Loader2, Save } from "lucide-react";
+import { User, Mail, Globe, Crown, CreditCard, Key, Loader2, Save, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
+
+function FeatureLink({ label, href }: { label: string; href: string }) {
+  return (
+    <Link to={href} className="flex items-center gap-2 text-sm text-primary hover:underline">
+      <ExternalLink className="h-3 w-3" />
+      {label}
+    </Link>
+  );
+}
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -159,20 +169,57 @@ export default function Profile() {
               </div>
             )}
             {isTrialActive && trialEndsAt && (
-              <p className="text-sm text-muted-foreground">
-                Trial ends: {format(trialEndsAt, "MMM d, yyyy")}
-              </p>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Trial ends: {format(trialEndsAt, "MMM d, yyyy")} ({Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / 86400000))} days left)
+                </p>
+                <p className="text-xs text-muted-foreground">Trial includes Pro features only. Pro+ features require an upgrade.</p>
+              </div>
             )}
             {currentPeriodEnd && !isTrialActive && (
               <p className="text-sm text-muted-foreground">
                 Next billing: {format(currentPeriodEnd, "MMM d, yyyy")}
               </p>
             )}
-            <Button variant="outline" onClick={() => navigate("/billing")} className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              Manage Billing
-            </Button>
           </div>
+
+          {/* Your Features */}
+          <Separator />
+          <div>
+            <h3 className="text-sm font-medium mb-2">Your Accessible Features</h3>
+            <div className="grid grid-cols-1 gap-1.5">
+              {(tier === "free" && !isAdmin) ? (
+                <p className="text-xs text-muted-foreground">Upgrade to unlock premium analytics pages.</p>
+              ) : (
+                <>
+                  {(isAdmin || tier === "pro" || tier === "pro_plus" || tier === "enterprise") && (
+                    <>
+                      <FeatureLink label="Backtester" href="/backtester" />
+                      <FeatureLink label="Risk Dashboard" href="/risk-dashboard" />
+                      <FeatureLink label="Predictions" href="/predictions" />
+                      <FeatureLink label="Governance" href="/governance" />
+                      <FeatureLink label="Alert Config" href="/alert-config" />
+                      <FeatureLink label="Protocol Comparison" href="/protocol-comparison" />
+                    </>
+                  )}
+                  {(isAdmin || tier === "pro_plus" || tier === "enterprise") && (
+                    <>
+                      <FeatureLink label="Whale Activity" href="/whale-activity" />
+                      <FeatureLink label="Market Structure" href="/market-structure" />
+                      <FeatureLink label="Yield Intelligence" href="/yield-intelligence" />
+                      <FeatureLink label="Correlations" href="/correlations" />
+                      <FeatureLink label="Community Sentiment" href="/community-sentiment" />
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <Button variant="outline" onClick={() => navigate("/billing")} className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            Manage Billing
+          </Button>
         </Card>
 
         {/* Security */}

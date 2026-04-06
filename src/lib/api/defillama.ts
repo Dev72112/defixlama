@@ -332,10 +332,13 @@ export async function fetchChainYieldPools(chain: string): Promise<YieldPool[]> 
   }
 }
 
-// Fetch stablecoins
+// Fetch stablecoins via proxy to avoid CORS
 export async function fetchStablecoins(): Promise<Stablecoin[]> {
   try {
-    const response = await fetch(`${DEFILLAMA_STABLECOINS_URL}/stablecoins?includePrices=true`);
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const response = await fetch(
+      `https://${projectId}.supabase.co/functions/v1/stablecoins-proxy?endpoint=/stablecoins?includePrices=true`
+    );
     if (!response.ok) throw new Error("Failed to fetch stablecoins");
     const data = await response.json();
     const assets = data?.peggedAssets;

@@ -102,7 +102,7 @@ export default function Governance() {
   const columns: ResponsiveColumn<GovernanceProtocol>[] = [
     { key: "name", label: "Protocol", priority: "always", render: (g) => <span className="font-medium text-foreground">{g.name}</span> },
     { key: "tvl", label: "TVL", priority: "desktop", align: "right", render: (g) => <span className="font-mono text-foreground">{formatCurrency(g.tvl)}</span> },
-    { key: "proposalCount", label: "Proposals", priority: "always", align: "right", render: (g) => <span className="font-mono text-foreground">{g.proposalCount}</span> },
+    { key: "proposalCount", label: "Est. Proposals", priority: "always", align: "right", render: (g) => <span className="font-mono text-foreground">{g.proposalCount}</span> },
     { key: "activeProposals", label: "Active", priority: "always", align: "right", render: (g) => g.activeProposals > 0 ? <span className="inline-flex items-center gap-1 text-success"><CheckCircle className="h-3 w-3" /> {g.activeProposals}</span> : <span className="text-muted-foreground">0</span> },
     { key: "participationRate", label: "Participation", priority: "expanded", align: "right", render: (g) => <span className={cn("font-mono", g.participationRate >= 40 ? "text-success" : g.participationRate >= 20 ? "text-warning" : "text-destructive")}>{g.participationRate.toFixed(1)}%</span> },
     { key: "category", label: "Category", priority: "expanded", align: "center", render: (g) => <Badge variant="outline" className="text-xs">{g.category}</Badge> },
@@ -123,11 +123,17 @@ export default function Governance() {
         <div className="space-y-6 animate-fade-in">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} Governance Tracker</h1>
+             <h1 className="text-2xl md:text-3xl font-bold text-foreground">{selectedChain.name} Governance Estimates</h1>
               <Badge className="bg-primary/20 text-primary text-xs">PRO</Badge>
             </div>
-            <p className="text-muted-foreground mt-1">Track on-chain governance proposals and voting activity</p>
+            <p className="text-muted-foreground mt-1">TVL-derived governance estimates for DeFi protocols</p>
           </div>
+
+          <Card className="p-3 border-warning/30 bg-warning/5">
+            <p className="text-xs text-muted-foreground">
+              <strong className="text-warning">⚠ Estimated Data:</strong> Governance metrics are derived from TVL rankings and on-chain activity patterns — not from real governance APIs. Proposal counts, participation rates, and voting power are approximations based on protocol TVL and category.
+            </p>
+          </Card>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Protocols Tracked" value={governanceData.length.toString()} icon={Users} loading={isLoading} />
@@ -174,8 +180,13 @@ export default function Governance() {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-4">
+              <Card className="p-4 border-warning/30 bg-warning/5">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-warning">⚠ Simulated Events:</strong> These entries are derived from recent TVL movements and do not represent actual governance votes. Connect a real governance API (e.g., Snapshot) for live vote data.
+                </p>
+              </Card>
               <div>
-                <h3 className="font-semibold text-foreground mb-3">Recent Governance Votes</h3>
+                <h3 className="font-semibold text-foreground mb-3">TVL-Derived Activity (Estimated)</h3>
                 <ResponsiveDataTable columns={historyColumns} data={votingHistory} keyField="id" />
               </div>
             </TabsContent>

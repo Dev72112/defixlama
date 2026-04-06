@@ -40,7 +40,7 @@ export function useUserCurrency(): UserCurrency {
           }
         }
 
-        // If no stored country, detect via geo-IP
+        // If no stored country, detect via geo-IP with navigator.language fallback
         if (!country) {
           try {
             const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
@@ -61,7 +61,14 @@ export function useUserCurrency(): UserCurrency {
               }
             }
           } catch {
-            // Geo detection failed, default to USD
+            // Geo-IP failed — try navigator.language fallback
+            if (!cancelled && typeof navigator !== 'undefined') {
+              const lang = navigator.language || '';
+              if (lang.endsWith('-ZA') || lang === 'af') {
+                setCountry('ZA');
+                setCurrency('ZAR');
+              }
+            }
           }
         }
 

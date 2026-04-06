@@ -22,11 +22,12 @@ const tierDefinitions = [
     period: "/ 7 days",
     description: "Try Pro features free for 7 days",
     features: [
-      "Full Pro access for 7 days",
+      "Pro-tier access for 7 days",
       "Backtester & Risk Dashboard",
       "Predictions & Governance",
       "Protocol Comparison",
       "API Access (10k req/mo)",
+      "Pro+ features remain locked",
       "No auto-renewal",
     ],
     ctaTemplate: "Start Free Trial",

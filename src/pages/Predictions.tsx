@@ -54,16 +54,16 @@ export default function Predictions() {
     });
   }, [predictions]);
 
-  // Dynamic accuracy from real protocol data: compare 1d change as "actual" vs 7d trend / 7 as "predicted daily"
+  // Trend alignment: compare 1d change as "actual" vs 7d trend / 7 as "predicted daily"
   const accuracyData = useMemo<AccuracyEntry[]>(() => {
     if (!protocols || protocols.length < 6) return [];
     return protocols.slice(0, 6).map((p: any, i: number) => {
-      const predicted = (p.change_7d || 0) / 7; // daily average of 7d trend
+      const predicted = (p.change_7d || 0) / 7;
       const actual = p.change_1d || 0;
       const error = Math.abs(predicted - actual);
       const accuracy = Math.max(0, Math.round(100 - error * 5));
       return {
-        period: `Week ${i + 1}`,
+        period: p.name?.slice(0, 15) || `Protocol ${i + 1}`,
         predicted: Math.round(predicted * 100) / 100,
         actual: Math.round(actual * 100) / 100,
         accuracy,
@@ -121,7 +121,7 @@ export default function Predictions() {
             <StatCard title="Protocols Analyzed" value={predictions.length.toString()} icon={Brain} loading={isLoading} />
             <StatCard title="Bullish Signals" value={bullishCount.toString()} icon={TrendingUp} loading={isLoading} />
             <StatCard title="Avg Confidence" value={`${avgConfidence}%`} icon={Target} loading={isLoading} />
-            <StatCard title="Model Accuracy" value={`${avgAccuracy}%`} icon={BarChart3} loading={isLoading} />
+            <StatCard title="Trend Alignment" value={`${avgAccuracy}%`} icon={BarChart3} loading={isLoading} />
           </div>
 
           {/* Methodology Card */}
@@ -143,7 +143,7 @@ export default function Predictions() {
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="price" className="gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> Price Predictions</TabsTrigger>
               <TabsTrigger value="tvl" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> TVL Forecast</TabsTrigger>
-              <TabsTrigger value="accuracy" className="gap-1.5"><History className="h-3.5 w-3.5" /> Accuracy Tracker</TabsTrigger>
+              <TabsTrigger value="accuracy" className="gap-1.5"><History className="h-3.5 w-3.5" /> Trend Alignment</TabsTrigger>
             </TabsList>
 
             <TabsContent value="price" className="space-y-4">
@@ -176,9 +176,14 @@ export default function Predictions() {
             </TabsContent>
 
             <TabsContent value="accuracy" className="space-y-4">
+              <Card className="p-3 border-warning/30 bg-warning/5 mb-4">
+                <p className="text-xs text-muted-foreground">
+                  <strong className="text-warning">⚠ Snapshot Comparison:</strong> This compares each protocol's 7-day daily average vs actual 1-day change — it's a current alignment check, not historical prediction tracking.
+                </p>
+              </Card>
               <Card className="p-4">
-                <h3 className="font-semibold text-foreground mb-1">Prediction vs Actual</h3>
-                <p className="text-xs text-muted-foreground mb-4">Historical accuracy of the prediction model</p>
+                <h3 className="font-semibold text-foreground mb-1">Trend Alignment by Protocol</h3>
+                <p className="text-xs text-muted-foreground mb-4">How well 7-day trends align with recent 1-day movement</p>
                 <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={accuracyData}>
@@ -193,7 +198,7 @@ export default function Predictions() {
                 </div>
               </Card>
               <div>
-                <h3 className="font-semibold text-foreground mb-3">Accuracy Breakdown</h3>
+                <h3 className="font-semibold text-foreground mb-3">Alignment Breakdown</h3>
                 <ResponsiveDataTable columns={accuracyColumns} data={accuracyData} keyField="period" />
               </div>
             </TabsContent>
