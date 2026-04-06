@@ -121,7 +121,7 @@ export default function Predictions() {
             <StatCard title="Protocols Analyzed" value={predictions.length.toString()} icon={Brain} loading={isLoading} />
             <StatCard title="Bullish Signals" value={bullishCount.toString()} icon={TrendingUp} loading={isLoading} />
             <StatCard title="Avg Confidence" value={`${avgConfidence}%`} icon={Target} loading={isLoading} />
-            <StatCard title="Model Accuracy" value={`${avgAccuracy}%`} icon={BarChart3} loading={isLoading} />
+            <StatCard title="Trend Alignment" value={`${avgAccuracy}%`} icon={BarChart3} loading={isLoading} />
           </div>
 
           {/* Methodology Card */}
