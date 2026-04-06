@@ -102,7 +102,7 @@ export default function Governance() {
   const columns: ResponsiveColumn<GovernanceProtocol>[] = [
     { key: "name", label: "Protocol", priority: "always", render: (g) => <span className="font-medium text-foreground">{g.name}</span> },
     { key: "tvl", label: "TVL", priority: "desktop", align: "right", render: (g) => <span className="font-mono text-foreground">{formatCurrency(g.tvl)}</span> },
-    { key: "proposalCount", label: "Proposals", priority: "always", align: "right", render: (g) => <span className="font-mono text-foreground">{g.proposalCount}</span> },
+    { key: "proposalCount", label: "Est. Proposals", priority: "always", align: "right", render: (g) => <span className="font-mono text-foreground">{g.proposalCount}</span> },
     { key: "activeProposals", label: "Active", priority: "always", align: "right", render: (g) => g.activeProposals > 0 ? <span className="inline-flex items-center gap-1 text-success"><CheckCircle className="h-3 w-3" /> {g.activeProposals}</span> : <span className="text-muted-foreground">0</span> },
     { key: "participationRate", label: "Participation", priority: "expanded", align: "right", render: (g) => <span className={cn("font-mono", g.participationRate >= 40 ? "text-success" : g.participationRate >= 20 ? "text-warning" : "text-destructive")}>{g.participationRate.toFixed(1)}%</span> },
     { key: "category", label: "Category", priority: "expanded", align: "center", render: (g) => <Badge variant="outline" className="text-xs">{g.category}</Badge> },
